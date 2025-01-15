@@ -1,15 +1,21 @@
 {
-  "extends": "./tsconfig_base",
   "include": ["./node_modules/@ma3-pro-plugins/grandma3-types/index.d.ts", "lib/**/*", "src/**/*"],
   "tstl": {
     "luaTarget": "5.3",
     "luaBundleEntry": "./src/main.ts",
-    "luaBundle": "/Users/arochut/DEV/grandma3-autozoom-plugin/dist/Anatole Rochut - GrandMA3 Autozoom Plugin - v0.1.0/grandMA3/gma3_library/datapools/plugins/Anatole Rochut/GrandMA3 Autozoom Plugin - v0.1.0/MA3 1.8/main.lua",
-    "luaPlugins": [
-      { "name": "./tstl/grandMA3-tstl-plugin.js" }
-    ],
+    "luaBundle": "./out/main.lua",
     "sourceMapTraceback": true,
-    "noResolvePaths": ["json", "lfs", "socket"]
-  }
+    "noResolvePaths": ["json", "lfs", "socket"],
+    "luaLibImport": "require-minimal",
+    "noHeader": true,
+
+  },
+  "compilerOptions": {
+    "target": "ESNext",
+    "lib": ["ESNext"],
+    "moduleResolution": "node",
+    "types": ["grandma3-ts-types", "lua-types/5.3"],
+    "strict" : true,
+  },
 }
     
