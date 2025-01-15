@@ -1,0 +1,260 @@
+import { PrintEcho, PrintLogLevel, SetLogLevel } from "./utils";
+import { fetchFixtures, loadFixtureTypes } from "./load-patch";
+import { AZ_EnabledFixture, AZ_PatchInfo } from "./types";
+import { moveFaderGMA3 } from "./handle-execs";
+
+
+export class AZ_Global_Type {
+    patch_info: AZ_PatchInfo;
+    enabledFixtures: AZ_EnabledFixture[];
+    enabled: boolean;
+
+    refreshRate = 30;
+    initialized = false;
+
+    constructor() {
+        this.patch_info = { fixtures: [], markers: [] };
+        this.enabledFixtures = [];
+        this.enabled = false;
+
+        PrintEcho("AZ created, patch_info", 10);
+    }
+
+    PrintLength(): void {
+        PrintEcho((this.patch_info.fixtures.length).toString(), 10);
+        PrintEcho((this.patch_info.markers.length).toString(), 10);
+    }
+
+    ShowEnabled(): void {
+        if (this.enabled) {
+            PrintEcho("AutoZoom is enabled", 10);
+        } else {
+            PrintEcho("AutoZoom is disabled", 10);
+        }
+    }
+    Enable(): void {
+        if(!this.initialized){
+            this.Start();
+        }
+        if (!this.enabled) {
+            PrintEcho("Enabling Plugin AutoZoom", 10);
+            this.enabled = true;
+        }
+        this.ShowEnabled();
+
+        this.RegisterUpdateLoop();
+    }
+    Disable(): void {
+        if (this.enabled) {
+            PrintEcho("Disabling Plugin AutoZoom", 10);
+
+            this.enabled = false;
+        }
+        this.ShowEnabled();
+    }
+    Toggle(): void {
+        if (this.enabled) {
+            this.Disable();
+        } else {
+            this.Enable();
+        }
+    }
+    ScanPatch(): void {
+        this.patch_info = { fixtures: [], markers: [] };
+        let fixtureTypes_in_XYZ = loadFixtureTypes();
+        let fixture_and_markers = fetchFixtures(fixtureTypes_in_XYZ);
+        PrintEcho("--- Scanned all fixtures that have XYZ", 1)
+        this.patch_info = { fixtures: fixture_and_markers.fixtures, markers: fixture_and_markers.markers};
+        PrintEcho("--- Patch fetched - found " + this.patch_info.fixtures.length + " fixtures and " + this.patch_info.markers.length + " markers.", 10);
+    }
+
+    PrintCurrentPatch(): void {
+        if (!this){
+            PrintEcho("AZ is not defined", 3);
+            return;
+        }
+
+        if (!(this.patch_info)) {
+            PrintEcho("Patch is not defined", 3);
+            return;
+        }
+        if (this.patch_info === undefined) {
+            PrintEcho("Nothing is defined, problem...", 3);
+            return;
+        }
+        if (this.patch_info.fixtures === undefined) {
+            PrintEcho("Fixtures aren't defined, problem...", 3);
+            return;
+        }
+        if (this.patch_info.markers === undefined) {
+            PrintEcho("Markers aren't defined, problem...", 3);
+            return;
+        }
+        if (this.patch_info.fixtures.length == 0) {
+            PrintEcho("No fixtures in patch", 3);
+            return;
+        }
+        if (this.patch_info.markers.length == 0) {
+            PrintEcho("No markers in patch", 3);
+            return;
+        }
+        PrintEcho("Current Patch", 10);
+        PrintEcho("Fixtures", 10);
+        for (let fixture of this.patch_info.fixtures) {
+            fixture.print(10);
+        }
+        PrintEcho("Markers", 10);
+        for (let marker of this.patch_info.markers) {
+            marker.print(10);
+        }
+    }
+    GetFixturesStatus(): void {
+        for(let enabledFixture of this.enabledFixtures){
+            PrintEcho("Fixture " + enabledFixture.fixture.fid + " -> " + enabledFixture.marker.fid + " | beamsize : " + enabledFixture.beamSize, 10)
+        }
+
+
+    }
+    EnableFixture(fixtureid: number, markerid: number, beamSize: number): void {
+        // Check if the fixtureid is in the patch_info.fixtures
+        // Check if the markerid is in the patch_info.markers
+        // Store in enabledFixtures a new AZ_EnabledFixture at index [fixtureid]
+        if (!this.patch_info.fixtures) {
+            PrintEcho("Patch is not defined", 10);
+        }
+        if (this.patch_info.fixtures.length === 0) {
+            PrintEcho("No fixtures in patch", 10);
+            return;
+        }
+        if (this.patch_info.markers.length === 0) {
+            PrintEcho("No markers in patch", 10);
+            return;
+        }
+        for (let fixture of this.patch_info.fixtures) {
+            if (fixture.fid === fixtureid) {
+                for (let marker of this.patch_info.markers) {
+                    if (marker.fid === markerid) {
+                        let enabledFixture = new AZ_EnabledFixture(
+                            fixture, marker, beamSize)
+                        for (let i = 0; i < this.enabledFixtures.length; i++) {
+                            if (this.enabledFixtures[i].fixture.fid == fixtureid){
+                                this.enabledFixtures[i].marker = marker;
+                                this.enabledFixtures[i].beamSize = beamSize;
+                                PrintEcho("Updated fixture " + fixtureid + " - Marker : " + marker.fid + " - " + marker.cid + + " |  Beam size : " + beamSize, 10)
+                                return;
+                            }
+                        }
+                        this.enabledFixtures.push(enabledFixture);
+                        PrintEcho("Enabled fixture " + fixtureid + " - Marker : " + marker.fid + " |  Beam size : " + beamSize, 10)
+                        return;
+                    }
+                }
+                PrintEcho("No marker with id " + markerid + " found", 10);
+                return;
+            }
+        }
+        PrintEcho("No fixture with id " + fixtureid + " found", 10);
+    }
+
+    DisableFixture(fixtureid: number): void {
+        for (let i = 0; i < this.enabledFixtures.length; i++) {
+            if (this.enabledFixtures[i].fixture.fid == fixtureid) {
+                delete this.enabledFixtures[i];
+                PrintEcho("Disabled fixture " + fixtureid, 10);
+                return;
+            }
+        }
+        PrintEcho("Fixture " + fixtureid + " was not enabled", 10);
+    }
+    LogLevel(levelString: string): void {
+        SetLogLevel(levelString);
+    }
+    GetLogLevel(): void {
+        PrintLogLevel();
+    }
+
+    DisableAllFixtures() : void {
+        this.enabledFixtures = []
+        PrintEcho("Disabled all fixtures", 10)
+    }
+
+    UpdateMarkers() : void{
+        for (let marker of this.patch_info.markers){
+            marker.update();
+        }
+    }
+
+    UpdateFixtures() : void {
+        for(let enabledFixture of this.enabledFixtures) {
+            enabledFixture.Update();
+        }
+    }
+
+    expected_remaining_update = 0;
+    global_call_repeat = 10;
+
+    UpdateLoop():void {
+        this.expected_remaining_update--;
+        if(!this.enabled){
+            this.expected_remaining_update = 0;
+            this.global_call_repeat = 0;
+            return;
+
+        }
+
+        this.UpdateMarkers();
+        this.UpdateFixtures();
+
+        if (this.expected_remaining_update == 0) {
+            this.RegisterUpdateLoop();
+        }
+    }
+
+    SetRefreshRate(rate: number): void {
+        this.refreshRate = rate;
+        PrintEcho("Set refresh rate to " + rate + " updates/second", 10);
+    }
+
+    RegisterUpdateLoop(): void {
+        if (!this.enabled) {
+            PrintEcho("Autozoom is disabled, failed to start loop", 10)
+            return;
+        }
+        let updatePeriod = 1/this.refreshRate;
+        if (this.expected_remaining_update > 0) {
+            PrintEcho("Update loop is already registered, expected remaining update " + this.expected_remaining_update, 2);
+            return;
+        }
+
+        this.global_call_repeat = this.refreshRate*10;
+        this.expected_remaining_update = this.global_call_repeat;
+        Timer(()=>{this.UpdateLoop()}, updatePeriod, this.expected_remaining_update);
+    }
+
+    Init() : void {
+        if(!this.initialized){
+            this.Start();
+        }
+    }
+
+    Start() : void {
+        PrintEcho("Plugin GRANDMA3 AUTOZOOM launched ", 10);
+        PrintEcho("Plugin version : 0.1", 10);
+        PrintEcho("Plugin author : Naostage 2024", 10);
+        PrintEcho("", 10)
+        this.ScanPatch();
+        this.ShowEnabled();
+    }
+
+    Cleanup() : void {
+        this.expected_remaining_update = 0;
+        this.global_call_repeat = 0;
+        this.enabled = false;
+        PrintEcho("Plugin GRANDMA3 AUTOZOOM stopped", 10);
+    }
+
+    TestMoveFader(ExecName : string, value:number){
+        PrintEcho("Trying to move fader " + ExecName + " to " + value, 10)
+            moveFaderGMA3(ExecName, value);
+    }
+}

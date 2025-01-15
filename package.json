@@ -1,0 +1,22 @@
+{
+  "name": "grandma3-autozoom-plugin",
+  "version": "1.0.0",
+  "description": "Autozoom plugin for grandma3",
+  "main": "index.ts",
+  "scripts": {
+    "build": "npx @ma3-pro-plugins/ma3-ts-plugin-builder",
+    "dev": "npx @ma3-pro-plugins/ma3-ts-plugin-builder dev"
+  },
+  "author": "naostage",
+  "license": "ISC",
+  "devDependencies": {
+    "@ma3-pro-plugins/ma3-ts-plugin-builder": "^1.2.2",
+    "grandma3-ts-types": "^2.0.0",
+    "lua-types": "^2.13.0",
+    "typescript": "^5.7.2",
+    "typescript-to-lua": "^1.10.1"
+  },
+  "dependencies": {
+    "@ma3-pro-plugins/ma3-pro-plugins-lib": "~0.4.0"
+  }
+}

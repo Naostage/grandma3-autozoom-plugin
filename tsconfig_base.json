@@ -1,0 +1,20 @@
+{
+    "compilerOptions": {
+        "target": "esnext",
+        "lib": [
+            "esnext"
+        ],
+        "moduleResolution": "node",
+        "types": [
+            "lua-types/5.3",
+            "grandma3-ts-types"
+        ],
+        "strict": true,
+        "baseUrl": ".",
+        "paths": {
+            "@pplib": [
+                "node_modules/@ma3-pro-plugins/lib/dist/*"
+            ]
+        }
+    }
+}
