@@ -1,6 +1,6 @@
 import { PrintEcho, PrintLogLevel, SetLogLevel } from "./utils";
 import { fetchFixtures, loadFixtureTypes } from "./load-patch";
-import { AZ_EnabledFixture, AZ_PatchInfo } from "./types";
+import { AZ_EnabledFixture, AZ_PatchInfo, AZ_SizeFaderConfig } from "./types";
 import { moveFaderGMA3 } from "./handle-execs";
 
 
@@ -8,6 +8,8 @@ export class AZ_Global_Type {
     patch_info: AZ_PatchInfo;
     enabledFixtures: AZ_EnabledFixture[];
     enabled: boolean;
+
+    sizeFaderConfig : AZ_SizeFaderConfig = {globalEnabled:false, fixturesEnabled:[], rangeMin:0.5, rangeMax:3};
 
     refreshRate = 30;
     initialized = false;
@@ -186,7 +188,7 @@ export class AZ_Global_Type {
 
     UpdateFixtures() : void {
         for(let enabledFixture of this.enabledFixtures) {
-            enabledFixture.Update();
+            enabledFixture.Update(this.sizeFaderConfig);
         }
     }
 
@@ -253,8 +255,41 @@ export class AZ_Global_Type {
         PrintEcho("Plugin GRANDMA3 AUTOZOOM stopped", 10);
     }
 
-    TestMoveFader(ExecName : string, value:number){
-        PrintEcho("Trying to move fader " + ExecName + " to " + value, 10)
-            moveFaderGMA3(ExecName, value);
+    EnableSizeFader(fid: number) : void {
+        for (let fixture of this.patch_info.fixtures){
+            if (fixture.fid == fid){
+                this.sizeFaderConfig.fixturesEnabled[fid] = true;
+                PrintEcho("Enabled size fader for fixture " + fid, 10);
+                return;
+            }
+        }
+        PrintEcho("Fixture " + fid + " not found in the patch", 10);
+    }
+
+    DisableSizeFader(fid: number) : void {
+        for (let fixture of this.patch_info.fixtures){
+            if (fixture.fid == fid){
+                this.sizeFaderConfig.fixturesEnabled[fid] = false;
+                PrintEcho("Disabled size fader for fixture " + fid, 10);
+                return;
+            }
+        }
+        PrintEcho("Fixture " + fid + " not found in the patch", 10);
+    }
+
+    EnableGlobalSizeFader() : void {
+        this.sizeFaderConfig.globalEnabled = true;
+        PrintEcho("Enabled global size fader", 10);
+    }
+
+    DisableGlobalSizeFader() : void {
+        this.sizeFaderConfig.globalEnabled = false;
+        PrintEcho("Disabled global size fader", 10);
+    }
+
+    SetSizeFaderMinMax(min: number, max: number) : void {
+        this.sizeFaderConfig.rangeMin = min;
+        this.sizeFaderConfig.rangeMax = max;
+        PrintEcho("Set size fader range to [" + min + ", " + max + "]", 10);
     }
 }

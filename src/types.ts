@@ -1,7 +1,7 @@
 import { calculateZoomIrisFaderValues, TargetZoomIris } from "./calculate-zoom-iris";
-import { moveFaderGMA3 } from "./handle-execs";
+import { getFixtureSizeFaderValue, getGlobalSizeFaderValue, moveFaderGMA3 } from "./handle-execs";
 import { getFixturePosition } from "./load-patch";
-import { PrintEcho } from "./utils";
+import { PrintEcho, remap } from "./utils";
 
 export class Vector3 {
     x: number;
@@ -151,9 +151,24 @@ export class AZ_EnabledFixture {
         this.beamSize = beamSize
     }
 
-    Update() : void {
-        let targetZoomIris = calculateZoomIrisFaderValues(this.fixture.position, this.marker.position, this.fixture.fixtureType.opticalParameters, this.beamSize);
+    Update(sizeFaderConfig : AZ_SizeFaderConfig) : void {
+        let targettedBeamSize = this.beamSize;
+        if (sizeFaderConfig.globalEnabled == true){
+            targettedBeamSize = remap(getGlobalSizeFaderValue(), 0, 100, sizeFaderConfig.rangeMin, sizeFaderConfig.rangeMax);
+            // PrintEcho("Using global size fader value for fixture " + this.fixture.fid + " : " + targettedBeamSize, 0)
+        }
+        else if (sizeFaderConfig.fixturesEnabled[this.fixture.fid] == true){
+            targettedBeamSize = remap(getFixtureSizeFaderValue(this.fixture.fid), 0, 100, sizeFaderConfig.rangeMin, sizeFaderConfig.rangeMax);
+            // PrintEcho("Using fixture size fader value for fixture " + this.fixture.fid + " : " + targettedBeamSize, 0)
+        }
+        let targetZoomIris = calculateZoomIrisFaderValues(this.fixture.position, this.marker.position, this.fixture.fixtureType.opticalParameters, targettedBeamSize);
         // PrintEcho("Fixture " + this.fixture.fid + " should now be at (zoom :" + targetZoomIris.zoom + " | iris : " + targetZoomIris.iris + ")", 0)
         this.fixture.updateTo(targetZoomIris)
     }
+}
+export type AZ_SizeFaderConfig = {
+    globalEnabled: boolean,
+    fixturesEnabled: { [key: number]: boolean },
+    rangeMin: number,
+    rangeMax: number
 }
