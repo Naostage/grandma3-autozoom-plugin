@@ -1,4 +1,5 @@
-import { PrintEcho } from "./utils";
+import { AZ_EnabledFixture, AZ_Fixture } from "./types";
+import { ClearAll, PrintEcho } from "./utils";
 
 export function moveFaderGMA3(faderName: string, level: number){
     PrintEcho("Moving fader " + faderName + " to " + level, 0)   
@@ -39,4 +40,69 @@ export function getGlobalSizeFaderValue() : number {
     let seqName = "AZ_SIZE";
     let seq = getSeqHandleFromName(seqName);
     return seq.GetFader({"token":"FaderMaster"});
+}
+
+
+function storeTrackingCue(enabledFixture : AZ_EnabledFixture,) : void {
+    // ClearAll();
+    // We need in the programmer :
+    // - X Y Z at 0
+    // - StageMarker set to the marker cid
+    // - Zoom at min
+    // - Iris at min
+    // TODO : V2
+    PrintEcho("Not implemented yet", 3);
+}
+
+
+function createAZDatapool() : void {
+    for (let i = 0; i < ShowData().DataPools.Count(); i++){
+        let datapool = ShowData().DataPools[i];
+        if (datapool.name == "AZ"){
+            return;
+        }
+    }
+    Cmd("Store DataPool 'AZ'");
+}
+
+
+function createTrackingSequence(fixtureid: number) : void {
+    // ClearAll();
+    // let command : string = "Store Sequence 'AZ_TRACK_" + fixtureid + "' Cue 0.5";
+    // Cmd(command);
+    PrintEcho("Not implemented yet", 3);
+}
+
+function createZoomIrisSequence(fixture : AZ_Fixture) : void {
+    createAZDatapool();
+    ClearAll();
+    Cmd("Fixture " + fixture.fid)
+    Cmd("Attribute Zoom At " + fixture.fixtureType.opticalParameters.zoom.max);
+    Cmd("Store Datapool 'AZ' Sequence 'AZ_ZOOM_"+fixture.fid);
+
+    ClearAll();
+    if (fixture.fixtureType.opticalParameters.iris.max != fixture.fixtureType.opticalParameters.iris.min){
+        Cmd("Fixture " + fixture.fid)
+        Cmd("Attribute Iris At " + fixture.fixtureType.opticalParameters.iris.max);
+        Cmd("Store Datapool 'AZ' Sequence 'AZ_IRIS_"+fixture.fid);
+    }
+}
+
+function createSizeSequence(fixture : AZ_Fixture) : void {
+    createAZDatapool();
+    ClearAll();
+    Cmd("Store Datapool 'AZ' Sequence 'AZ_SIZE_"+ fixture.fid);
+    if (getSeqHandleFromName("AZ_SIZE") == null){
+        Cmd("Store Datapool 'AZ' Sequence 'AZ_SIZE'");
+    }
+}
+
+export function createSequencesForFixture(enabledFixture : AZ_EnabledFixture) : void {
+    ClearAll();
+    // if (getSeqHandleFromName("AZ_TRACK_"+enabledFixture.fixture.fid) == null){
+    //     createTrackingSequence(enabledFixture.fixture.fid);
+    // }
+    // storeTrackingCue(enabledFixture);
+    createZoomIrisSequence(enabledFixture.fixture);
+    createSizeSequence(enabledFixture.fixture);
 }

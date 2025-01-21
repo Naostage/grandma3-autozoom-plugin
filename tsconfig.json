@@ -3,7 +3,7 @@
   "tstl": {
     "luaTarget": "5.3",
     "luaBundleEntry": "./src/main.ts",
-    "luaBundle": "./out/main.lua",
+    "luaBundle": "./out/autozoom-grandma3.lua",
     "sourceMapTraceback": true,
     "noResolvePaths": ["json", "lfs", "socket"],
     "luaLibImport": "require-minimal",

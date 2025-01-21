@@ -1,7 +1,9 @@
 import { PrintEcho, PrintLogLevel, SetLogLevel } from "./utils";
 import { fetchFixtures, loadFixtureTypes } from "./load-patch";
 import { AZ_EnabledFixture, AZ_PatchInfo, AZ_SizeFaderConfig } from "./types";
-import { moveFaderGMA3 } from "./handle-execs";
+import { createSequencesForFixture, moveFaderGMA3 } from "./handle-execs";
+import { createMacro } from "./create-macros";
+import { IMPORTED_MACROS } from "./macros";
 
 
 export class AZ_Global_Type {
@@ -10,9 +12,11 @@ export class AZ_Global_Type {
     enabled: boolean;
 
     sizeFaderConfig : AZ_SizeFaderConfig = {globalEnabled:false, fixturesEnabled:[], rangeMin:0.5, rangeMax:3};
+    createSequences = false;
 
     refreshRate = 30;
     initialized = false;
+
 
     constructor() {
         this.patch_info = { fixtures: [], markers: [] };
@@ -22,10 +26,6 @@ export class AZ_Global_Type {
         PrintEcho("AZ created, patch_info", 10);
     }
 
-    PrintLength(): void {
-        PrintEcho((this.patch_info.fixtures.length).toString(), 10);
-        PrintEcho((this.patch_info.markers.length).toString(), 10);
-    }
 
     ShowEnabled(): void {
         if (this.enabled) {
@@ -111,6 +111,10 @@ export class AZ_Global_Type {
         }
     }
     GetFixturesStatus(): void {
+        if (this.enabledFixtures.length == 0) {
+            PrintEcho("No fixtures enabled", 10);
+            return;
+        }
         for(let enabledFixture of this.enabledFixtures){
             PrintEcho("Fixture " + enabledFixture.fixture.fid + " -> " + enabledFixture.marker.fid + " | beamsize : " + enabledFixture.beamSize, 10)
         }
@@ -278,6 +282,8 @@ export class AZ_Global_Type {
     }
 
     EnableGlobalSizeFader() : void {
+        // Try to create the global size fader (if needed)
+        
         this.sizeFaderConfig.globalEnabled = true;
         PrintEcho("Enabled global size fader", 10);
     }
@@ -287,9 +293,45 @@ export class AZ_Global_Type {
         PrintEcho("Disabled global size fader", 10);
     }
 
-    SetSizeFaderMinMax(min: number, max: number) : void {
+    SetSizeFaderRange(min: number, max: number) : void {
         this.sizeFaderConfig.rangeMin = min;
         this.sizeFaderConfig.rangeMax = max;
         PrintEcho("Set size fader range to [" + min + ", " + max + "]", 10);
     }
+
+    TestCreateMacro() : void {
+        let macroLines = ['Lua "Test de creation de macro"', 'Lua "Test de creation de macro 2"', 'Lua "Test de creation de macro 3"'];
+        let macroName = "TestMacro";
+        let macroNumber = 40;
+
+        createMacro(macroName, macroNumber, macroLines);
+
+    }
+
+    CreateMacros(startingIndex : number) : void {
+        if (!startingIndex){
+            PrintEcho("No starting index provided, macros creation cancelled, Usage : AZ:CreateMacros(<Starting Index>)", 10);
+            return;
+        }
+
+        for(let i = 0; i < IMPORTED_MACROS.length; i++){
+            createMacro(IMPORTED_MACROS[i].name, startingIndex+i, IMPORTED_MACROS[i].commands);
+        }
+    }
+
+    CreateAZSequences(fid: number) {
+        // Checks if fid in enabledFixtures
+        // if yes -> Create a sequences => X, Y, Z at 0, Marker set, and Zoom, Iris at min
+        // Also create 3 sequences : AZ_ZOOM_fid, AZ_IRIS_fid, AZ_SIZE_fid
+        for (let i = 0; i < this.enabledFixtures.length; i++){
+            let enabledFixture = this.enabledFixtures[i];
+            if (enabledFixture.fixture.fid == fid){
+                createSequencesForFixture(enabledFixture);
+                return;
+            }
+        }
+        // if no -> Print error message
+        PrintEcho("Fixture " + fid + " is not enabled", 10);
+    }
+
 }
