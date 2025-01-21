@@ -35,7 +35,7 @@ Also make sure that the zoom and iris physical ranges (of the fixture type) corr
 - Supposed you have a tracking sequence, in which the position of the fixture is set to the marker.
 - Store in the same cue the zoom and iris values at minimum.
 
-- Create 2 sequences 'AZ_ZOOM_<fixture_id>' and 'AZ_IRIS_<fixture_id>' (manually or automatically using `Lua "AZ:CreateAZSequences(<fid>)"`)
+- Create 2 sequences 'AZ_ZOOM_<fixture_id>' and 'AZ_IRIS_<fixture_id>' with zoom and iris at max (manually or automatically using `Lua "AZ:CreateAZSequences(<fid>)"`)
 - Enable the fixture to a certain beam size : `Lua "AZ:EnableFixture(<fixture_id>, <marker_fid>, <beamSize>)"`
 
 ### Disabling a fixture
