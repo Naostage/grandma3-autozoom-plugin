@@ -6,7 +6,7 @@
 2. Move the downloaded files to :
    - Either a USBStick in folder : `grandMA3\gma3_library\datapools\plugins`
    - Either to your onPC datapools folder : `C:\ProgramData\MALightingTechnology\gma3_library\datapools\plugins`
-3. Import the plugin in grandma3 (help : [Doc](https://help.malighting.com/grandMA3/2.2/HTML/plugins.html#h2_1665288257)
+3. Import the plugin in grandma3 (help : [Doc](https://help.malighting.com/grandMA3/2.2/HTML/plugins.html#h2_1665288257) )
 
 ## Usage
 
