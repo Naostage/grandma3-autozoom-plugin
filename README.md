@@ -60,4 +60,4 @@ This plugin uses [TypescriptToLua](https://typescripttolua.github.io/) and [Gran
 
 To install them, use node js, and type `npm install` in folder.
 
-You can build using `npm run build` or use `npm run dev` to automatically build out files on code change.
+You can build using `npm run build` or use `npm run dev` to automatically build the plugin on code change.
