@@ -50,6 +50,7 @@ Also make sure that the zoom and iris physical ranges (of the fixture type) corr
   - Use one global fader for all fixture : "AZ_SIZE"
 
 - To enable Size Fader for a fixture, type `Lua "AZ:EnableSizeFader(<fid>)"`
+- To go back to fixed value, use `Lua "AZ:DisableSizeFader(<fid>)"`
 
 - To enable the "global" fader, use : `Lua "AZ:EnableGlobalSizeFader()"`
 - To disable the "global" fader, use : `Lua "AZ:DisableGlobalSizeFader()"`
