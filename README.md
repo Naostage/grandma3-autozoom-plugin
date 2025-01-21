@@ -53,3 +53,11 @@
 ### Get the current status
 
 - You can print the current status of the fixtures (which one is following which marker, at which beam_size) using `Lua "AZ:GetFixturesStatus()"`
+
+## Developping
+
+This plugin uses [TypescriptToLua](https://typescripttolua.github.io/) and [GrandMA3-TS-Types](https://github.com/ma3-pro-plugins/grandma3-ts-types).
+
+To install them, use node js, and type `npm install` in folder.
+
+You can build using `npm run build` or use `npm run dev` to automatically build out files on code change.
