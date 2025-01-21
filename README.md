@@ -10,6 +10,12 @@
 
 ## Usage
 
+### Preparing the console
+
+Make sure that XYZ is enabled for all fixture types that you want to use autozoom with.
+
+Also make sure that the zoom and iris physical ranges (of the fixture type) correspond to the optical parameters given by the constructor on the fixture's datasheet.
+
 ### Importing the macros
 
 - Launch the plugin to import all the commands.
