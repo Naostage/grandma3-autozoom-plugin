@@ -38,6 +38,11 @@ Also make sure that the zoom and iris physical ranges (of the fixture type) corr
 - Create 2 sequences 'AZ_ZOOM_<fixture_id>' and 'AZ_IRIS_<fixture_id>' with zoom and iris at max (manually or automatically using `Lua "AZ:CreateAZSequences(<fid>)"`)
 - Enable the fixture to a certain beam size : `Lua "AZ:EnableFixture(<fixture_id>, <marker_fid>, <beamSize>)"`
 
+#### Note on using automatic sequence creation :
+  Automatic creation creates fixtures either in a new datapool called "AZ", or in the current datapool you're in.
+  You can enable/disable the use of the "AZ" Datapool using `Lua "AZ:EnableDatapool()"` or `Lua "AZ:DisableDatapool()"`
+  It works on fixtures that are enabled only (because in the future, it will create also the tracking sequence, with XYZ 0, Zoom and Iris min, and marker set)
+
 ### Disabling a fixture
 
 - To disable Autozoom on a fixture, simply launch / type `Lua "AZ:DisableFixture(<fixture_id>)"`

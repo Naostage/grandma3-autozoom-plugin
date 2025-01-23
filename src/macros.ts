@@ -88,5 +88,17 @@ export let IMPORTED_MACROS = [
         commands: [
             'Lua "AZ:CreateAZSequences(301)"'
         ]
+    },
+    {
+        name: "AZ Enable Datapool",
+        commands: [
+            'Lua "AZ:EnableDatapool()"'
+        ]
+    },
+    {
+        name: "AZ Disable Datapool",
+        commands: [
+            'Lua "AZ:DisableDatapool()"'
+        ]
     }
 ]

@@ -73,36 +73,57 @@ function createTrackingSequence(fixtureid: number) : void {
     PrintEcho("Not implemented yet", 3);
 }
 
-function createZoomIrisSequence(fixture : AZ_Fixture) : void {
-    createAZDatapool();
+function createZoomIrisSequence(fixture : AZ_Fixture, useAZDatapool : boolean) : void {
+    if (useAZDatapool){
+        createAZDatapool();
+    }
     ClearAll();
     Cmd("Fixture " + fixture.fid)
     Cmd("Attribute Zoom At " + fixture.fixtureType.opticalParameters.zoom.max);
-    Cmd("Store Datapool 'AZ' Sequence 'AZ_ZOOM_"+fixture.fid);
+    if (useAZDatapool){
+        Cmd("Store Datapool 'AZ' Sequence 'AZ_ZOOM_"+fixture.fid);
+    } else {
+        Cmd("Store Sequence 'AZ_ZOOM_"+fixture.fid);
+    }
 
     ClearAll();
     if (fixture.fixtureType.opticalParameters.iris.max != fixture.fixtureType.opticalParameters.iris.min){
         Cmd("Fixture " + fixture.fid)
         Cmd("Attribute Iris At " + fixture.fixtureType.opticalParameters.iris.max);
-        Cmd("Store Datapool 'AZ' Sequence 'AZ_IRIS_"+fixture.fid);
+        if (useAZDatapool){
+            Cmd("Store Datapool 'AZ' Sequence 'AZ_IRIS_"+fixture.fid);
+        } else {
+            Cmd("Store Sequence 'AZ_IRIS_"+fixture.fid);
+        }
     }
 }
 
-function createSizeSequence(fixture : AZ_Fixture) : void {
-    createAZDatapool();
+function createSizeSequence(fixture : AZ_Fixture, useAZDatapool:boolean) : void {
+    if (useAZDatapool){
+        createAZDatapool();
+    }
     ClearAll();
-    Cmd("Store Datapool 'AZ' Sequence 'AZ_SIZE_"+ fixture.fid);
+    if(useAZDatapool){
+        Cmd("Store Datapool 'AZ' Sequence 'AZ_SIZE_"+ fixture.fid);
+    } else {
+        Cmd("Store Sequence 'AZ_SIZE_"+ fixture.fid);
+    }
     if (getSeqHandleFromName("AZ_SIZE") == null){
-        Cmd("Store Datapool 'AZ' Sequence 'AZ_SIZE'");
+        if (useAZDatapool){
+            Cmd("Store Datapool 'AZ' Sequence 'AZ_SIZE'");
+        }
+        else {
+            Cmd("Store Sequence 'AZ_SIZE'");
+        }
     }
 }
 
-export function createSequencesForFixture(enabledFixture : AZ_EnabledFixture) : void {
+export function createSequencesForFixture(enabledFixture : AZ_EnabledFixture, useAZDatapool: boolean) : void {
     ClearAll();
     // if (getSeqHandleFromName("AZ_TRACK_"+enabledFixture.fixture.fid) == null){
     //     createTrackingSequence(enabledFixture.fixture.fid);
     // }
     // storeTrackingCue(enabledFixture);
-    createZoomIrisSequence(enabledFixture.fixture);
-    createSizeSequence(enabledFixture.fixture);
+    createZoomIrisSequence(enabledFixture.fixture, useAZDatapool);
+    createSizeSequence(enabledFixture.fixture, useAZDatapool);
 }

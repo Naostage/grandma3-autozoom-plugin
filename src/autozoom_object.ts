@@ -17,6 +17,8 @@ export class AZ_Global_Type {
     refreshRate = 30;
     initialized = false;
 
+    useAZDatapool = false;
+
 
     constructor() {
         this.patch_info = { fixtures: [], markers: [] };
@@ -299,13 +301,14 @@ export class AZ_Global_Type {
         PrintEcho("Set size fader range to [" + min + ", " + max + "]", 10);
     }
 
-    TestCreateMacro() : void {
-        let macroLines = ['Lua "Test de creation de macro"', 'Lua "Test de creation de macro 2"', 'Lua "Test de creation de macro 3"'];
-        let macroName = "TestMacro";
-        let macroNumber = 40;
+    EnableDatapool() : void {
+        this.useAZDatapool = true;
+        PrintEcho("Enabled AZ Datapool", 10);
+    }
 
-        createMacro(macroName, macroNumber, macroLines);
-
+    DisableDatapool() : void {
+        this.useAZDatapool = false;
+        PrintEcho("Disabled AZ Datapool", 10);
     }
 
     CreateMacros(startingIndex : number) : void {
@@ -326,7 +329,7 @@ export class AZ_Global_Type {
         for (let i = 0; i < this.enabledFixtures.length; i++){
             let enabledFixture = this.enabledFixtures[i];
             if (enabledFixture.fixture.fid == fid){
-                createSequencesForFixture(enabledFixture);
+                createSequencesForFixture(enabledFixture, this.useAZDatapool);
                 return;
             }
         }
