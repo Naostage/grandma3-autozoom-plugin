@@ -17,15 +17,15 @@ export function moveFaderGMA3(faderName: string, level: number){
 export function getSeqHandleFromName(seqName: string): any{
     for (let i = 0; i < ShowData().DataPools.Count(); i++){
         let datapool = ShowData().DataPools[i];
-        for (let j = 0; j < datapool[6].Count(); j++){
+        for (let j = 1; j <= datapool[6].Count(); j++){
             let seq = datapool[6][j];
             //@ts-expect-error
             if (seq.Name == seqName){
                 return seq;
             }
         }
-        return null;
     }
+    return null;
 }
 
 
@@ -81,9 +81,9 @@ function createZoomIrisSequence(fixture : AZ_Fixture, useAZDatapool : boolean) :
     Cmd("Fixture " + fixture.fid)
     Cmd("Attribute Zoom At " + fixture.fixtureType.opticalParameters.zoom.max);
     if (useAZDatapool){
-        Cmd("Store Datapool 'AZ' Sequence 'AZ_ZOOM_"+fixture.fid);
+        CmdIndirectWait("Store Datapool 'AZ' Sequence 'AZ_ZOOM_"+fixture.fid + "' /o /nc");
     } else {
-        Cmd("Store Sequence 'AZ_ZOOM_"+fixture.fid);
+        CmdIndirectWait("Store Sequence 'AZ_ZOOM_"+fixture.fid + "' /o /nc");
     }
 
     ClearAll();
@@ -91,9 +91,9 @@ function createZoomIrisSequence(fixture : AZ_Fixture, useAZDatapool : boolean) :
         Cmd("Fixture " + fixture.fid)
         Cmd("Attribute Iris At " + fixture.fixtureType.opticalParameters.iris.max);
         if (useAZDatapool){
-            Cmd("Store Datapool 'AZ' Sequence 'AZ_IRIS_"+fixture.fid);
+            CmdIndirectWait("Store Datapool 'AZ' Sequence 'AZ_IRIS_"+fixture.fid + "' /o /nc");
         } else {
-            Cmd("Store Sequence 'AZ_IRIS_"+fixture.fid);
+            CmdIndirectWait("Store Sequence 'AZ_IRIS_"+fixture.fid + "' /o /nc");
         }
     }
 }
@@ -104,17 +104,11 @@ function createSizeSequence(fixture : AZ_Fixture, useAZDatapool:boolean) : void 
     }
     ClearAll();
     if(useAZDatapool){
-        Cmd("Store Datapool 'AZ' Sequence 'AZ_SIZE_"+ fixture.fid);
+        CmdIndirectWait("Store Datapool 'AZ' Sequence 'AZ_SIZE_"+ fixture.fid + "' /o /nc");
+        CmdIndirectWait("Store Datapool 'AZ' Sequence 'AZ_SIZE' /o /nc");
     } else {
-        Cmd("Store Sequence 'AZ_SIZE_"+ fixture.fid);
-    }
-    if (getSeqHandleFromName("AZ_SIZE") == null){
-        if (useAZDatapool){
-            Cmd("Store Datapool 'AZ' Sequence 'AZ_SIZE'");
-        }
-        else {
-            Cmd("Store Sequence 'AZ_SIZE'");
-        }
+        CmdIndirectWait("Store Sequence 'AZ_SIZE_"+ fixture.fid + "' /o /nc");
+        CmdIndirectWait("Store Sequence 'AZ_SIZE' /o /nc");
     }
 }
 
@@ -126,4 +120,9 @@ export function createSequencesForFixture(enabledFixture : AZ_EnabledFixture, us
     // storeTrackingCue(enabledFixture);
     createZoomIrisSequence(enabledFixture.fixture, useAZDatapool);
     createSizeSequence(enabledFixture.fixture, useAZDatapool);
+    if (useAZDatapool){
+        PrintEcho("Sequences created for fixture " + enabledFixture.fixture.fid + " in AZ Datapool", 0);
+    } else {
+        PrintEcho("Sequences created for fixture " + enabledFixture.fixture.fid, 0);
+    }
 }
