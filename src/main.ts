@@ -3,6 +3,7 @@ import { AZ_Global_Type } from "./autozoom_object";
 import { PrintEcho, SetLogLevel } from "./utils";
 
 
+
 declare var AZ : AZ_Global_Type; 
 
 function main(display: any, args: any) {

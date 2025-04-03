@@ -86,6 +86,11 @@ export class AZ_Fixture {
         }
     }
 
+    forceUpdate() : void {
+        moveFaderGMA3(this.getZoomFader(), this.lastZoom);
+        moveFaderGMA3(this.getIrisFader(), this.lastIris);
+    }
+
     getZoomFader():string{
         return "AZ_ZOOM_"+this.fid
     }

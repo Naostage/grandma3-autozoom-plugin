@@ -38,7 +38,7 @@ export function calculateZoomIrisFaderValues(fixturePosition : Vector3, targetPo
     // The zoom is enough if the angle is between the min and max zoom values
     if (angle >= opticalParameters.zoom.min && angle <= opticalParameters.zoom.max) {
         // Calculate the zoom value
-        return {zoom: getFaderValue(opticalParameters.zoom.min, opticalParameters.zoom.max, angle), iris: 0};
+        return {zoom: getFaderValue(opticalParameters.zoom.min, opticalParameters.zoom.max, angle), iris: 100};
     }
     // If the zoom isn't enough (beam needed is too small), return the zoom value at min and the iris value to have the beamSize at the target
     else if (angle < opticalParameters.zoom.min) {
@@ -50,7 +50,7 @@ export function calculateZoomIrisFaderValues(fixturePosition : Vector3, targetPo
         return {zoom: 0, iris: irisLevel};
     }
     else {
-        // if the zoom is not wide enough, return the zoom value at max, and the iris at 0
-        return {zoom: 100, iris: 0};
+        // if the zoom is not wide enough, return the max zoom and iris.
+        return {zoom: 100, iris: 100};
     }
 }

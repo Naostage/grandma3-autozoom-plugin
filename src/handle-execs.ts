@@ -79,7 +79,7 @@ function createZoomIrisSequence(fixture : AZ_Fixture, useAZDatapool : boolean) :
     }
     ClearAll();
     Cmd("Fixture " + fixture.fid)
-    Cmd("Attribute Zoom At " + fixture.fixtureType.opticalParameters.zoom.max);
+    Cmd("Attribute Zoom At 100");
     if (useAZDatapool){
         CmdIndirectWait("Store Datapool 'AZ' Sequence 'AZ_ZOOM_"+fixture.fid + "' /o /nc");
     } else {
@@ -89,7 +89,7 @@ function createZoomIrisSequence(fixture : AZ_Fixture, useAZDatapool : boolean) :
     ClearAll();
     if (fixture.fixtureType.opticalParameters.iris.max != fixture.fixtureType.opticalParameters.iris.min){
         Cmd("Fixture " + fixture.fid)
-        Cmd("Attribute Iris At " + fixture.fixtureType.opticalParameters.iris.max);
+        Cmd("Attribute Iris At 100");
         if (useAZDatapool){
             CmdIndirectWait("Store Datapool 'AZ' Sequence 'AZ_IRIS_"+fixture.fid + "' /o /nc");
         } else {

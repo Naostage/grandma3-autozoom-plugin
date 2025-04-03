@@ -1,18 +1,22 @@
 {
-  "name": "grandma3-autozoom-plugin",
-  "version": "1.1.0",
+  "name": "gma3_autozoom",
+  "version": "1.1.1.0",
   "description": "Autozoom plugin for grandma3",
   "private": true,
   "scripts": {
-    "build": "tstl",
+    "build": "tstl && node scripts/generateXML.js",
     "dev": "tstl --watch"
   },
   "author": "naostage",
   "license": "ISC",
   "devDependencies": {
+    "@types/node": "^22.14.0",
     "grandma3-ts-types": "^2.0.0",
     "lua-types": "^2.13.0",
     "typescript": "^5.7.2",
     "typescript-to-lua": "^1.29.0"
-  }
+  },
+  "gma3DataVersion": "2.1.1.2",
+  "plugin_name" : "GMA3 Autozoom",
+  "filename" : "autozoom-grandma3"
 }

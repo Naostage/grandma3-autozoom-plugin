@@ -149,6 +149,7 @@ export class AZ_Global_Type {
                                 this.enabledFixtures[i].marker = marker;
                                 this.enabledFixtures[i].beamSize = beamSize;
                                 PrintEcho("Updated fixture " + fixtureid + " - Marker : " + marker.fid + " - " + marker.cid + + " |  Beam size : " + beamSize, 10)
+                                this.enabledFixtures[i].fixture.forceUpdate();
                                 return;
                             }
                         }
@@ -230,7 +231,7 @@ export class AZ_Global_Type {
         }
         let updatePeriod = 1/this.refreshRate;
         if (this.expected_remaining_update > 0) {
-            PrintEcho("Update loop is already registered, expected remaining update " + this.expected_remaining_update, 2);
+            PrintEcho("Update loop is already registered, expected remaining update " + this.expected_remaining_update, 1);
             return;
         }
 
@@ -247,8 +248,8 @@ export class AZ_Global_Type {
 
     Start() : void {
         PrintEcho("Plugin GRANDMA3 AUTOZOOM launched ", 10);
-        PrintEcho("Plugin version : 0.1", 10);
-        PrintEcho("Plugin author : Naostage 2024", 10);
+        PrintEcho("Plugin version : 1.1", 10);
+        PrintEcho("Plugin author : Naostage 2025", 10);
         PrintEcho("", 10)
         this.ScanPatch();
         this.ShowEnabled();
