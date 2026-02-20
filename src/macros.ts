@@ -70,7 +70,7 @@ export let IMPORTED_MACROS = [
         commands: [
             'Lua "AZ:DisableDatapool()"'
         ]
-    }
+    },
     {
         name: "AZ Example ENABLE FIXTURE",
         commands: [
