@@ -42,24 +42,24 @@ export let IMPORTED_MACROS = [
         ]
     },
     {
+        name: "AZ ENABLE GLOBAL SIZE FADER",
+        commands: [
+            'Lua "AZ:EnableGlobalSizeFader()"'
+        ]
+    },
+    {
+        name: "AZ DISABLE GLOBAL SIZE FADER",
+        commands: [
+            'Lua "AZ:DisableGlobalSizeFader()"'
+        ]
+    },
+    {
         name: "AZ SET SIZE FADER RANGE",
         commands: [
             'Lua "AZ:SetSizeFaderRange(0,5)"'
         ]
     },
     {
-        name: "AZ ENABLE GLOBAL SIZE FADER",
-        commands: [
-            'Lua "AZ:EnableGlobalSizeFader()"'
-        ]
-    },
-        {
-        name: "AZ DISABLE GLOBAL SIZE FADER",
-        commands: [
-            'Lua "AZ:DisableGlobalSizeFader()"'
-        ]
-    },
-        {
         name: "AZ Enable Datapool",
         commands: [
             'Lua "AZ:EnableDatapool()"'
