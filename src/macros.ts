@@ -42,6 +42,36 @@ export let IMPORTED_MACROS = [
         ]
     },
     {
+        name: "AZ ENABLE GLOBAL SIZE FADER",
+        commands: [
+            'Lua "AZ:EnableGlobalSizeFader()"'
+        ]
+    },
+    {
+        name: "AZ DISABLE GLOBAL SIZE FADER",
+        commands: [
+            'Lua "AZ:DisableGlobalSizeFader()"'
+        ]
+    },
+    {
+        name: "AZ SET SIZE FADER RANGE",
+        commands: [
+            'Lua "AZ:SetSizeFaderRange(0,5)"'
+        ]
+    },
+    {
+        name: "AZ Enable Datapool",
+        commands: [
+            'Lua "AZ:EnableDatapool()"'
+        ]
+    },
+    {
+        name: "AZ Disable Datapool",
+        commands: [
+            'Lua "AZ:DisableDatapool()"'
+        ]
+    },
+    {
         name: "AZ Example ENABLE FIXTURE",
         commands: [
             'Lua "AZ:EnableFixture(301,1001,3)"'
@@ -66,39 +96,9 @@ export let IMPORTED_MACROS = [
         ]
     },
     {
-        name: "AZ ENABLE GLOBAL SIZE FADER",
-        commands: [
-            'Lua "AZ:EnableGlobalSizeFader()"'
-        ]
-    },
-    {
-        name: "AZ DISABLE GLOBAL SIZE FADER",
-        commands: [
-            'Lua "AZ:DisableGlobalSizeFader()"'
-        ]
-    },
-    {
-        name: "AZ SET SIZE FADER RANGE",
-        commands: [
-            'Lua "AZ:SetSizeFaderRange(0,5)"'
-        ]
-    },
-    {
         name: "AZ Example CREATE AZ SEQUENCES FOR FIXTURE",
         commands: [
             'Lua "AZ:CreateAZSequences(301)"'
         ]
     },
-    {
-        name: "AZ Enable Datapool",
-        commands: [
-            'Lua "AZ:EnableDatapool()"'
-        ]
-    },
-    {
-        name: "AZ Disable Datapool",
-        commands: [
-            'Lua "AZ:DisableDatapool()"'
-        ]
-    }
 ]

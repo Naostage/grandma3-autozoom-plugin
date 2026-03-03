@@ -1,6 +1,6 @@
 {
   "name": "gma3_autozoom",
-  "version": "1.1.1.0",
+  "version": "1.1.2.0",
   "description": "Autozoom plugin for grandma3",
   "private": true,
   "scripts": {
@@ -13,10 +13,10 @@
     "@types/node": "^22.14.0",
     "grandma3-ts-types": "^2.0.0",
     "lua-types": "^2.13.0",
-    "typescript": "^5.7.2",
-    "typescript-to-lua": "^1.29.0"
+    "typescript": "^5.9.3",
+    "typescript-to-lua": "^1.33.2"
   },
-  "gma3DataVersion": "2.1.1.2",
-  "plugin_name" : "GMA3 Autozoom",
-  "filename" : "autozoom-grandma3"
+  "gma3DataVersion": "2.3.2.0",
+  "plugin_name": "GMA3 Autozoom",
+  "filename": "autozoom-grandma3"
 }
