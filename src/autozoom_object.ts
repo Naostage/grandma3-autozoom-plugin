@@ -248,7 +248,7 @@ export class AZ_Global_Type {
 
     Start() : void {
         PrintEcho("Plugin GRANDMA3 AUTOZOOM launched ", 10);
-        PrintEcho("Plugin version : 1.1", 10);
+        PrintEcho("Plugin version : 1.1.2", 10);
         PrintEcho("Plugin author : Naostage 2025", 10);
         PrintEcho("", 10)
         this.ScanPatch();
