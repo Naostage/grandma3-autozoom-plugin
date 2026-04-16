@@ -8,7 +8,7 @@ export type TargetZoomIris = {
 
 
 function getFaderValue(min: number, max: number, value: number) : number {
-    return (value - min) / (max - min)*100;
+    return Math.round((value - min) / (max - min)*100);
 }
 
 

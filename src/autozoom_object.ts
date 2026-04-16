@@ -148,7 +148,7 @@ export class AZ_Global_Type {
                             if (this.enabledFixtures[i].fixture.fid == fixtureid){
                                 this.enabledFixtures[i].marker = marker;
                                 this.enabledFixtures[i].beamSize = beamSize;
-                                PrintEcho("Updated fixture " + fixtureid + " - Marker : " + marker.fid + " - " + marker.cid + + " |  Beam size : " + beamSize, 10)
+                                PrintEcho("Updated fixture " + fixtureid + " - Marker : " + marker.fid + " - " + marker.cid + " |  Beam size : " + beamSize, 10)
                                 this.enabledFixtures[i].fixture.forceUpdate();
                                 return;
                             }
