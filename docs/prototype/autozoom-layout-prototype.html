@@ -1,0 +1,643 @@
+<title>AutoZoom Layout Prototype</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout concept: a grandMA3-style console screen. Left = the AutoZoom layout view (what the plugin generates);
+   right = simulation panes (stage top view, sequences + cue sheet, system monitor) standing in for the rest of the desk.
+   Deliberately single dark theme: it imitates a console UI. */
+:root {
+  color-scheme: dark;
+  --bg: #121417;          /* desk background */
+  --panel: #1b1e23;       /* window background */
+  --cell: #262a31;        /* layout element */
+  --cell-hi: #30353e;
+  --line: #3a404a;
+  --fg: #e6e8eb;
+  --muted: #8e96a3;
+  --accent: #f5a623;      /* MA-like amber: selection / capture */
+  --on: #3ecf6e;          /* armed / tracking */
+  --warn: #e8c547;
+  --bad: #e5534b;
+  --idle: #5b6573;
+  --display: "Barlow Condensed", "Arial Narrow", sans-serif;
+  --body: "Barlow", "Segoe UI", system-ui, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, "Consolas", monospace;
+}
+* { box-sizing: border-box; }
+html, body { background: var(--bg); color: var(--fg); }
+body { font-family: var(--body); font-size: 14px; padding-inline: 16px; padding-block: 16px 32px; }
+h1, h2 { font-family: var(--display); font-weight: 600; letter-spacing: .04em; text-transform: uppercase; margin: 0; text-wrap: balance; }
+h1 { font-size: 20px; }
+h2 { font-size: 14px; color: var(--muted); }
+.top { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px 16px; margin-bottom: 12px; }
+.top p { margin: 0; color: var(--muted); max-width: 70ch; }
+.desk { display: grid; grid-template-columns: minmax(0, 1.45fr) minmax(0, 1fr); gap: 12px; align-items: start; }
+@media (max-width: 1100px) { .desk { grid-template-columns: minmax(0, 1fr); } }
+.win { background: var(--panel); border: 1px solid var(--line); border-radius: 4px; min-width: 0; }
+.win > header { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 6px 10px; border-bottom: 1px solid var(--line); }
+.win > header .tag { font-family: var(--mono); font-size: 11px; color: var(--muted); }
+.pad { padding: 10px; }
+.stack { display: grid; gap: 12px; min-width: 0; }
+
+/* ---- Layout view (what the plugin builds) ---- */
+.layout-scroll { overflow-x: auto; padding: 10px; }
+.layout { display: grid; gap: 4px; width: max-content; }
+.hdr { display: grid; grid-template-columns: 150px 100px 110px 100px 100px 100px minmax(200px, 1fr); gap: 4px; margin-bottom: 8px; }
+.el { background: var(--cell); border: 2px solid var(--line); border-radius: 3px; min-height: 52px; padding: 4px 6px;
+      display: flex; flex-direction: column; justify-content: center; font-family: var(--display); font-size: 15px; line-height: 1.1; color: var(--fg); text-align: left; }
+button.el { cursor: pointer; font: inherit; font-family: var(--display); font-size: 15px; }
+button.el:hover { background: var(--cell-hi); }
+button.el:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.el small { font-family: var(--mono); font-size: 11px; color: var(--muted); margin-top: 2px; }
+.el.big { font-size: 18px; font-weight: 600; }
+.el.on { border-color: var(--on); }
+.el.on .dot { background: var(--on); }
+.el.capture { border-color: var(--accent); background: #3a2c12; }
+.el.bad { border-color: var(--bad); }
+.dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--idle); margin-right: 6px; vertical-align: middle; }
+.fader { display: flex; flex-direction: column; gap: 4px; justify-content: center; }
+.fader input { width: 100%; accent-color: var(--accent); }
+.fader .val { font-family: var(--mono); font-size: 12px; color: var(--fg); }
+.row { display: grid; gap: 4px; }
+.colhead { font-family: var(--display); font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; padding: 2px 4px; align-self: end; }
+.colhead.mk { text-align: center; }
+.colhead.mk.stale { color: var(--bad); }
+.arm { font-weight: 600; }
+.arm.armed { border-color: var(--on); background: #173322; }
+.mx { min-height: 52px; border-radius: 3px; border: 2px solid var(--line); background: var(--cell); display: grid; place-items: center; font-family: var(--mono); font-size: 12px; color: transparent; }
+.mx.follow { border-color: var(--accent); background: #3a2c12; color: var(--accent); }
+.mx.follow.live { border-color: var(--on); background: #173322; color: var(--on); }
+.mx { cursor: pointer; }
+.mx:hover { background: var(--cell-hi); }
+.mx:focus-visible { outline: 2px solid var(--accent); }
+.mx.prog { border-color: var(--bad); color: var(--bad); font-weight: 600; }
+.prog-line { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; margin-top: 10px; font-size: 13px; }
+.prog-line .vals { font-family: var(--mono); font-size: 12px; color: var(--bad); }
+.mx.follow.dim { border-style: dashed; background: var(--cell); color: var(--muted); border-color: var(--muted); }
+.state { font-size: 14px; }
+.state.ok { border-color: var(--on); }
+.state.warn { border-color: var(--warn); }
+.state.bad { border-color: var(--bad); }
+.num { font-family: var(--mono); font-size: 13px; font-variant-numeric: tabular-nums; }
+.bar { height: 6px; background: var(--bg); border-radius: 2px; margin-top: 4px; overflow: hidden; }
+.bar i { display: block; height: 100%; background: var(--accent); }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 14px; padding: 0 10px 10px; color: var(--muted); font-size: 12px; }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.sw { width: 14px; height: 14px; border-radius: 2px; border: 2px solid var(--line); background: var(--cell); }
+
+/* ---- Stage ---- */
+svg.stage { display: block; width: 100%; height: auto; max-width: 100%; background: #0d0f12; border-radius: 3px; touch-action: none; }
+.stage-tools { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; color: var(--muted); font-size: 13px; padding: 8px 10px 0; }
+.stage-tools label { display: inline-flex; gap: 6px; align-items: center; cursor: pointer; }
+
+/* ---- Sequences ---- */
+.pool { display: flex; flex-wrap: wrap; gap: 6px; }
+.seq { width: 150px; }
+.seq .el { min-height: 46px; }
+.seq.sel .el { border-color: var(--accent); }
+.seq .btns { display: grid; grid-template-columns: repeat(3, 1fr); gap: 3px; margin-top: 3px; }
+.mini { background: var(--cell); border: 1px solid var(--line); color: var(--fg); border-radius: 3px; font-family: var(--display); font-size: 13px; padding: 4px 0; cursor: pointer; }
+.mini:hover { background: var(--cell-hi); }
+.mini:focus-visible { outline: 2px solid var(--accent); }
+table.cues { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 10px; }
+.cues-wrap { overflow-x: auto; }
+table.cues th { text-align: left; font-family: var(--display); font-weight: 600; color: var(--muted); text-transform: uppercase; font-size: 12px; letter-spacing: .05em; padding: 4px 6px; border-bottom: 1px solid var(--line); }
+table.cues td { padding: 5px 6px; border-bottom: 1px solid #262a31; vertical-align: top; }
+table.cues tr { cursor: pointer; }
+table.cues tr.running td:first-child { box-shadow: inset 3px 0 var(--on); }
+table.cues tr.selected td { background: #2b2f36; }
+table.cues td.cmd { font-family: var(--mono); font-size: 12px; color: var(--accent); word-break: break-word; }
+table.cues td.mk { font-family: var(--mono); font-size: 12px; color: var(--muted); }
+
+/* ---- System monitor ---- */
+.log { font-family: var(--mono); font-size: 12px; line-height: 1.5; height: 150px; overflow-y: auto; padding: 8px 10px; color: #b9c0ca; }
+.log .t { color: var(--muted); }
+.log .az { color: var(--accent); }
+
+/* ---- In-page prompt (stands in for TextInput) ---- */
+.modal-bg { position: fixed; inset: 0; background: rgba(0,0,0,.55); display: grid; place-items: center; padding: 16px; z-index: 10; }
+.modal { background: var(--panel); border: 1px solid var(--accent); border-radius: 4px; width: min(420px, 100%); padding: 14px; display: grid; gap: 10px; }
+.modal h3 { margin: 0; font-family: var(--display); font-size: 18px; font-weight: 600; }
+.modal p { margin: 0; color: var(--muted); }
+.modal input { background: var(--bg); color: var(--fg); border: 1px solid var(--line); border-radius: 3px; padding: 8px; font-family: var(--mono); font-size: 15px; }
+.modal input:focus-visible { outline: 2px solid var(--accent); }
+.modal .acts { display: flex; gap: 8px; justify-content: flex-end; flex-wrap: wrap; }
+.modal .acts button { padding: 6px 14px; }
+.modal .acts .primary { border-color: var(--accent); }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<div class="top">
+  <h1>AutoZoom Layout Prototype</h1>
+  <p>Left: the layout the plugin would generate in its data pool. Right: a fake desk to drive it. Drag markers on the stage, Go sequences to recall markers and arms, try Capture. Sample data, real zoom/iris math.</p>
+</div>
+
+<div class="desk">
+  <section class="win" aria-label="AutoZoom layout">
+    <header><h2>Layout 1 “AutoZoom” · DataPool “AutoZoom”</h2><span class="tag" id="rate">30 Hz</span></header>
+    <div class="layout-scroll"><div id="layout"></div></div>
+    <div class="legend">
+      <span><i class="sw" style="border-color:var(--on);background:#173322"></i>following, tracking</span>
+      <span><i class="sw" style="border-color:var(--accent);background:#3a2c12"></i>following, no PSN</span>
+      <span><i class="sw" style="border-color:var(--muted);border-style:dashed"></i>marker set, fixture disarmed</span>
+      <span><i class="sw" style="border-color:var(--bad)"></i>P = in programmer (tap a cell: XYZ 0, marker, zoom/iris min)</span>
+    </div>
+  </section>
+
+  <div class="stack">
+    <section class="win" aria-label="Stage top view">
+      <header><h2>Stage · top view</h2><span class="tag">drag markers · tap marker label to cut PSN</span></header>
+      <div class="stage-tools">
+        <label><input type="checkbox" id="wander" checked> markers move (simulated PSN)</label>
+      </div>
+      <div class="pad"><svg class="stage" id="stage" viewBox="0 0 640 400" role="img" aria-label="Stage top view with fixtures, markers and beam footprints"></svg></div>
+    </section>
+
+    <section class="win" aria-label="Sequences">
+      <header><h2>Sequences</h2><span class="tag">Go+ plays · tap the tile to select</span></header>
+      <div class="pad">
+        <div class="pool" id="pool"></div>
+        <div class="prog-line" id="prog"></div>
+        <div class="cues-wrap"><table class="cues" id="cues"></table></div>
+      </div>
+    </section>
+
+    <section class="win" aria-label="System monitor">
+      <header><h2>System Monitor</h2></header>
+      <div class="log" id="log" aria-live="polite"></div>
+    </section>
+  </div>
+</div>
+
+<div class="modal-bg" id="setupModal" hidden>
+  <form class="modal" id="setupForm">
+    <h3>AutoZoom setup</h3>
+    <p>XYZ offset applied when you tap a marker cell (aim point = marker + offset).</p>
+    <fieldset style="border:1px solid var(--line);border-radius:3px;display:grid;gap:8px;padding:10px">
+      <legend style="color:var(--muted);font-size:12px">Offset source</legend>
+      <label><input type="radio" name="src" value="preset" id="srcPreset"> XYZ preset (only XYZ_X/Y/Z are recalled)</label>
+      <select id="presetSel" style="background:var(--bg);color:var(--fg);border:1px solid var(--line);border-radius:3px;padding:6px"></select>
+      <label><input type="radio" name="src" value="values" id="srcValues"> Values</label>
+      <div id="valFaders" style="display:grid;gap:6px"></div>
+    </fieldset>
+    <div class="acts"><button type="button" class="mini" id="setupCancel">Cancel</button><button type="submit" class="mini primary">Save</button></div>
+  </form>
+</div>
+<div class="modal-bg" id="modal" hidden>
+  <form class="modal" id="modalForm">
+    <h3 id="mTitle"></h3>
+    <p id="mText"></p>
+    <input id="mInput" autocomplete="off">
+    <div class="acts">
+      <button type="button" class="mini" id="mAlt" hidden></button>
+      <button type="button" class="mini" id="mCancel">Cancel</button>
+      <button type="submit" class="mini primary" id="mOk">Store</button>
+    </div>
+  </form>
+</div>
+
+<script>
+// ---------------- sample show data ----------------
+const OPT = { zoom: { min: 5.5, max: 49 }, iris: { min: 0.109, max: 1 } }; // Robin Esprite, as scanned on the onPC
+const FIXTURES = [
+  { fid: 101, name: 'Spot FL', x: -4, y: -3, z: 8 },
+  { fid: 102, name: 'Spot FC', x: 0, y: -3, z: 8 },
+  { fid: 103, name: 'Spot FR', x: 4, y: -3, z: 8 },
+  { fid: 104, name: 'Spot BL', x: -4, y: 5, z: 7 },
+  { fid: 105, name: 'Spot BC', x: 0, y: 5, z: 7 },
+  { fid: 106, name: 'Spot BR', x: 4, y: 5, z: 7 },
+];
+const MARKERS = [
+  { cid: 1, name: 'Lead', x: -1.5, y: 1, z: 1.5, live: true, ph: 0 },
+  { cid: 2, name: 'Guitar', x: -5, y: 2.5, z: 1.5, live: true, ph: 1.7 },
+  { cid: 3, name: 'Bass', x: 4.5, y: 2.5, z: 1.5, live: true, ph: 3.1 },
+  { cid: 4, name: 'Keys', x: 2, y: 3.5, z: 1.2, live: true, ph: 4.4 },
+];
+const SEQS = [
+  { no: 1, name: 'Main', running: null, cues: [
+    { no: 1, name: 'Intro', mk: { 101: 1, 102: 1, 103: 1 }, cmd: `Lua "AZ:Arm('101,102,103')"` },
+    { no: 2, name: 'Verse', mk: { 104: 2, 106: 3 }, cmd: `Lua "AZ:Arm('101,102,103,104,106')"` },
+    { no: 3, name: 'Solo', mk: { 101: 2, 102: 2, 103: 2, 105: 2 }, cmd: '' },
+    { no: 4, name: 'Outro', mk: { 101: 0, 102: 0, 103: 0, 104: 0, 105: 0, 106: 0 }, cmd: '' },
+  ]},
+  { no: 2, name: 'Keys spot', running: null, cues: [
+    { no: 1, name: 'On Keys', mk: { 105: 4 }, cmd: '' },
+  ]},
+];
+const PRESETS = [ // Position presets that hold XYZ values; only XYZ_X/Y/Z are taken from them
+  { no: '2.11', name: 'On marker', off: [0, 0, 0] },
+  { no: '2.12', name: 'Head height', off: [0, 0, 0.3] },
+  { no: '2.13', name: '1 m downstage', off: [0, -1, 0] },
+];
+const RANGE = { min: 0.5, max: 5 }; // global size fader maps 0..100 % to metres
+
+// ---------------- runtime state (what the plugin would hold) ----------------
+const S = {
+  running: true,
+  armed: new Set([101, 102, 103]),
+  markerOf: {},            // XYZ_MArker value from playback, 0 = none
+  programmer: {},          // fid -> { cid, off:[x,y,z] } loaded in the programmer (wins over playback)
+  offOf: {},               // XYZ_X/Y/Z offsets from playback
+  setup: { source: 'values', vals: [0, 0, 0], preset: '2.12' }, // saved in GlobalVars by the plugin
+  sizeOverride: {},        // fid -> metres, absent = Global
+  globalFader: 35,
+  selectedSeq: 1,
+  selectedCue: null,       // { seq, cue } selected in the cue sheet
+  capture: null,           // { until } while waiting for a sequence selection
+  out: {},                 // fid -> computed result
+};
+FIXTURES.forEach(f => S.markerOf[f.fid] = 0);
+const mOf = fid => S.programmer[fid]?.cid ?? S.markerOf[fid];       // live XYZ_MArker, as GetRTChannel reads it
+const offOf = fid => S.programmer[fid]?.off ?? S.offOf[fid] ?? [0, 0, 0]; // live XYZ_X/Y/Z
+const setupOffset = () => S.setup.source === 'preset' ? PRESETS.find(p => p.no === S.setup.preset).off.slice() : S.setup.vals.slice();
+const offTxt = o => o.some(v => v) ? ` (${o.map(v => (v >= 0 ? '+' : '') + v.toFixed(1)).join(', ')})` : '';
+
+// ---------------- engine: same math as the plugin ----------------
+const deg = r => r * 180 / Math.PI, rad = d => d * Math.PI / 180;
+const clamp = v => Math.min(100, Math.max(0, Math.round(v)));
+function compute(f) {
+  const cid = mOf(f.fid);
+  const m = MARKERS.find(k => k.cid === cid);
+  const size = S.sizeOverride[f.fid] ?? (RANGE.min + (RANGE.max - RANGE.min) * S.globalFader / 100);
+  const r = { size, cid, zoom: null, iris: null, dist: null, achieved: null };
+  if (!S.running) return { ...r, state: 'Offline', cls: 'bad' };
+  if (!S.armed.has(f.fid)) return { ...r, state: 'Disarmed', cls: '' };
+  if (!cid) return { ...r, state: 'Armed · no marker', sub: 'zoom/iris released', cls: '' };
+  if (!m) return { ...r, state: `Marker ${cid} not patched`, cls: 'bad' };
+  if (!m.live) return { ...r, state: `No PSN · marker ${cid}`, sub: 'holding last values', cls: 'bad', zoom: S.out[f.fid]?.zoom ?? null, iris: S.out[f.fid]?.iris ?? null };
+  const o3 = offOf(f.fid);
+  const aim = { x: m.x + o3[0], y: m.y + o3[1], z: m.z + o3[2] };
+  const d = Math.hypot(f.x - aim.x, f.y - aim.y, f.z - aim.z);
+  const angle = deg(Math.atan(size / 2 / d)) * 2;
+  const atMin = 2 * d * Math.tan(rad(OPT.zoom.min / 2));
+  let zoom, iris, state = 'Tracking', cls = 'ok', achieved = size;
+  if (angle > OPT.zoom.max) { zoom = 100; iris = 100; state = 'Too wide'; cls = 'warn'; achieved = 2 * d * Math.tan(rad(OPT.zoom.max / 2)); }
+  else if (angle >= OPT.zoom.min) { zoom = clamp((angle - OPT.zoom.min) / (OPT.zoom.max - OPT.zoom.min) * 100); iris = 100; }
+  else {
+    zoom = 0;
+    const ratio = size / atMin;
+    iris = clamp((ratio - OPT.iris.min) / (OPT.iris.max - OPT.iris.min) * 100);
+    if (ratio < OPT.iris.min) { state = 'Too small'; cls = 'warn'; achieved = atMin * OPT.iris.min; }
+  }
+  return { ...r, dist: d, zoom, iris, state, cls, achieved, aim };
+}
+
+// ---------------- desk simulation ----------------
+function go(seq) {
+  const next = seq.running == null ? 1 : seq.running + 1;
+  if (next > seq.cues.length) { log(`Seq ${seq.no} '${seq.name}' is on its last cue`); return; }
+  seq.running = next;
+  // tracking: values of cues 1..next, last one wins
+  const tracked = {};
+  seq.cues.slice(0, next).forEach(c => Object.assign(tracked, c.mk));
+  for (const [f, v] of Object.entries(tracked)) {
+    S.markerOf[f] = typeof v === 'object' ? v.cid : v;
+    if (typeof v === 'object') S.offOf[f] = v.off;
+  }
+  const cue = seq.cues[next - 1];
+  log(`Go+ Sequence ${seq.no} → cue ${cue.no} '${cue.name}'`);
+  if (cue.cmd) runCmd(cue.cmd, `Seq ${seq.no} cue ${cue.no}`);
+  render();
+}
+function off(seq) {
+  if (seq.running == null) return;
+  seq.cues.forEach(c => Object.keys(c.mk).forEach(fid => S.markerOf[fid] = 0));
+  seq.running = null;
+  log(`Off Sequence ${seq.no} '${seq.name}'`);
+  render();
+}
+function runCmd(cmd, from) {
+  const m = cmd.match(/AZ:Arm\('([^']*)'\)/);
+  if (!m) return;
+  const ids = m[1].split(',').map(s => parseInt(s, 10)).filter(Boolean);
+  S.armed = new Set(ids);
+  log(`[AZ] ${from}: armed ${ids.length ? ids.join(', ') : 'none'}`, true);
+}
+
+// ---------------- capture flow ----------------
+let captureTimer = null;
+function startCapture() {
+  if (S.capture) { cancelCapture('cancelled'); return; }
+  S.capture = { until: Date.now() + 15000 };
+  log('[AZ] Capture: select a sequence (pool tile or executor Select)', true);
+  captureTimer = setInterval(() => {
+    if (Date.now() > S.capture.until) cancelCapture('timed out'); else renderLayout();
+  }, 250);
+  render();
+}
+function cancelCapture(why) {
+  clearInterval(captureTimer); S.capture = null;
+  log(`[AZ] Capture ${why}`, true); render();
+}
+function selectSeq(seq) {
+  S.selectedSeq = seq.no;
+  if (S.selectedCue && S.selectedCue.seq !== seq.no) S.selectedCue = null;
+  if (S.capture) {
+    clearInterval(captureTimer); S.capture = null;
+    const pre = S.selectedCue?.seq === seq.no ? S.selectedCue.cue : seq.running;
+    const armedTxt = [...S.armed].sort().join(',');
+    ask({
+      title: `Store AutoZoom arms in Seq ${seq.no} '${seq.name}'`,
+      text: `Armed: ${armedTxt || 'none'}. Cue number:` + (pre == null ? ' (sequence is off, no running cue)' : ''),
+      value: pre == null ? '' : String(pre),
+      ok: 'Store',
+      onOk: v => {
+        const cue = seq.cues.find(c => String(c.no) === v.trim());
+        if (!cue) { log(`[AZ] Seq ${seq.no} has no cue ${v}, nothing stored`, true); return; }
+        const line = `Lua "AZ:Arm('${armedTxt}')"`;
+        const rest = cue.cmd.split(';').map(s => s.trim()).filter(s => s && !/AZ:Arm\(/.test(s));
+        cue.cmd = [...rest, line].join('; ');
+        log(`[AZ] Stored in Seq ${seq.no} '${seq.name}' cue ${cue.no}: ${line}`, true);
+        render();
+      },
+    });
+  }
+  render();
+}
+
+// ---------------- prompt (stands in for TextInput) ----------------
+const modal = document.getElementById('modal'), mInput = document.getElementById('mInput');
+let modalCb = null;
+function ask({ title, text, value, ok, alt, onOk, onAlt }) {
+  document.getElementById('mTitle').textContent = title;
+  document.getElementById('mText').textContent = text;
+  document.getElementById('mOk').textContent = ok;
+  const altBtn = document.getElementById('mAlt');
+  altBtn.hidden = !alt; altBtn.textContent = alt || '';
+  altBtn.onclick = () => { closeModal(); onAlt && onAlt(); };
+  mInput.value = value; modalCb = onOk; modal.hidden = false; mInput.focus(); mInput.select();
+}
+function closeModal() { modal.hidden = true; modalCb = null; }
+document.getElementById('modalForm').addEventListener('submit', e => { e.preventDefault(); const cb = modalCb; const v = mInput.value; closeModal(); cb && cb(v); });
+document.getElementById('mCancel').onclick = closeModal;
+modal.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+
+const setupModal = document.getElementById('setupModal');
+function openSetup() {
+  const st = S.setup;
+  document.getElementById(st.source === 'preset' ? 'srcPreset' : 'srcValues').checked = true;
+  document.getElementById('presetSel').innerHTML = PRESETS.map(p => `<option value="${p.no}" ${p.no === st.preset ? 'selected' : ''}>Preset ${p.no} '${esc(p.name)}'${offTxt(p.off) || ' (0, 0, 0)'}</option>`).join('');
+  document.getElementById('valFaders').innerHTML = ['X', 'Y', 'Z'].map((a, i) =>
+    `<label style="display:grid;grid-template-columns:24px 1fr 64px;gap:8px;align-items:center">${a}
+      <input type="range" id="v${a}" min="-3" max="3" step="0.1" value="${st.vals[i]}" style="accent-color:var(--accent)">
+      <output id="o${a}" class="num">${st.vals[i].toFixed(1)} m</output></label>`).join('');
+  ['X', 'Y', 'Z'].forEach(a => document.getElementById('v' + a).oninput = e => { document.getElementById('o' + a).textContent = (+e.target.value).toFixed(1) + ' m'; document.getElementById('srcValues').checked = true; });
+  document.getElementById('presetSel').onchange = () => document.getElementById('srcPreset').checked = true;
+  setupModal.hidden = false;
+}
+document.getElementById('setupCancel').onclick = () => setupModal.hidden = true;
+document.getElementById('setupForm').addEventListener('submit', e => {
+  e.preventDefault();
+  S.setup.source = document.getElementById('srcPreset').checked ? 'preset' : 'values';
+  S.setup.preset = document.getElementById('presetSel').value;
+  S.setup.vals = ['X', 'Y', 'Z'].map(a => +document.getElementById('v' + a).value);
+  setupModal.hidden = true;
+  log(`[AZ] Setup saved: XYZ offset from ${S.setup.source === 'preset' ? 'preset ' + S.setup.preset : 'values ' + S.setup.vals.join('/')}`, true);
+  render();
+});
+setupModal.addEventListener('keydown', e => { if (e.key === 'Escape') setupModal.hidden = true; });
+function editSize(f) {
+  const cur = S.sizeOverride[f.fid];
+  ask({
+    title: `Beam size for ${f.fid} '${f.name}'`,
+    text: 'Fixed size in metres, or use the global size fader.',
+    value: cur == null ? '' : String(cur),
+    ok: 'Set', alt: 'Use global',
+    onOk: v => { const n = parseFloat(v.replace(',', '.')); if (n > 0) { S.sizeOverride[f.fid] = n; log(`[AZ] ${f.fid} size fixed at ${n} m`, true); } render(); },
+    onAlt: () => { delete S.sizeOverride[f.fid]; log(`[AZ] ${f.fid} size follows global`, true); render(); },
+  });
+}
+
+// ---------------- log ----------------
+const logEl = document.getElementById('log');
+function log(msg, az) {
+  const t = new Date().toTimeString().slice(0, 8);
+  const line = document.createElement('div');
+  line.innerHTML = `<span class="t">${t}</span> <span class="${az ? 'az' : ''}"></span>`;
+  line.lastChild.textContent = msg;
+  logEl.appendChild(line); logEl.scrollTop = logEl.scrollHeight;
+}
+
+// ---------------- render: layout ----------------
+// Built once, then only changed texts / classes are written (like the plugin will do with layout elements).
+const layoutEl = document.getElementById('layout');
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const cols = `150px repeat(${MARKERS.length}, 64px) 170px 92px 92px 92px 108px`;
+const E = {}; // element refs by key
+function buildLayout() {
+  let h = `<div class="hdr">
+    <div class="el big" data-k="status"></div>
+    <button class="el" data-act="startstop" data-k="startstop"></button>
+    <button class="el" data-act="capture" data-k="capture"></button>
+    <button class="el" data-act="setup" data-k="setupbtn"></button>
+    <button class="el" data-act="armall">Arm all<small>${FIXTURES.length} fixtures</small></button>
+    <button class="el" data-act="disarmall">Disarm all<small>&nbsp;</small></button>
+    <div class="el fader"><label for="gsize" style="font-size:13px">AZ_SIZE · global size</label>
+      <input type="range" id="gsize" min="0" max="100" value="${S.globalFader}">
+      <span class="val" data-k="gval"></span></div>
+  </div>
+  <div class="layout"><div class="row" style="grid-template-columns:${cols}">
+    <div class="colhead">Arm</div>
+    ${MARKERS.map(m => `<button class="colhead mk" data-act="psn" data-cid="${m.cid}" data-k="mh${m.cid}" style="background:none;border:0;cursor:pointer;font:inherit" title="Toggle PSN data for this marker"></button>`).join('')}
+    <div class="colhead">State</div><div class="colhead">Distance</div><div class="colhead">Zoom</div><div class="colhead">Iris</div><div class="colhead">Size</div>
+  </div>`;
+  for (const f of FIXTURES) {
+    const k = f.fid;
+    h += `<div class="row" style="grid-template-columns:${cols}">
+      <button class="el arm" data-act="arm" data-fid="${k}" data-k="arm${k}"></button>
+      ${MARKERS.map(m => `<button class="mx" data-act="pick" data-fid="${k}" data-cid="${m.cid}" data-k="mx${k}_${m.cid}" title="Put ${k} on marker ${m.cid} in the programmer"></button>`).join('')}
+      <div class="el state" data-k="st${k}"></div>
+      <div class="el num" data-k="di${k}"></div>
+      <div class="el num" data-k="zo${k}"></div>
+      <div class="el num" data-k="ir${k}"></div>
+      <button class="el num" data-act="size" data-fid="${k}" data-k="sz${k}"></button>
+    </div>`;
+  }
+  layoutEl.innerHTML = h + '</div>';
+  layoutEl.querySelectorAll('[data-k]').forEach(el => E[el.dataset.k] = el);
+}
+function put(key, html, cls) {
+  const el = E[key];
+  if (html != null && el._h !== html) { el.innerHTML = html; el._h = html; }
+  if (cls != null) { const base = el._base ?? (el._base = el.className); const c = (base + ' ' + cls).trim(); if (el.className !== c) el.className = c; }
+}
+const bar = v => `<div class="bar"><i style="width:${v ?? 0}%"></i></div>`;
+function renderLayout() {
+  const liveCount = MARKERS.filter(m => m.live).length;
+  const gSize = RANGE.min + (RANGE.max - RANGE.min) * S.globalFader / 100;
+  const left = S.capture ? Math.ceil((S.capture.until - Date.now()) / 1000) : 0;
+  put('status', `<span><span class="dot"></span>${S.running ? 'Running' : 'Offline'}</span><small>PSN ${liveCount}/${MARKERS.length} markers live</small>`, S.running ? 'on' : 'bad');
+  put('startstop', `${S.running ? 'Stop' : 'Start'}<small>AutoZoom</small>`);
+  put('capture', S.capture ? `Select a sequence…<small>tap to cancel · ${left}s</small>` : 'Capture<small>arms → cue</small>', S.capture ? 'capture' : '');
+  put('setupbtn', `Setup<small>XYZ: ${S.setup.source === 'preset' ? 'preset ' + S.setup.preset : 'values' + (offTxt(S.setup.vals) || ' 0/0/0')}</small>`);
+  put('gval', `${S.globalFader}% → ${gSize.toFixed(2)} m`);
+  const g = document.getElementById('gsize'); if (document.activeElement !== g && +g.value !== S.globalFader) g.value = S.globalFader;
+  for (const m of MARKERS) put('mh' + m.cid, `${esc(m.name)}<br>CID ${m.cid}${m.live ? '' : ' ✕'}`, m.live ? '' : 'stale');
+  for (const f of FIXTURES) {
+    const k = f.fid;
+    const o = S.out[k] = compute(f);
+    const armed = S.armed.has(k);
+    const cid = mOf(k);
+    const mk = MARKERS.find(m => m.cid === cid);
+    put('arm' + k, `<span><span class="dot" style="background:${armed ? 'var(--on)' : 'var(--idle)'}"></span>${k}</span><small>${esc(f.name)}</small>`, armed ? 'armed' : '');
+    for (const m of MARKERS) {
+      const follow = m.cid === cid;
+      const inProg = S.programmer[k]?.cid === m.cid;
+      const state = (!follow ? '' : 'follow ' + (!armed || !S.running ? 'dim' : (m.live ? 'live' : ''))) + (inProg ? ' prog' : '');
+      put(`mx${k}_${m.cid}`, inProg ? 'P' : (follow ? '●' : ''), state);
+    }
+    put('st' + k, `${esc(o.state)}<small>${esc(o.sub || (mk ? 'following ' + mk.name + offTxt(offOf(k)) : (cid ? '' : 'no marker in output')))}</small>`, o.cls);
+    put('di' + k, `${o.dist == null ? '—' : o.dist.toFixed(1) + ' m'}<small>${o.achieved == null ? '&nbsp;' : 'beam ' + o.achieved.toFixed(2) + ' m'}</small>`);
+    put('zo' + k, `${o.zoom == null ? '—' : o.zoom + ' %'}${bar(o.zoom)}`);
+    put('ir' + k, `${o.iris == null ? '—' : o.iris + ' %'}${bar(o.iris)}`);
+    put('sz' + k, `${S.sizeOverride[k] == null ? 'Global' : S.sizeOverride[k].toFixed(2) + ' m'}<small>${o.size.toFixed(2)} m target</small>`);
+  }
+}
+layoutEl.addEventListener('click', e => {
+  const b = e.target.closest('[data-act]'); if (!b) return;
+  const fid = +b.dataset.fid, act = b.dataset.act;
+  if (act === 'arm') { S.armed.has(fid) ? S.armed.delete(fid) : S.armed.add(fid); log(`[AZ] ${fid} ${S.armed.has(fid) ? 'armed' : 'disarmed'}`, true); }
+  if (act === 'startstop') { S.running = !S.running; log(`[AZ] AutoZoom ${S.running ? 'started' : 'stopped, zoom/iris released'}`, true); }
+  if (act === 'capture') { startCapture(); return; }
+  if (act === 'armall') { FIXTURES.forEach(f => S.armed.add(f.fid)); log('[AZ] all fixtures armed', true); }
+  if (act === 'disarmall') { S.armed.clear(); log('[AZ] all fixtures disarmed', true); }
+  if (act === 'setup') { openSetup(); return; }
+  if (act === 'size') { editSize(FIXTURES.find(f => f.fid === fid)); return; }
+  if (act === 'pick') {
+    const cid = +b.dataset.cid;
+    if (S.programmer[fid]?.cid === cid) { delete S.programmer[fid]; log(`Off Fixture ${fid} Attribute "XYZ_MArker"`); }
+    else {
+      const off = setupOffset();
+      S.programmer[fid] = { cid, off };
+      const src = S.setup.source === 'preset' ? `preset ${S.setup.preset} (XYZ only)` : 'setup values';
+      log(`[AZ] Programmer: Fixture ${fid} · XYZ_MArker ${cid} · XYZ ${off.join('/')} from ${src} · Zoom/Iris at minimum`, true);
+    }
+    renderSeqs();
+  }
+  if (act === 'psn') { const m = MARKERS.find(k => k.cid === +b.dataset.cid); m.live = !m.live; log(`PSN marker ${m.cid} ${m.live ? 'receiving' : 'lost'}`); }
+  render();
+});
+layoutEl.addEventListener('input', e => {
+  if (e.target.id === 'gsize') { S.globalFader = +e.target.value; renderLayout(); renderStage(); }
+});
+buildLayout();
+// ---------------- render: stage ----------------
+const svg = document.getElementById('stage');
+const SX = x => (x + 8) * 40, SY = y => (6 - y) * 40;
+let drag = null;
+function renderStage() {
+  let h = `<rect x="0" y="0" width="640" height="400" fill="#0d0f12"/>
+    <rect x="${SX(-7)}" y="${SY(4.5)}" width="${14 * 40}" height="${8 * 40}" fill="#15181d" stroke="#2c3139"/>
+    <text x="${SX(0)}" y="${SY(-3.9) - 4}" fill="#5b6573" font-size="11" text-anchor="middle" font-family="Barlow Condensed, sans-serif">AUDIENCE</text>
+    <line x1="${SX(-6)}" y1="${SY(-3)}" x2="${SX(6)}" y2="${SY(-3)}" stroke="#3a404a" stroke-width="4"/>
+    <line x1="${SX(-6)}" y1="${SY(5)}" x2="${SX(6)}" y2="${SY(5)}" stroke="#3a404a" stroke-width="4"/>`;
+  for (const f of FIXTURES) {
+    const o = S.out[f.fid]; const m = MARKERS.find(k => k.cid === mOf(f.fid));
+    if (m && o && o.achieved != null) {
+      const col = o.cls === 'warn' ? '#e8c547' : '#3ecf6e';
+      const a = o.aim;
+      h += `<line x1="${SX(f.x)}" y1="${SY(f.y)}" x2="${SX(a.x)}" y2="${SY(a.y)}" stroke="${col}" stroke-opacity=".35" stroke-dasharray="4 4"/>
+            <circle cx="${SX(a.x)}" cy="${SY(a.y)}" r="${o.achieved / 2 * 40}" fill="${col}" fill-opacity=".07" stroke="${col}" stroke-opacity=".7"/>`;
+      if (a.x !== m.x || a.y !== m.y) h += `<line x1="${SX(m.x)}" y1="${SY(m.y)}" x2="${SX(a.x)}" y2="${SY(a.y)}" stroke="${col}" stroke-opacity=".7"/>`;
+    }
+  }
+  for (const f of FIXTURES) {
+    const armed = S.armed.has(f.fid);
+    h += `<g><rect x="${SX(f.x) - 9}" y="${SY(f.y) - 9}" width="18" height="18" rx="3" fill="${armed ? '#173322' : '#262a31'}" stroke="${armed ? '#3ecf6e' : '#5b6573'}" stroke-width="2"/>
+      <text x="${SX(f.x)}" y="${SY(f.y) + (f.y < 0 ? 24 : -14)}" fill="#8e96a3" font-size="11" text-anchor="middle" font-family="IBM Plex Mono, monospace">${f.fid}</text></g>`;
+  }
+  for (const m of MARKERS) {
+    h += `<g data-cid="${m.cid}" style="cursor:grab">
+      <circle cx="${SX(m.x)}" cy="${SY(m.y)}" r="11" fill="${m.live ? '#f5a623' : '#3a404a'}" stroke="#121417" stroke-width="2"/>
+      <text x="${SX(m.x)}" y="${SY(m.y) + 4}" fill="#121417" font-size="11" font-weight="600" text-anchor="middle" font-family="IBM Plex Mono, monospace" pointer-events="none">${m.cid}</text>
+      <text x="${SX(m.x)}" y="${SY(m.y) + 26}" fill="${m.live ? '#e6e8eb' : '#e5534b'}" font-size="12" text-anchor="middle" font-family="Barlow Condensed, sans-serif" pointer-events="none">${esc(m.name)}${m.live ? '' : ' · no PSN'}</text></g>`;
+  }
+  svg.innerHTML = h;
+}
+function svgPoint(e) { const p = svg.createSVGPoint(); p.x = e.clientX; p.y = e.clientY; return p.matrixTransform(svg.getScreenCTM().inverse()); }
+svg.addEventListener('pointerdown', e => {
+  const g = e.target.closest('[data-cid]'); if (!g) return;
+  drag = MARKERS.find(m => m.cid === +g.dataset.cid); svg.setPointerCapture(e.pointerId);
+});
+svg.addEventListener('pointermove', e => {
+  if (!drag) return; const p = svgPoint(e);
+  drag.x = Math.max(-7, Math.min(7, p.x / 40 - 8)); drag.y = Math.max(-3.5, Math.min(4.5, 6 - p.y / 40));
+  render();
+});
+svg.addEventListener('pointerup', () => drag = null);
+
+// ---------------- render: sequences ----------------
+const poolEl = document.getElementById('pool'), cuesEl = document.getElementById('cues');
+function renderProg() {
+  const el = document.getElementById('prog');
+  const ids = Object.keys(S.programmer);
+  const s = SEQS.find(k => k.no === S.selectedSeq);
+  const target = S.selectedCue?.seq === s.no ? S.selectedCue.cue : s.running;
+  el.innerHTML = `<strong style="font-family:var(--display);text-transform:uppercase;letter-spacing:.05em;color:var(--muted)">Programmer</strong>
+    <span class="vals">${ids.length ? ids.map(f => `${f}→M${S.programmer[f].cid}${offTxt(S.programmer[f].off)}`).join(' ') : 'empty · tap a marker cell in the layout'}</span>
+    <button class="mini" data-p="store" ${ids.length ? '' : 'disabled'} style="padding:4px 10px">Store in Seq ${s.no} cue ${target ?? '?'}</button>
+    <button class="mini" data-p="clear" ${ids.length ? '' : 'disabled'} style="padding:4px 10px">Clear</button>`;
+}
+document.getElementById('prog').addEventListener('click', e => {
+  const b = e.target.closest('[data-p]'); if (!b) return;
+  const s = SEQS.find(k => k.no === S.selectedSeq);
+  if (b.dataset.p === 'store') {
+    const no = S.selectedCue?.seq === s.no ? S.selectedCue.cue : s.running;
+    const cue = s.cues.find(c => c.no === no);
+    if (!cue) { log(`Store: Seq ${s.no} has no running or selected cue`); return; }
+    Object.entries(S.programmer).forEach(([f, v]) => cue.mk[f] = { cid: v.cid, off: v.off.slice() });
+    log(`Store Sequence ${s.no} Cue ${cue.no} /Merge`);
+    // stored values now come from playback once the cue is (re)played; keep output identical
+    if (s.running === cue.no) Object.entries(S.programmer).forEach(([f, v]) => { S.markerOf[f] = v.cid; S.offOf[f] = v.off; });
+  } else log('ClearAll');
+  S.programmer = {};
+  render();
+});
+function renderSeqs() {
+  renderProg();
+  poolEl.innerHTML = SEQS.map(s => `<div class="seq ${S.selectedSeq === s.no ? 'sel' : ''}">
+    <button class="el" data-seq="${s.no}" data-a="select" style="width:100%">${s.no} ${esc(s.name)}<small>${s.running == null ? 'off' : 'cue ' + s.running}</small></button>
+    <div class="btns"><button class="mini" data-seq="${s.no}" data-a="go">Go+</button><button class="mini" data-seq="${s.no}" data-a="off">Off</button><button class="mini" data-seq="${s.no}" data-a="select">Select</button></div>
+  </div>`).join('');
+  const s = SEQS.find(k => k.no === S.selectedSeq);
+  cuesEl.innerHTML = `<caption style="text-align:left;color:var(--muted);font-size:12px;padding-bottom:4px">Sequence sheet · Seq ${s.no} '${esc(s.name)}' · tap a cue to select it</caption>
+    <thead><tr><th>Cue</th><th>Name</th><th>XYZ_MArker</th><th>CMD</th></tr></thead><tbody>` +
+    s.cues.map(c => `<tr data-cue="${c.no}" class="${s.running === c.no ? 'running' : ''} ${S.selectedCue?.seq === s.no && S.selectedCue.cue === c.no ? 'selected' : ''}">
+      <td class="num">${c.no}</td><td>${esc(c.name)}</td>
+      <td class="mk">${Object.entries(c.mk).map(([f, v]) => typeof v === 'object' ? `${f}→${v.cid}${offTxt(v.off)}` : `${f}→${v || '–'}`).join(' ')}</td>
+      <td class="cmd">${esc(c.cmd)}</td></tr>`).join('') + '</tbody>';
+}
+poolEl.addEventListener('click', e => {
+  const b = e.target.closest('[data-seq]'); if (!b) return;
+  const s = SEQS.find(k => k.no === +b.dataset.seq);
+  if (b.dataset.a === 'go') { if (S.capture) log('[AZ] Go+ does not capture: select the sequence instead', true); go(s); }
+  else if (b.dataset.a === 'off') off(s);
+  else selectSeq(s);
+});
+cuesEl.addEventListener('click', e => {
+  const tr = e.target.closest('tr[data-cue]'); if (!tr) return;
+  const c = +tr.dataset.cue;
+  S.selectedCue = S.selectedCue?.seq === S.selectedSeq && S.selectedCue.cue === c ? null : { seq: S.selectedSeq, cue: c };
+  render();
+});
+
+// ---------------- loop ----------------
+function render() { renderLayout(); renderStage(); renderSeqs(); }
+const wander = document.getElementById('wander');
+let t0 = performance.now(), last = 0;
+function frame(now) {
+  if (now - last > 1000 / 30) {
+    last = now;
+    if (wander.checked && !drag) {
+      const t = (now - t0) / 1000;
+      for (const m of MARKERS) { if (!m.live) continue; m.x += Math.sin(t * .4 + m.ph) * .012; m.y += Math.cos(t * .3 + m.ph * 1.3) * .008; m.x = Math.max(-7, Math.min(7, m.x)); m.y = Math.max(-3.5, Math.min(4.5, m.y)); }
+      renderLayout(); renderStage();
+    }
+  }
+  requestAnimationFrame(frame);
+}
+log('[AZ] AutoZoom started · 6 fixtures, 4 markers', true);
+go(SEQS[0]);
+requestAnimationFrame(frame);
+</script>
