@@ -9,6 +9,7 @@ local FILES = {
   "beam_test",
   "fixture_state_test",
   "commands_test",
+  "view_model_test",
 }
 
 for _, name in ipairs(FILES) do

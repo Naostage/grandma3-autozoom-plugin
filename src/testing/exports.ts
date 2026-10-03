@@ -8,6 +8,7 @@ import * as beam from "../engine/beam";
 import * as state from "../engine/fixture-state";
 import * as arm from "../engine/arm-command";
 import * as program from "../engine/program";
+import * as view from "../ui/view-model";
 
 export const ready = true;
-export { format, json, config, vec, beam, state, arm, program };
+export { format, json, config, vec, beam, state, arm, program, view };
