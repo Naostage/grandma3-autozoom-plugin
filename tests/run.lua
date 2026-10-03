@@ -4,6 +4,8 @@ local T = require("t")
 
 local FILES = {
   "smoke_test",
+  "json_test",
+  "config_test",
 }
 
 for _, name in ipairs(FILES) do
