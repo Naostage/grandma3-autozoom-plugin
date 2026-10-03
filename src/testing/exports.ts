@@ -6,6 +6,8 @@ import * as config from "../store/config";
 import * as vec from "../engine/vec";
 import * as beam from "../engine/beam";
 import * as state from "../engine/fixture-state";
+import * as arm from "../engine/arm-command";
+import * as program from "../engine/program";
 
 export const ready = true;
-export { format, json, config, vec, beam, state };
+export { format, json, config, vec, beam, state, arm, program };
