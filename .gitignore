@@ -1,2 +1,5 @@
 /node_modules
 /dist
+build/
+other_plugins/
+spikes/
