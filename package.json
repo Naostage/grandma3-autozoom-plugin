@@ -5,7 +5,8 @@
   "private": true,
   "scripts": {
     "build": "tstl && node scripts/generateXML.js",
-    "dev": "tstl --watch"
+    "dev": "tstl --watch",
+    "test": "lua tests/harness.lua"
   },
   "author": "naostage",
   "license": "ISC",

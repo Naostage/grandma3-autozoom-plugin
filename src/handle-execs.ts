@@ -14,13 +14,27 @@ export function moveFaderGMA3(faderName: string, level: number){
 }
 
 
+// Iterate on Children() rather than indexing 0..Count() : on 2.5, DataPools[i] can be nil for some i < Count().
+// Children() also returns a plain Lua array, which avoids TSTL's index translation on typed MA3 objects.
+function getDataPools(): any[] {
+    let datapools: any[] = [];
+    for (let datapool of ShowData().DataPools.Children()){
+        if (datapool != null){
+            datapools.push(datapool);
+        }
+    }
+    return datapools;
+}
+
 export function getSeqHandleFromName(seqName: string): any{
-    for (let i = 0; i < ShowData().DataPools.Count(); i++){
-        let datapool = ShowData().DataPools[i];
-        for (let j = 1; j <= datapool[6].Count(); j++){
-            let seq = datapool[6][j];
-            //@ts-expect-error
-            if (seq.Name == seqName){
+    // Access sequences by the named "Sequences" child : its index in the datapool changed in 2.5 (6 -> 7).
+    for (let datapool of getDataPools()){
+        let sequences = datapool.Sequences;
+        if (sequences == null){
+            continue;
+        }
+        for (let seq of sequences.Children()){
+            if (seq != null && seq.Name == seqName){
                 return seq;
             }
         }
@@ -29,17 +43,29 @@ export function getSeqHandleFromName(seqName: string): any{
 }
 
 
-export function getFixtureSizeFaderValue(fid : number) : number{
-    let seqName = "AZ_SIZE_"+fid;
+let missingSizeFaderWarned : { [seqName: string]: boolean } = {};
+
+function getSizeFaderValue(seqName : string) : number | null {
     let seq = getSeqHandleFromName(seqName);
+    if (seq == null){
+        // Called every frame : only warn once per missing fader
+        if (!missingSizeFaderWarned[seqName]){
+            PrintEcho("Size fader " + seqName + " not found, using the fixed beam size", 3);
+            missingSizeFaderWarned[seqName] = true;
+        }
+        return null;
+    }
+    missingSizeFaderWarned[seqName] = false;
     return seq.GetFader({"token":"FaderMaster"});
 }
 
+export function getFixtureSizeFaderValue(fid : number) : number | null {
+    return getSizeFaderValue("AZ_SIZE_"+fid);
+}
 
-export function getGlobalSizeFaderValue() : number {
-    let seqName = "AZ_SIZE";
-    let seq = getSeqHandleFromName(seqName);
-    return seq.GetFader({"token":"FaderMaster"});
+
+export function getGlobalSizeFaderValue() : number | null {
+    return getSizeFaderValue("AZ_SIZE");
 }
 
 
@@ -56,8 +82,7 @@ function storeTrackingCue(enabledFixture : AZ_EnabledFixture,) : void {
 
 
 function createAZDatapool() : void {
-    for (let i = 0; i < ShowData().DataPools.Count(); i++){
-        let datapool = ShowData().DataPools[i];
+    for (let datapool of getDataPools()){
         if (datapool.name == "AZ"){
             return;
         }
@@ -78,8 +103,10 @@ function createZoomIrisSequence(fixture : AZ_Fixture, useAZDatapool : boolean) :
         createAZDatapool();
     }
     ClearAll();
+    // Zoom must be quoted ("Z" alone parses as Zero), and the value is given in physical units
+    // so it does not depend on the user's readout setting.
     Cmd("Fixture " + fixture.fid)
-    Cmd("Attribute Zoom At 100");
+    Cmd("Attribute \"Zoom\" At Absolute Physical " + fixture.fixtureType.opticalParameters.zoom.max);
     if (useAZDatapool){
         CmdIndirectWait("Store Datapool 'AZ' Sequence 'AZ_ZOOM_"+fixture.fid + "' /o /nc");
     } else {
@@ -89,7 +116,7 @@ function createZoomIrisSequence(fixture : AZ_Fixture, useAZDatapool : boolean) :
     ClearAll();
     if (fixture.fixtureType.opticalParameters.iris.max != fixture.fixtureType.opticalParameters.iris.min){
         Cmd("Fixture " + fixture.fid)
-        Cmd("Attribute Iris At 100");
+        Cmd("Attribute \"Iris\" At Absolute Physical " + fixture.fixtureType.opticalParameters.iris.max);
         if (useAZDatapool){
             CmdIndirectWait("Store Datapool 'AZ' Sequence 'AZ_IRIS_"+fixture.fid + "' /o /nc");
         } else {

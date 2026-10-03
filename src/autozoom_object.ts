@@ -70,6 +70,27 @@ export class AZ_Global_Type {
         PrintEcho("--- Scanned all fixtures that have XYZ", 1)
         this.patch_info = { fixtures: fixture_and_markers.fixtures, markers: fixture_and_markers.markers};
         PrintEcho("--- Patch fetched - found " + this.patch_info.fixtures.length + " fixtures and " + this.patch_info.markers.length + " markers.", 10);
+        this.RebindEnabledFixtures();
+    }
+
+    // After a rescan, point enabled fixtures to the new fixture / marker objects
+    // (otherwise they keep the old positions, and their markers are no longer updated)
+    RebindEnabledFixtures(): void {
+        let rebound: AZ_EnabledFixture[] = [];
+        for (let enabledFixture of this.enabledFixtures) {
+            let fixture = this.patch_info.fixtures.find(f => f.fid == enabledFixture.fixture.fid);
+            let marker = this.patch_info.markers.find(m => m.fid == enabledFixture.marker.fid);
+            if (fixture === undefined || marker === undefined) {
+                PrintEcho("Fixture " + enabledFixture.fixture.fid + " or marker " + enabledFixture.marker.fid + " not found after rescan, disabling it", 3);
+                continue;
+            }
+            fixture.lastZoom = enabledFixture.fixture.lastZoom;
+            fixture.lastIris = enabledFixture.fixture.lastIris;
+            enabledFixture.fixture = fixture;
+            enabledFixture.marker = marker;
+            rebound.push(enabledFixture);
+        }
+        this.enabledFixtures = rebound;
     }
 
     PrintCurrentPatch(): void {
@@ -168,7 +189,8 @@ export class AZ_Global_Type {
     DisableFixture(fixtureid: number): void {
         for (let i = 0; i < this.enabledFixtures.length; i++) {
             if (this.enabledFixtures[i].fixture.fid == fixtureid) {
-                delete this.enabledFixtures[i];
+                // splice (not delete) : a hole in the array would stop the update loop at this index
+                this.enabledFixtures.splice(i, 1);
                 PrintEcho("Disabled fixture " + fixtureid, 10);
                 return;
             }
@@ -201,12 +223,18 @@ export class AZ_Global_Type {
 
     expected_remaining_update = 0;
     global_call_repeat = 10;
+    // Identifies the current Timer : calls from a stopped Timer are ignored, so timers never stack up
+    loopId = 0;
 
-    UpdateLoop():void {
+    UpdateLoop(loopId: number):void {
+        if (loopId != this.loopId) {
+            return;
+        }
         this.expected_remaining_update--;
         if(!this.enabled){
             this.expected_remaining_update = 0;
             this.global_call_repeat = 0;
+            this.loopId++;
             return;
 
         }
@@ -237,7 +265,9 @@ export class AZ_Global_Type {
 
         this.global_call_repeat = this.refreshRate*10;
         this.expected_remaining_update = this.global_call_repeat;
-        Timer(()=>{this.UpdateLoop()}, updatePeriod, this.expected_remaining_update);
+        this.loopId++;
+        let loopId = this.loopId;
+        Timer(()=>{this.UpdateLoop(loopId)}, updatePeriod, this.expected_remaining_update);
     }
 
     Init() : void {
@@ -258,6 +288,7 @@ export class AZ_Global_Type {
     Cleanup() : void {
         this.expected_remaining_update = 0;
         this.global_call_repeat = 0;
+        this.loopId++;
         this.enabled = false;
         PrintEcho("Plugin GRANDMA3 AUTOZOOM stopped", 10);
     }

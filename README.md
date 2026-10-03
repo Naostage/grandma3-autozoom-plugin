@@ -73,3 +73,5 @@ This plugin uses [TypescriptToLua](https://typescripttolua.github.io/) and [Gran
 To install them, use node js, and type `npm install` in folder.
 
 You can build using `npm run build` or use `npm run dev` to automatically build the plugin on code change.
+
+After building, run the regression tests with `npm test` (requires a `lua` 5.3+ interpreter in your PATH). They run the compiled plugin against a minimal mock of the grandMA3 API (`tests/harness.lua`).

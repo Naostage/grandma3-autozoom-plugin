@@ -91,6 +91,65 @@ local function __TS__SourceMapTraceBack(fileName, sourceMap)
     end
 end
 
+local __TS__Symbol, Symbol
+do
+    local symbolMetatable = {__tostring = function(self)
+        return ("Symbol(" .. (self.description or "")) .. ")"
+    end}
+    function __TS__Symbol(description)
+        return setmetatable({description = description}, symbolMetatable)
+    end
+    Symbol = {
+        asyncDispose = __TS__Symbol("Symbol.asyncDispose"),
+        dispose = __TS__Symbol("Symbol.dispose"),
+        iterator = __TS__Symbol("Symbol.iterator"),
+        hasInstance = __TS__Symbol("Symbol.hasInstance"),
+        species = __TS__Symbol("Symbol.species"),
+        toStringTag = __TS__Symbol("Symbol.toStringTag")
+    }
+end
+
+local __TS__Iterator
+do
+    local function iteratorGeneratorStep(self)
+        local co = self.____coroutine
+        local status, value = coroutine.resume(co)
+        if not status then
+            error(value, 0)
+        end
+        if coroutine.status(co) == "dead" then
+            return
+        end
+        return true, value
+    end
+    local function iteratorIteratorStep(self)
+        local result = self:next()
+        if result.done then
+            return
+        end
+        return true, result.value
+    end
+    local function iteratorStringStep(self, index)
+        index = index + 1
+        if index > #self then
+            return
+        end
+        return index, string.sub(self, index, index)
+    end
+    function __TS__Iterator(iterable)
+        if type(iterable) == "string" then
+            return iteratorStringStep, iterable, 0
+        elseif iterable.____coroutine ~= nil then
+            return iteratorGeneratorStep, iterable
+        elseif iterable[Symbol.iterator] then
+            local iterator = iterable[Symbol.iterator](iterable)
+            return iteratorIteratorStep, iterator
+        else
+            return ipairs(iterable)
+        end
+    end
+end
+
 local function __TS__Class(self)
     local c = {prototype = {}}
     c.prototype.__index = c.prototype
@@ -110,150 +169,102 @@ local function __TS__ArrayForEach(self, callbackFn, thisArg)
     end
 end
 
-local function __TS__ClassExtends(target, base)
-    target.____super = base
-    local staticMetatable = setmetatable({__index = base}, base)
-    setmetatable(target, staticMetatable)
-    local baseMetatable = getmetatable(base)
-    if baseMetatable then
-        if type(baseMetatable.__index) == "function" then
-            staticMetatable.__index = baseMetatable.__index
-        end
-        if type(baseMetatable.__newindex) == "function" then
-            staticMetatable.__newindex = baseMetatable.__newindex
+local function __TS__ArrayFind(self, predicate, thisArg)
+    for i = 1, #self do
+        local elem = self[i]
+        if predicate(thisArg, elem, i - 1, self) then
+            return elem
         end
     end
-    setmetatable(target.prototype, base.prototype)
-    if type(base.prototype.__index) == "function" then
-        target.prototype.__index = base.prototype.__index
-    end
-    if type(base.prototype.__newindex) == "function" then
-        target.prototype.__newindex = base.prototype.__newindex
-    end
-    if type(base.prototype.__tostring) == "function" then
-        target.prototype.__tostring = base.prototype.__tostring
-    end
+    return nil
 end
 
-local Error, RangeError, ReferenceError, SyntaxError, TypeError, URIError
-do
-    local function getErrorStack(self, constructor)
-        if debug == nil then
-            return nil
+local function __TS__CountVarargs(...)
+    return select("#", ...)
+end
+
+local function __TS__ArraySplice(self, ...)
+    local args = {...}
+    local len = #self
+    local actualArgumentCount = __TS__CountVarargs(...)
+    local start = args[1]
+    local deleteCount = args[2]
+    if start < 0 then
+        start = len + start
+        if start < 0 then
+            start = 0
         end
-        local level = 1
-        while true do
-            local info = debug.getinfo(level, "f")
-            level = level + 1
-            if not info then
-                level = 1
-                break
-            elseif info.func == constructor then
-                break
-            end
+    elseif start > len then
+        start = len
+    end
+    local itemCount = actualArgumentCount - 2
+    if itemCount < 0 then
+        itemCount = 0
+    end
+    local actualDeleteCount
+    if actualArgumentCount == 0 then
+        actualDeleteCount = 0
+    elseif actualArgumentCount == 1 then
+        actualDeleteCount = len - start
+    else
+        actualDeleteCount = deleteCount or 0
+        if actualDeleteCount < 0 then
+            actualDeleteCount = 0
         end
-        if __TS__StringIncludes(_VERSION, "Lua 5.0") then
-            return debug.traceback(("[Level " .. tostring(level)) .. "]")
-        elseif _VERSION == "Lua 5.1" then
-            return string.sub(
-                debug.traceback("", level),
-                2
-            )
-        else
-            return debug.traceback(nil, level)
+        if actualDeleteCount > len - start then
+            actualDeleteCount = len - start
         end
     end
-    local function wrapErrorToString(self, getDescription)
-        return function(self)
-            local description = getDescription(self)
-            local caller = debug.getinfo(3, "f")
-            local isClassicLua = __TS__StringIncludes(_VERSION, "Lua 5.0")
-            if isClassicLua or caller and caller.func ~= error then
-                return description
+    local out = {}
+    for k = 1, actualDeleteCount do
+        local from = start + k
+        if self[from] ~= nil then
+            out[k] = self[from]
+        end
+    end
+    if itemCount < actualDeleteCount then
+        for k = start + 1, len - actualDeleteCount do
+            local from = k + actualDeleteCount
+            local to = k + itemCount
+            if self[from] then
+                self[to] = self[from]
             else
-                return (description .. "\n") .. tostring(self.stack)
+                self[to] = nil
+            end
+        end
+        for k = len - actualDeleteCount + itemCount + 1, len do
+            self[k] = nil
+        end
+    elseif itemCount > actualDeleteCount then
+        for k = len - actualDeleteCount, start + 1, -1 do
+            local from = k + actualDeleteCount
+            local to = k + itemCount
+            if self[from] then
+                self[to] = self[from]
+            else
+                self[to] = nil
             end
         end
     end
-    local function initErrorClass(self, Type, name)
-        Type.name = name
-        return setmetatable(
-            Type,
-            {__call = function(____, _self, message) return __TS__New(Type, message) end}
-        )
+    local j = start + 1
+    for i = 3, actualArgumentCount do
+        self[j] = args[i]
+        j = j + 1
     end
-    local ____initErrorClass_1 = initErrorClass
-    local ____class_0 = __TS__Class()
-    ____class_0.name = ""
-    function ____class_0.prototype.____constructor(self, message)
-        if message == nil then
-            message = ""
-        end
-        self.message = message
-        self.name = "Error"
-        self.stack = getErrorStack(nil, __TS__New)
-        local metatable = getmetatable(self)
-        if metatable and not metatable.__errorToStringPatched then
-            metatable.__errorToStringPatched = true
-            metatable.__tostring = wrapErrorToString(nil, metatable.__tostring)
-        end
+    for k = #self, len - actualDeleteCount + itemCount + 1, -1 do
+        self[k] = nil
     end
-    function ____class_0.prototype.__tostring(self)
-        return self.message ~= "" and (self.name .. ": ") .. self.message or self.name
-    end
-    Error = ____initErrorClass_1(nil, ____class_0, "Error")
-    local function createErrorClass(self, name)
-        local ____initErrorClass_3 = initErrorClass
-        local ____class_2 = __TS__Class()
-        ____class_2.name = ____class_2.name
-        __TS__ClassExtends(____class_2, Error)
-        function ____class_2.prototype.____constructor(self, ...)
-            ____class_2.____super.prototype.____constructor(self, ...)
-            self.name = name
-        end
-        return ____initErrorClass_3(nil, ____class_2, name)
-    end
-    RangeError = createErrorClass(nil, "RangeError")
-    ReferenceError = createErrorClass(nil, "ReferenceError")
-    SyntaxError = createErrorClass(nil, "SyntaxError")
-    TypeError = createErrorClass(nil, "TypeError")
-    URIError = createErrorClass(nil, "URIError")
-end
-
-local function __TS__ObjectGetOwnPropertyDescriptors(object)
-    local metatable = getmetatable(object)
-    if not metatable then
-        return {}
-    end
-    return rawget(metatable, "_descriptors") or ({})
-end
-
-local function __TS__Delete(target, key)
-    local descriptors = __TS__ObjectGetOwnPropertyDescriptors(target)
-    local descriptor = descriptors[key]
-    if descriptor then
-        if not descriptor.configurable then
-            error(
-                __TS__New(
-                    TypeError,
-                    ((("Cannot delete property " .. tostring(key)) .. " of ") .. tostring(target)) .. "."
-                ),
-                0
-            )
-        end
-        descriptors[key] = nil
-        return true
-    end
-    target[key] = nil
-    return true
+    return out
 end
 
 return {
   __TS__SourceMapTraceBack = __TS__SourceMapTraceBack,
+  __TS__Iterator = __TS__Iterator,
   __TS__Class = __TS__Class,
   __TS__New = __TS__New,
   __TS__ArrayForEach = __TS__ArrayForEach,
-  __TS__Delete = __TS__Delete
+  __TS__ArrayFind = __TS__ArrayFind,
+  __TS__ArraySplice = __TS__ArraySplice
 }
  end,
 ["src.utils"] = function(...) 
@@ -345,7 +356,14 @@ local ____lualib = require("lualib_bundle")
 local __TS__SourceMapTraceBack = ____lualib.__TS__SourceMapTraceBack
 local ____exports = {}
 local function getFaderValue(self, min, max, value)
-    return math.floor((value - min) / (max - min) * 100 + 0.5)
+    if max == min then
+        return 100
+    end
+    local level = math.floor((value - min) / (max - min) * 100 + 0.5)
+    return math.min(
+        100,
+        math.max(0, level)
+    )
 end
 local function getBeamSizeAtTarget(self, zoom, distance)
     local angle = zoom * math.pi / 180
@@ -374,28 +392,36 @@ return ____exports
  end,
 ["src.handle-execs"] = function(...) 
 local ____lualib = require("lualib_bundle")
+local __TS__Iterator = ____lualib.__TS__Iterator
 local __TS__SourceMapTraceBack = ____lualib.__TS__SourceMapTraceBack
 local ____exports = {}
+local getDataPools
 local ____utils = require("src.utils")
 local ClearAll = ____utils.ClearAll
 local PrintEcho = ____utils.PrintEcho
+function getDataPools(self)
+    local datapools = {}
+    for ____, datapool in ipairs(ShowData().DataPools:Children()) do
+        if datapool ~= nil then
+            datapools[#datapools + 1] = datapool
+        end
+    end
+    return datapools
+end
 function ____exports.getSeqHandleFromName(self, seqName)
-    do
-        local i = 0
-        while i < ShowData().DataPools:Count() do
-            local datapool = ShowData().DataPools[i + 1]
-            do
-                local j = 1
-                while j <= datapool[6]:Count() do
-                    local seq = datapool[6][j + 1]
-                    if seq.Name == seqName then
-                        return seq
-                    end
-                    j = j + 1
+    for ____, datapool in ipairs(getDataPools(nil)) do
+        do
+            local sequences = datapool.Sequences
+            if sequences == nil then
+                goto __continue9
+            end
+            for ____, seq in __TS__Iterator(sequences:Children()) do
+                if seq ~= nil and seq.Name == seqName then
+                    return seq
                 end
             end
-            i = i + 1
         end
+        ::__continue9::
     end
     return nil
 end
@@ -412,28 +438,35 @@ function ____exports.moveFaderGMA3(self, faderName, level)
     end
     seq:SetFader({value = level, token = "FaderTemp"})
 end
-function ____exports.getFixtureSizeFaderValue(self, fid)
-    local seqName = "AZ_SIZE_" .. tostring(fid)
+local missingSizeFaderWarned = {}
+local function getSizeFaderValue(self, seqName)
     local seq = ____exports.getSeqHandleFromName(nil, seqName)
+    if seq == nil then
+        if not missingSizeFaderWarned[seqName] then
+            PrintEcho(nil, ("Size fader " .. seqName) .. " not found, using the fixed beam size", 3)
+            missingSizeFaderWarned[seqName] = true
+        end
+        return nil
+    end
+    missingSizeFaderWarned[seqName] = false
     return seq:GetFader({token = "FaderMaster"})
 end
+function ____exports.getFixtureSizeFaderValue(self, fid)
+    return getSizeFaderValue(
+        nil,
+        "AZ_SIZE_" .. tostring(fid)
+    )
+end
 function ____exports.getGlobalSizeFaderValue(self)
-    local seqName = "AZ_SIZE"
-    local seq = ____exports.getSeqHandleFromName(nil, seqName)
-    return seq:GetFader({token = "FaderMaster"})
+    return getSizeFaderValue(nil, "AZ_SIZE")
 end
 local function storeTrackingCue(self, enabledFixture)
     PrintEcho(nil, "Not implemented yet", 3)
 end
 local function createAZDatapool(self)
-    do
-        local i = 0
-        while i < ShowData().DataPools:Count() do
-            local datapool = ShowData().DataPools[i + 1]
-            if datapool.name == "AZ" then
-                return
-            end
-            i = i + 1
+    for ____, datapool in ipairs(getDataPools(nil)) do
+        if datapool.name == "AZ" then
+            return
         end
     end
     Cmd("Store DataPool 'AZ'")
@@ -447,7 +480,7 @@ local function createZoomIrisSequence(self, fixture, useAZDatapool)
     end
     ClearAll(nil)
     Cmd("Fixture " .. tostring(fixture.fid))
-    Cmd("Attribute Zoom At 100")
+    Cmd("Attribute \"Zoom\" At Absolute Physical " .. tostring(fixture.fixtureType.opticalParameters.zoom.max))
     if useAZDatapool then
         CmdIndirectWait(("Store Datapool 'AZ' Sequence 'AZ_ZOOM_" .. tostring(fixture.fid)) .. "' /o /nc")
     else
@@ -456,7 +489,7 @@ local function createZoomIrisSequence(self, fixture, useAZDatapool)
     ClearAll(nil)
     if fixture.fixtureType.opticalParameters.iris.max ~= fixture.fixtureType.opticalParameters.iris.min then
         Cmd("Fixture " .. tostring(fixture.fid))
-        Cmd("Attribute Iris At 100")
+        Cmd("Attribute \"Iris\" At Absolute Physical " .. tostring(fixture.fixtureType.opticalParameters.iris.max))
         if useAZDatapool then
             CmdIndirectWait(("Store Datapool 'AZ' Sequence 'AZ_IRIS_" .. tostring(fixture.fid)) .. "' /o /nc")
         else
@@ -557,8 +590,8 @@ function AZ_Fixture.prototype.____constructor(self, fid, name, fixtureType, posi
     self.fixtureType = fixtureType
     self.position = position
     self.handle = handle
-    self.lastZoom = 0
-    self.lastIris = 0
+    self.lastZoom = -1
+    self.lastIris = -1
 end
 function AZ_Fixture.prototype.print(self, level)
     PrintEcho(
@@ -577,7 +610,7 @@ function AZ_Fixture.prototype.updateTo(self, targetZI)
         )
         self.lastZoom = math.floor(targetZI.zoom + 0.5)
     end
-    if math.floor(targetZI.iris + 0.5) ~= self.lastIris and targetZI.iris ~= -1 then
+    if math.floor(targetZI.iris + 0.5) ~= self.lastIris and targetZI.iris ~= -1 and self:hasIris() then
         moveFaderGMA3(
             nil,
             self:getIrisFader(),
@@ -586,17 +619,24 @@ function AZ_Fixture.prototype.updateTo(self, targetZI)
         self.lastIris = math.floor(targetZI.iris + 0.5)
     end
 end
+function AZ_Fixture.prototype.hasIris(self)
+    return self.fixtureType.opticalParameters.iris.min ~= self.fixtureType.opticalParameters.iris.max
+end
 function AZ_Fixture.prototype.forceUpdate(self)
-    moveFaderGMA3(
-        nil,
-        self:getZoomFader(),
-        self.lastZoom
-    )
-    moveFaderGMA3(
-        nil,
-        self:getIrisFader(),
-        self.lastIris
-    )
+    if self.lastZoom >= 0 then
+        moveFaderGMA3(
+            nil,
+            self:getZoomFader(),
+            self.lastZoom
+        )
+    end
+    if self.lastIris >= 0 and self:hasIris() then
+        moveFaderGMA3(
+            nil,
+            self:getIrisFader(),
+            self.lastIris
+        )
+    end
 end
 function AZ_Fixture.prototype.getZoomFader(self)
     return "AZ_ZOOM_" .. tostring(self.fid)
@@ -654,19 +694,16 @@ function AZ_EnabledFixture.prototype.____constructor(self, fixture, marker, beam
 end
 function AZ_EnabledFixture.prototype.Update(self, sizeFaderConfig)
     local targettedBeamSize = self.beamSize
+    local faderValue = nil
     if sizeFaderConfig.globalEnabled == true then
-        targettedBeamSize = remap(
-            nil,
-            getGlobalSizeFaderValue(nil),
-            0,
-            100,
-            sizeFaderConfig.rangeMin,
-            sizeFaderConfig.rangeMax
-        )
+        faderValue = getGlobalSizeFaderValue(nil)
     elseif sizeFaderConfig.fixturesEnabled[self.fixture.fid] == true then
+        faderValue = getFixtureSizeFaderValue(nil, self.fixture.fid)
+    end
+    if faderValue ~= nil then
         targettedBeamSize = remap(
             nil,
-            getFixtureSizeFaderValue(nil, self.fixture.fid),
+            faderValue,
             0,
             100,
             sizeFaderConfig.rangeMin,
@@ -941,8 +978,9 @@ return ____exports
 ["src.autozoom_object"] = function(...) 
 local ____lualib = require("lualib_bundle")
 local __TS__Class = ____lualib.__TS__Class
+local __TS__ArrayFind = ____lualib.__TS__ArrayFind
 local __TS__New = ____lualib.__TS__New
-local __TS__Delete = ____lualib.__TS__Delete
+local __TS__ArraySplice = ____lualib.__TS__ArraySplice
 local __TS__SourceMapTraceBack = ____lualib.__TS__SourceMapTraceBack
 local ____exports = {}
 local ____utils = require("src.utils")
@@ -971,6 +1009,7 @@ function AZ_Global_Type.prototype.____constructor(self)
     self.useAZDatapool = false
     self.expected_remaining_update = 0
     self.global_call_repeat = 10
+    self.loopId = 0
     self.patch_info = {fixtures = {}, markers = {}}
     self.enabledFixtures = {}
     self.enabled = false
@@ -1019,6 +1058,37 @@ function AZ_Global_Type.prototype.ScanPatch(self)
         ((("--- Patch fetched - found " .. tostring(#self.patch_info.fixtures)) .. " fixtures and ") .. tostring(#self.patch_info.markers)) .. " markers.",
         10
     )
+    self:RebindEnabledFixtures()
+end
+function AZ_Global_Type.prototype.RebindEnabledFixtures(self)
+    local rebound = {}
+    for ____, enabledFixture in ipairs(self.enabledFixtures) do
+        do
+            local fixture = __TS__ArrayFind(
+                self.patch_info.fixtures,
+                function(____, f) return f.fid == enabledFixture.fixture.fid end
+            )
+            local marker = __TS__ArrayFind(
+                self.patch_info.markers,
+                function(____, m) return m.fid == enabledFixture.marker.fid end
+            )
+            if fixture == nil or marker == nil then
+                PrintEcho(
+                    nil,
+                    ((("Fixture " .. tostring(enabledFixture.fixture.fid)) .. " or marker ") .. tostring(enabledFixture.marker.fid)) .. " not found after rescan, disabling it",
+                    3
+                )
+                goto __continue16
+            end
+            fixture.lastZoom = enabledFixture.fixture.lastZoom
+            fixture.lastIris = enabledFixture.fixture.lastIris
+            enabledFixture.fixture = fixture
+            enabledFixture.marker = marker
+            rebound[#rebound + 1] = enabledFixture
+        end
+        ::__continue16::
+    end
+    self.enabledFixtures = rebound
 end
 function AZ_Global_Type.prototype.PrintCurrentPatch(self)
     if not self then
@@ -1135,7 +1205,7 @@ function AZ_Global_Type.prototype.DisableFixture(self, fixtureid)
         local i = 0
         while i < #self.enabledFixtures do
             if self.enabledFixtures[i + 1].fixture.fid == fixtureid then
-                __TS__Delete(self.enabledFixtures, i + 1)
+                __TS__ArraySplice(self.enabledFixtures, i, 1)
                 PrintEcho(
                     nil,
                     "Disabled fixture " .. tostring(fixtureid),
@@ -1172,11 +1242,15 @@ function AZ_Global_Type.prototype.UpdateFixtures(self)
         enabledFixture:Update(self.sizeFaderConfig)
     end
 end
-function AZ_Global_Type.prototype.UpdateLoop(self)
+function AZ_Global_Type.prototype.UpdateLoop(self, loopId)
+    if loopId ~= self.loopId then
+        return
+    end
     self.expected_remaining_update = self.expected_remaining_update - 1
     if not self.enabled then
         self.expected_remaining_update = 0
         self.global_call_repeat = 0
+        self.loopId = self.loopId + 1
         return
     end
     self:UpdateMarkers()
@@ -1209,9 +1283,11 @@ function AZ_Global_Type.prototype.RegisterUpdateLoop(self)
     end
     self.global_call_repeat = self.refreshRate * 10
     self.expected_remaining_update = self.global_call_repeat
+    self.loopId = self.loopId + 1
+    local loopId = self.loopId
     Timer(
         function()
-            self:UpdateLoop()
+            self:UpdateLoop(loopId)
         end,
         updatePeriod,
         self.expected_remaining_update
@@ -1233,6 +1309,7 @@ end
 function AZ_Global_Type.prototype.Cleanup(self)
     self.expected_remaining_update = 0
     self.global_call_repeat = 0
+    self.loopId = self.loopId + 1
     self.enabled = false
     PrintEcho(nil, "Plugin GRANDMA3 AUTOZOOM stopped", 10)
 end
@@ -1350,5 +1427,5 @@ return main
  end,
 }
 local __TS__SourceMapTraceBack = require("lualib_bundle").__TS__SourceMapTraceBack
-__TS__SourceMapTraceBack(debug.getinfo(1).short_src, {["263"] = {line = 25, file = "utils.ts"},["264"] = {line = 25, file = "utils.ts"},["266"] = {line = 26, file = "utils.ts"},["267"] = {line = 27, file = "utils.ts"},["269"] = {line = 28, file = "utils.ts"},["271"] = {line = 29, file = "utils.ts"},["273"] = {line = 30, file = "utils.ts"},["275"] = {line = 31, file = "utils.ts"},["277"] = {line = 32, file = "utils.ts"},["279"] = {line = 33, file = "utils.ts"},["281"] = {line = 34, file = "utils.ts"},["284"] = {line = 36, file = "utils.ts"},["288"] = {line = 43, file = "utils.ts"},["289"] = {line = 44, file = "utils.ts"},["290"] = {line = 45, file = "utils.ts"},["292"] = {line = 43, file = "utils.ts"},["293"] = {line = 2, file = "utils.ts"},["294"] = {line = 4, file = "utils.ts"},["296"] = {line = 5, file = "utils.ts"},["297"] = {line = 6, file = "utils.ts"},["299"] = {line = 7, file = "utils.ts"},["302"] = {line = 9, file = "utils.ts"},["304"] = {line = 10, file = "utils.ts"},["307"] = {line = 12, file = "utils.ts"},["309"] = {line = 13, file = "utils.ts"},["312"] = {line = 15, file = "utils.ts"},["314"] = {line = 16, file = "utils.ts"},["318"] = {line = 19, file = "utils.ts"},["322"] = {line = 22, file = "utils.ts"},["323"] = {line = 22, file = "utils.ts"},["324"] = {line = 22, file = "utils.ts"},["325"] = {line = 22, file = "utils.ts"},["326"] = {line = 22, file = "utils.ts"},["327"] = {line = 4, file = "utils.ts"},["328"] = {line = 40, file = "utils.ts"},["329"] = {line = 41, file = "utils.ts"},["330"] = {line = 41, file = "utils.ts"},["331"] = {line = 41, file = "utils.ts"},["332"] = {line = 41, file = "utils.ts"},["333"] = {line = 41, file = "utils.ts"},["334"] = {line = 40, file = "utils.ts"},["335"] = {line = 50, file = "utils.ts"},["336"] = {line = 51, file = "utils.ts"},["337"] = {line = 50, file = "utils.ts"},["338"] = {line = 55, file = "utils.ts"},["339"] = {line = 56, file = "utils.ts"},["340"] = {line = 55, file = "utils.ts"},["347"] = {line = 10, file = "calculate-zoom-iris.ts"},["348"] = {line = 11, file = "calculate-zoom-iris.ts"},["349"] = {line = 10, file = "calculate-zoom-iris.ts"},["350"] = {line = 15, file = "calculate-zoom-iris.ts"},["351"] = {line = 18, file = "calculate-zoom-iris.ts"},["352"] = {line = 19, file = "calculate-zoom-iris.ts"},["353"] = {line = 15, file = "calculate-zoom-iris.ts"},["354"] = {line = 23, file = "calculate-zoom-iris.ts"},["355"] = {line = 32, file = "calculate-zoom-iris.ts"},["356"] = {line = 35, file = "calculate-zoom-iris.ts"},["357"] = {line = 39, file = "calculate-zoom-iris.ts"},["358"] = {line = 41, file = "calculate-zoom-iris.ts"},["359"] = {line = 41, file = "calculate-zoom-iris.ts"},["360"] = {line = 41, file = "calculate-zoom-iris.ts"},["361"] = {line = 41, file = "calculate-zoom-iris.ts"},["362"] = {line = 44, file = "calculate-zoom-iris.ts"},["363"] = {line = 45, file = "calculate-zoom-iris.ts"},["364"] = {line = 46, file = "calculate-zoom-iris.ts"},["365"] = {line = 47, file = "calculate-zoom-iris.ts"},["367"] = {line = 49, file = "calculate-zoom-iris.ts"},["368"] = {line = 50, file = "calculate-zoom-iris.ts"},["370"] = {line = 54, file = "calculate-zoom-iris.ts"},["372"] = {line = 23, file = "calculate-zoom-iris.ts"},["379"] = {line = 2, file = "handle-execs.ts"},["380"] = {line = 2, file = "handle-execs.ts"},["381"] = {line = 2, file = "handle-execs.ts"},["382"] = {line = 17, file = "handle-execs.ts"},["384"] = {line = 18, file = "handle-execs.ts"},["385"] = {line = 18, file = "handle-execs.ts"},["386"] = {line = 19, file = "handle-execs.ts"},["388"] = {line = 20, file = "handle-execs.ts"},["389"] = {line = 20, file = "handle-execs.ts"},["390"] = {line = 21, file = "handle-execs.ts"},["391"] = {line = 23, file = "handle-execs.ts"},["392"] = {line = 24, file = "handle-execs.ts"},["394"] = {line = 20, file = "handle-execs.ts"},["397"] = {line = 18, file = "handle-execs.ts"},["400"] = {line = 28, file = "handle-execs.ts"},["401"] = {line = 17, file = "handle-execs.ts"},["402"] = {line = 4, file = "handle-execs.ts"},["403"] = {line = 5, file = "handle-execs.ts"},["404"] = {line = 5, file = "handle-execs.ts"},["405"] = {line = 5, file = "handle-execs.ts"},["406"] = {line = 5, file = "handle-execs.ts"},["407"] = {line = 5, file = "handle-execs.ts"},["408"] = {line = 7, file = "handle-execs.ts"},["409"] = {line = 8, file = "handle-execs.ts"},["410"] = {line = 9, file = "handle-execs.ts"},["413"] = {line = 12, file = "handle-execs.ts"},["414"] = {line = 4, file = "handle-execs.ts"},["415"] = {line = 32, file = "handle-execs.ts"},["416"] = {line = 33, file = "handle-execs.ts"},["417"] = {line = 34, file = "handle-execs.ts"},["418"] = {line = 35, file = "handle-execs.ts"},["419"] = {line = 32, file = "handle-execs.ts"},["420"] = {line = 39, file = "handle-execs.ts"},["421"] = {line = 40, file = "handle-execs.ts"},["422"] = {line = 41, file = "handle-execs.ts"},["423"] = {line = 42, file = "handle-execs.ts"},["424"] = {line = 39, file = "handle-execs.ts"},["425"] = {line = 46, file = "handle-execs.ts"},["426"] = {line = 54, file = "handle-execs.ts"},["427"] = {line = 46, file = "handle-execs.ts"},["428"] = {line = 58, file = "handle-execs.ts"},["430"] = {line = 59, file = "handle-execs.ts"},["431"] = {line = 59, file = "handle-execs.ts"},["432"] = {line = 60, file = "handle-execs.ts"},["433"] = {line = 61, file = "handle-execs.ts"},["436"] = {line = 59, file = "handle-execs.ts"},["439"] = {line = 65, file = "handle-execs.ts"},["440"] = {line = 58, file = "handle-execs.ts"},["441"] = {line = 69, file = "handle-execs.ts"},["442"] = {line = 73, file = "handle-execs.ts"},["443"] = {line = 69, file = "handle-execs.ts"},["444"] = {line = 76, file = "handle-execs.ts"},["445"] = {line = 77, file = "handle-execs.ts"},["446"] = {line = 78, file = "handle-execs.ts"},["448"] = {line = 80, file = "handle-execs.ts"},["449"] = {line = 81, file = "handle-execs.ts"},["450"] = {line = 82, file = "handle-execs.ts"},["451"] = {line = 83, file = "handle-execs.ts"},["452"] = {line = 84, file = "handle-execs.ts"},["454"] = {line = 86, file = "handle-execs.ts"},["456"] = {line = 89, file = "handle-execs.ts"},["457"] = {line = 90, file = "handle-execs.ts"},["458"] = {line = 91, file = "handle-execs.ts"},["459"] = {line = 92, file = "handle-execs.ts"},["460"] = {line = 93, file = "handle-execs.ts"},["461"] = {line = 94, file = "handle-execs.ts"},["463"] = {line = 96, file = "handle-execs.ts"},["466"] = {line = 76, file = "handle-execs.ts"},["467"] = {line = 101, file = "handle-execs.ts"},["468"] = {line = 102, file = "handle-execs.ts"},["469"] = {line = 103, file = "handle-execs.ts"},["471"] = {line = 105, file = "handle-execs.ts"},["472"] = {line = 106, file = "handle-execs.ts"},["473"] = {line = 107, file = "handle-execs.ts"},["474"] = {line = 108, file = "handle-execs.ts"},["476"] = {line = 110, file = "handle-execs.ts"},["477"] = {line = 111, file = "handle-execs.ts"},["479"] = {line = 101, file = "handle-execs.ts"},["480"] = {line = 115, file = "handle-execs.ts"},["481"] = {line = 116, file = "handle-execs.ts"},["482"] = {line = 121, file = "handle-execs.ts"},["483"] = {line = 122, file = "handle-execs.ts"},["484"] = {line = 123, file = "handle-execs.ts"},["485"] = {line = 124, file = "handle-execs.ts"},["486"] = {line = 124, file = "handle-execs.ts"},["487"] = {line = 124, file = "handle-execs.ts"},["488"] = {line = 124, file = "handle-execs.ts"},["489"] = {line = 124, file = "handle-execs.ts"},["491"] = {line = 126, file = "handle-execs.ts"},["492"] = {line = 126, file = "handle-execs.ts"},["493"] = {line = 126, file = "handle-execs.ts"},["494"] = {line = 126, file = "handle-execs.ts"},["495"] = {line = 126, file = "handle-execs.ts"},["497"] = {line = 115, file = "handle-execs.ts"},["506"] = {line = 1, file = "types.ts"},["507"] = {line = 1, file = "types.ts"},["508"] = {line = 2, file = "types.ts"},["509"] = {line = 2, file = "types.ts"},["510"] = {line = 2, file = "types.ts"},["511"] = {line = 2, file = "types.ts"},["512"] = {line = 4, file = "types.ts"},["513"] = {line = 4, file = "types.ts"},["514"] = {line = 4, file = "types.ts"},["515"] = {line = 6, file = "types.ts"},["516"] = {line = 6, file = "types.ts"},["517"] = {line = 6, file = "types.ts"},["518"] = {line = 11, file = "types.ts"},["519"] = {line = 12, file = "types.ts"},["520"] = {line = 13, file = "types.ts"},["521"] = {line = 14, file = "types.ts"},["522"] = {line = 11, file = "types.ts"},["523"] = {line = 17, file = "types.ts"},["524"] = {line = 18, file = "types.ts"},["525"] = {line = 17, file = "types.ts"},["526"] = {line = 21, file = "types.ts"},["527"] = {line = 22, file = "types.ts"},["528"] = {line = 21, file = "types.ts"},["529"] = {line = 36, file = "types.ts"},["530"] = {line = 36, file = "types.ts"},["531"] = {line = 36, file = "types.ts"},["532"] = {line = 41, file = "types.ts"},["533"] = {line = 42, file = "types.ts"},["534"] = {line = 43, file = "types.ts"},["535"] = {line = 44, file = "types.ts"},["536"] = {line = 45, file = "types.ts"},["537"] = {line = 41, file = "types.ts"},["538"] = {line = 48, file = "types.ts"},["539"] = {line = 49, file = "types.ts"},["540"] = {line = 50, file = "types.ts"},["541"] = {line = 50, file = "types.ts"},["542"] = {line = 50, file = "types.ts"},["543"] = {line = 50, file = "types.ts"},["544"] = {line = 50, file = "types.ts"},["545"] = {line = 51, file = "types.ts"},["546"] = {line = 51, file = "types.ts"},["547"] = {line = 51, file = "types.ts"},["548"] = {line = 51, file = "types.ts"},["549"] = {line = 51, file = "types.ts"},["550"] = {line = 48, file = "types.ts"},["551"] = {line = 55, file = "types.ts"},["552"] = {line = 55, file = "types.ts"},["553"] = {line = 55, file = "types.ts"},["554"] = {line = 63, file = "types.ts"},["555"] = {line = 64, file = "types.ts"},["556"] = {line = 65, file = "types.ts"},["557"] = {line = 66, file = "types.ts"},["558"] = {line = 67, file = "types.ts"},["559"] = {line = 68, file = "types.ts"},["560"] = {line = 69, file = "types.ts"},["561"] = {line = 70, file = "types.ts"},["562"] = {line = 63, file = "types.ts"},["563"] = {line = 73, file = "types.ts"},["564"] = {line = 74, file = "types.ts"},["565"] = {line = 74, file = "types.ts"},["566"] = {line = 74, file = "types.ts"},["567"] = {line = 74, file = "types.ts"},["568"] = {line = 74, file = "types.ts"},["569"] = {line = 75, file = "types.ts"},["570"] = {line = 73, file = "types.ts"},["571"] = {line = 78, file = "types.ts"},["572"] = {line = 79, file = "types.ts"},["573"] = {line = 80, file = "types.ts"},["574"] = {line = 80, file = "types.ts"},["575"] = {line = 80, file = "types.ts"},["576"] = {line = 80, file = "types.ts"},["577"] = {line = 80, file = "types.ts"},["578"] = {line = 81, file = "types.ts"},["580"] = {line = 83, file = "types.ts"},["581"] = {line = 84, file = "types.ts"},["582"] = {line = 84, file = "types.ts"},["583"] = {line = 84, file = "types.ts"},["584"] = {line = 84, file = "types.ts"},["585"] = {line = 84, file = "types.ts"},["586"] = {line = 85, file = "types.ts"},["588"] = {line = 78, file = "types.ts"},["589"] = {line = 89, file = "types.ts"},["590"] = {line = 90, file = "types.ts"},["591"] = {line = 90, file = "types.ts"},["592"] = {line = 90, file = "types.ts"},["593"] = {line = 90, file = "types.ts"},["594"] = {line = 90, file = "types.ts"},["595"] = {line = 91, file = "types.ts"},["596"] = {line = 91, file = "types.ts"},["597"] = {line = 91, file = "types.ts"},["598"] = {line = 91, file = "types.ts"},["599"] = {line = 91, file = "types.ts"},["600"] = {line = 89, file = "types.ts"},["601"] = {line = 94, file = "types.ts"},["602"] = {line = 95, file = "types.ts"},["603"] = {line = 94, file = "types.ts"},["604"] = {line = 97, file = "types.ts"},["605"] = {line = 98, file = "types.ts"},["606"] = {line = 97, file = "types.ts"},["607"] = {line = 102, file = "types.ts"},["608"] = {line = 102, file = "types.ts"},["609"] = {line = 102, file = "types.ts"},["610"] = {line = 109, file = "types.ts"},["611"] = {line = 110, file = "types.ts"},["612"] = {line = 111, file = "types.ts"},["613"] = {line = 112, file = "types.ts"},["614"] = {line = 113, file = "types.ts"},["615"] = {line = 114, file = "types.ts"},["616"] = {line = 109, file = "types.ts"},["617"] = {line = 117, file = "types.ts"},["618"] = {line = 118, file = "types.ts"},["619"] = {line = 118, file = "types.ts"},["620"] = {line = 118, file = "types.ts"},["621"] = {line = 118, file = "types.ts"},["622"] = {line = 118, file = "types.ts"},["623"] = {line = 117, file = "types.ts"},["624"] = {line = 121, file = "types.ts"},["625"] = {line = 124, file = "types.ts"},["627"] = {line = 125, file = "types.ts"},["628"] = {line = 125, file = "types.ts"},["629"] = {line = 126, file = "types.ts"},["631"] = {line = 128, file = "types.ts"},["632"] = {line = 128, file = "types.ts"},["633"] = {line = 130, file = "types.ts"},["634"] = {line = 131, file = "types.ts"},["635"] = {line = 132, file = "types.ts"},["636"] = {line = 133, file = "types.ts"},["637"] = {line = 134, file = "types.ts"},["640"] = {line = 128, file = "types.ts"},["643"] = {line = 125, file = "types.ts"},["646"] = {line = 121, file = "types.ts"},["647"] = {line = 148, file = "types.ts"},["648"] = {line = 148, file = "types.ts"},["649"] = {line = 148, file = "types.ts"},["650"] = {line = 153, file = "types.ts"},["651"] = {line = 154, file = "types.ts"},["652"] = {line = 155, file = "types.ts"},["653"] = {line = 156, file = "types.ts"},["654"] = {line = 153, file = "types.ts"},["655"] = {line = 159, file = "types.ts"},["656"] = {line = 160, file = "types.ts"},["657"] = {line = 161, file = "types.ts"},["658"] = {line = 162, file = "types.ts"},["659"] = {line = 162, file = "types.ts"},["660"] = {line = 162, file = "types.ts"},["661"] = {line = 162, file = "types.ts"},["662"] = {line = 162, file = "types.ts"},["663"] = {line = 162, file = "types.ts"},["664"] = {line = 162, file = "types.ts"},["665"] = {line = 162, file = "types.ts"},["666"] = {line = 165, file = "types.ts"},["667"] = {line = 166, file = "types.ts"},["668"] = {line = 166, file = "types.ts"},["669"] = {line = 166, file = "types.ts"},["670"] = {line = 166, file = "types.ts"},["671"] = {line = 166, file = "types.ts"},["672"] = {line = 166, file = "types.ts"},["673"] = {line = 166, file = "types.ts"},["674"] = {line = 166, file = "types.ts"},["676"] = {line = 169, file = "types.ts"},["677"] = {line = 169, file = "types.ts"},["678"] = {line = 169, file = "types.ts"},["679"] = {line = 169, file = "types.ts"},["680"] = {line = 169, file = "types.ts"},["681"] = {line = 169, file = "types.ts"},["682"] = {line = 169, file = "types.ts"},["683"] = {line = 171, file = "types.ts"},["684"] = {line = 159, file = "types.ts"},["693"] = {line = 2, file = "load-patch.ts"},["694"] = {line = 2, file = "load-patch.ts"},["695"] = {line = 2, file = "load-patch.ts"},["696"] = {line = 2, file = "load-patch.ts"},["697"] = {line = 2, file = "load-patch.ts"},["698"] = {line = 3, file = "load-patch.ts"},["699"] = {line = 3, file = "load-patch.ts"},["700"] = {line = 21, file = "load-patch.ts"},["701"] = {line = 22, file = "load-patch.ts"},["702"] = {line = 23, file = "load-patch.ts"},["703"] = {line = 24, file = "load-patch.ts"},["704"] = {line = 24, file = "load-patch.ts"},["705"] = {line = 24, file = "load-patch.ts"},["706"] = {line = 26, file = "load-patch.ts"},["709"] = {line = 31, file = "load-patch.ts"},["710"] = {line = 32, file = "load-patch.ts"},["711"] = {line = 33, file = "load-patch.ts"},["713"] = {line = 24, file = "load-patch.ts"},["714"] = {line = 24, file = "load-patch.ts"},["715"] = {line = 37, file = "load-patch.ts"},["716"] = {line = 37, file = "load-patch.ts"},["717"] = {line = 37, file = "load-patch.ts"},["718"] = {line = 37, file = "load-patch.ts"},["719"] = {line = 21, file = "load-patch.ts"},["720"] = {line = 40, file = "load-patch.ts"},["721"] = {line = 41, file = "load-patch.ts"},["722"] = {line = 42, file = "load-patch.ts"},["723"] = {line = 43, file = "load-patch.ts"},["724"] = {line = 43, file = "load-patch.ts"},["725"] = {line = 43, file = "load-patch.ts"},["726"] = {line = 45, file = "load-patch.ts"},["729"] = {line = 50, file = "load-patch.ts"},["730"] = {line = 51, file = "load-patch.ts"},["731"] = {line = 52, file = "load-patch.ts"},["733"] = {line = 43, file = "load-patch.ts"},["734"] = {line = 43, file = "load-patch.ts"},["735"] = {line = 55, file = "load-patch.ts"},["736"] = {line = 56, file = "load-patch.ts"},["738"] = {line = 58, file = "load-patch.ts"},["739"] = {line = 59, file = "load-patch.ts"},["741"] = {line = 61, file = "load-patch.ts"},["742"] = {line = 61, file = "load-patch.ts"},["743"] = {line = 61, file = "load-patch.ts"},["744"] = {line = 61, file = "load-patch.ts"},["745"] = {line = 40, file = "load-patch.ts"},["746"] = {line = 64, file = "load-patch.ts"},["747"] = {line = 65, file = "load-patch.ts"},["748"] = {line = 66, file = "load-patch.ts"},["749"] = {line = 67, file = "load-patch.ts"},["750"] = {line = 68, file = "load-patch.ts"},["752"] = {line = 70, file = "load-patch.ts"},["753"] = {line = 71, file = "load-patch.ts"},["754"] = {line = 72, file = "load-patch.ts"},["755"] = {line = 70, file = "load-patch.ts"},["756"] = {line = 64, file = "load-patch.ts"},["757"] = {line = 76, file = "load-patch.ts"},["758"] = {line = 77, file = "load-patch.ts"},["759"] = {line = 78, file = "load-patch.ts"},["760"] = {line = 81, file = "load-patch.ts"},["761"] = {line = 81, file = "load-patch.ts"},["762"] = {line = 81, file = "load-patch.ts"},["763"] = {line = 82, file = "load-patch.ts"},["764"] = {line = 83, file = "load-patch.ts"},["765"] = {line = 84, file = "load-patch.ts"},["767"] = {line = 86, file = "load-patch.ts"},["768"] = {line = 86, file = "load-patch.ts"},["769"] = {line = 86, file = "load-patch.ts"},["770"] = {line = 88, file = "load-patch.ts"},["771"] = {line = 89, file = "load-patch.ts"},["772"] = {line = 90, file = "load-patch.ts"},["773"] = {line = 91, file = "load-patch.ts"},["774"] = {line = 92, file = "load-patch.ts"},["775"] = {line = 92, file = "load-patch.ts"},["776"] = {line = 92, file = "load-patch.ts"},["777"] = {line = 92, file = "load-patch.ts"},["778"] = {line = 92, file = "load-patch.ts"},["779"] = {line = 92, file = "load-patch.ts"},["780"] = {line = 92, file = "load-patch.ts"},["781"] = {line = 93, file = "load-patch.ts"},["783"] = {line = 86, file = "load-patch.ts"},["784"] = {line = 86, file = "load-patch.ts"},["785"] = {line = 81, file = "load-patch.ts"},["786"] = {line = 81, file = "load-patch.ts"},["787"] = {line = 97, file = "load-patch.ts"},["788"] = {line = 76, file = "load-patch.ts"},["789"] = {line = 100, file = "load-patch.ts"},["790"] = {line = 101, file = "load-patch.ts"},["791"] = {line = 100, file = "load-patch.ts"},["792"] = {line = 104, file = "load-patch.ts"},["793"] = {line = 106, file = "load-patch.ts"},["794"] = {line = 107, file = "load-patch.ts"},["795"] = {line = 107, file = "load-patch.ts"},["796"] = {line = 108, file = "load-patch.ts"},["797"] = {line = 108, file = "load-patch.ts"},["798"] = {line = 108, file = "load-patch.ts"},["799"] = {line = 108, file = "load-patch.ts"},["800"] = {line = 107, file = "load-patch.ts"},["801"] = {line = 110, file = "load-patch.ts"},["804"] = {line = 115, file = "load-patch.ts"},["807"] = {line = 118, file = "load-patch.ts"},["808"] = {line = 119, file = "load-patch.ts"},["809"] = {line = 121, file = "load-patch.ts"},["810"] = {line = 124, file = "load-patch.ts"},["812"] = {line = 126, file = "load-patch.ts"},["813"] = {line = 126, file = "load-patch.ts"},["814"] = {line = 127, file = "load-patch.ts"},["815"] = {line = 127, file = "load-patch.ts"},["816"] = {line = 127, file = "load-patch.ts"},["817"] = {line = 127, file = "load-patch.ts"},["818"] = {line = 127, file = "load-patch.ts"},["819"] = {line = 127, file = "load-patch.ts"},["820"] = {line = 127, file = "load-patch.ts"},["821"] = {line = 126, file = "load-patch.ts"},["825"] = {line = 133, file = "load-patch.ts"},["826"] = {line = 134, file = "load-patch.ts"},["827"] = {line = 134, file = "load-patch.ts"},["828"] = {line = 134, file = "load-patch.ts"},["829"] = {line = 135, file = "load-patch.ts"},["832"] = {line = 139, file = "load-patch.ts"},["834"] = {line = 134, file = "load-patch.ts"},["835"] = {line = 134, file = "load-patch.ts"},["836"] = {line = 141, file = "load-patch.ts"},["839"] = {line = 144, file = "load-patch.ts"},["842"] = {line = 147, file = "load-patch.ts"},["843"] = {line = 147, file = "load-patch.ts"},["844"] = {line = 147, file = "load-patch.ts"},["845"] = {line = 147, file = "load-patch.ts"},["846"] = {line = 147, file = "load-patch.ts"},["847"] = {line = 147, file = "load-patch.ts"},["848"] = {line = 147, file = "load-patch.ts"},["849"] = {line = 147, file = "load-patch.ts"},["850"] = {line = 149, file = "load-patch.ts"},["851"] = {line = 150, file = "load-patch.ts"},["854"] = {line = 104, file = "load-patch.ts"},["855"] = {line = 165, file = "load-patch.ts"},["856"] = {line = 166, file = "load-patch.ts"},["857"] = {line = 167, file = "load-patch.ts"},["858"] = {line = 168, file = "load-patch.ts"},["859"] = {line = 169, file = "load-patch.ts"},["860"] = {line = 170, file = "load-patch.ts"},["861"] = {line = 171, file = "load-patch.ts"},["863"] = {line = 173, file = "load-patch.ts"},["864"] = {line = 173, file = "load-patch.ts"},["865"] = {line = 173, file = "load-patch.ts"},["866"] = {line = 173, file = "load-patch.ts"},["867"] = {line = 173, file = "load-patch.ts"},["869"] = {line = 174, file = "load-patch.ts"},["870"] = {line = 174, file = "load-patch.ts"},["871"] = {line = 175, file = "load-patch.ts"},["872"] = {line = 175, file = "load-patch.ts"},["873"] = {line = 175, file = "load-patch.ts"},["874"] = {line = 175, file = "load-patch.ts"},["875"] = {line = 175, file = "load-patch.ts"},["876"] = {line = 176, file = "load-patch.ts"},["877"] = {line = 178, file = "load-patch.ts"},["879"] = {line = 179, file = "load-patch.ts"},["880"] = {line = 179, file = "load-patch.ts"},["881"] = {line = 180, file = "load-patch.ts"},["882"] = {line = 183, file = "load-patch.ts"},["883"] = {line = 183, file = "load-patch.ts"},["884"] = {line = 183, file = "load-patch.ts"},["885"] = {line = 183, file = "load-patch.ts"},["886"] = {line = 183, file = "load-patch.ts"},["887"] = {line = 183, file = "load-patch.ts"},["888"] = {line = 183, file = "load-patch.ts"},["889"] = {line = 179, file = "load-patch.ts"},["892"] = {line = 174, file = "load-patch.ts"},["895"] = {line = 186, file = "load-patch.ts"},["896"] = {line = 165, file = "load-patch.ts"},["903"] = {line = 3, file = "create-macros.ts"},["904"] = {line = 4, file = "create-macros.ts"},["906"] = {line = 5, file = "create-macros.ts"},["907"] = {line = 5, file = "create-macros.ts"},["908"] = {line = 6, file = "create-macros.ts"},["909"] = {line = 7, file = "create-macros.ts"},["910"] = {line = 5, file = "create-macros.ts"},["913"] = {line = 3, file = "create-macros.ts"},["920"] = {line = 1, file = "macros.ts"},["921"] = {line = 2, file = "macros.ts"},["922"] = {line = 8, file = "macros.ts"},["923"] = {line = 14, file = "macros.ts"},["924"] = {line = 20, file = "macros.ts"},["925"] = {line = 26, file = "macros.ts"},["926"] = {line = 32, file = "macros.ts"},["927"] = {line = 38, file = "macros.ts"},["928"] = {line = 44, file = "macros.ts"},["929"] = {line = 50, file = "macros.ts"},["930"] = {line = 56, file = "macros.ts"},["931"] = {line = 62, file = "macros.ts"},["932"] = {line = 68, file = "macros.ts"},["933"] = {line = 74, file = "macros.ts"},["934"] = {line = 80, file = "macros.ts"},["935"] = {line = 86, file = "macros.ts"},["936"] = {line = 92, file = "macros.ts"},["937"] = {line = 98, file = "macros.ts"},["938"] = {line = 1, file = "macros.ts"},["948"] = {line = 1, file = "autozoom_object.ts"},["949"] = {line = 1, file = "autozoom_object.ts"},["950"] = {line = 1, file = "autozoom_object.ts"},["951"] = {line = 1, file = "autozoom_object.ts"},["952"] = {line = 2, file = "autozoom_object.ts"},["953"] = {line = 2, file = "autozoom_object.ts"},["954"] = {line = 2, file = "autozoom_object.ts"},["955"] = {line = 3, file = "autozoom_object.ts"},["956"] = {line = 3, file = "autozoom_object.ts"},["957"] = {line = 4, file = "autozoom_object.ts"},["958"] = {line = 4, file = "autozoom_object.ts"},["959"] = {line = 5, file = "autozoom_object.ts"},["960"] = {line = 5, file = "autozoom_object.ts"},["961"] = {line = 6, file = "autozoom_object.ts"},["962"] = {line = 6, file = "autozoom_object.ts"},["963"] = {line = 9, file = "autozoom_object.ts"},["964"] = {line = 9, file = "autozoom_object.ts"},["965"] = {line = 9, file = "autozoom_object.ts"},["967"] = {line = 14, file = "autozoom_object.ts"},["968"] = {line = 15, file = "autozoom_object.ts"},["969"] = {line = 17, file = "autozoom_object.ts"},["970"] = {line = 18, file = "autozoom_object.ts"},["971"] = {line = 20, file = "autozoom_object.ts"},["972"] = {line = 202, file = "autozoom_object.ts"},["973"] = {line = 203, file = "autozoom_object.ts"},["974"] = {line = 24, file = "autozoom_object.ts"},["975"] = {line = 25, file = "autozoom_object.ts"},["976"] = {line = 26, file = "autozoom_object.ts"},["977"] = {line = 28, file = "autozoom_object.ts"},["978"] = {line = 23, file = "autozoom_object.ts"},["979"] = {line = 32, file = "autozoom_object.ts"},["980"] = {line = 33, file = "autozoom_object.ts"},["981"] = {line = 34, file = "autozoom_object.ts"},["983"] = {line = 36, file = "autozoom_object.ts"},["985"] = {line = 32, file = "autozoom_object.ts"},["986"] = {line = 39, file = "autozoom_object.ts"},["987"] = {line = 40, file = "autozoom_object.ts"},["988"] = {line = 41, file = "autozoom_object.ts"},["990"] = {line = 43, file = "autozoom_object.ts"},["991"] = {line = 44, file = "autozoom_object.ts"},["992"] = {line = 45, file = "autozoom_object.ts"},["994"] = {line = 47, file = "autozoom_object.ts"},["995"] = {line = 49, file = "autozoom_object.ts"},["996"] = {line = 39, file = "autozoom_object.ts"},["997"] = {line = 51, file = "autozoom_object.ts"},["998"] = {line = 52, file = "autozoom_object.ts"},["999"] = {line = 53, file = "autozoom_object.ts"},["1000"] = {line = 55, file = "autozoom_object.ts"},["1002"] = {line = 57, file = "autozoom_object.ts"},["1003"] = {line = 51, file = "autozoom_object.ts"},["1004"] = {line = 59, file = "autozoom_object.ts"},["1005"] = {line = 60, file = "autozoom_object.ts"},["1006"] = {line = 61, file = "autozoom_object.ts"},["1008"] = {line = 63, file = "autozoom_object.ts"},["1010"] = {line = 59, file = "autozoom_object.ts"},["1011"] = {line = 66, file = "autozoom_object.ts"},["1012"] = {line = 67, file = "autozoom_object.ts"},["1013"] = {line = 68, file = "autozoom_object.ts"},["1014"] = {line = 69, file = "autozoom_object.ts"},["1015"] = {line = 70, file = "autozoom_object.ts"},["1016"] = {line = 71, file = "autozoom_object.ts"},["1017"] = {line = 72, file = "autozoom_object.ts"},["1018"] = {line = 72, file = "autozoom_object.ts"},["1019"] = {line = 72, file = "autozoom_object.ts"},["1020"] = {line = 72, file = "autozoom_object.ts"},["1021"] = {line = 72, file = "autozoom_object.ts"},["1022"] = {line = 66, file = "autozoom_object.ts"},["1023"] = {line = 75, file = "autozoom_object.ts"},["1024"] = {line = 76, file = "autozoom_object.ts"},["1025"] = {line = 77, file = "autozoom_object.ts"},["1028"] = {line = 81, file = "autozoom_object.ts"},["1029"] = {line = 82, file = "autozoom_object.ts"},["1032"] = {line = 85, file = "autozoom_object.ts"},["1033"] = {line = 86, file = "autozoom_object.ts"},["1036"] = {line = 89, file = "autozoom_object.ts"},["1037"] = {line = 90, file = "autozoom_object.ts"},["1040"] = {line = 93, file = "autozoom_object.ts"},["1041"] = {line = 94, file = "autozoom_object.ts"},["1044"] = {line = 97, file = "autozoom_object.ts"},["1045"] = {line = 98, file = "autozoom_object.ts"},["1048"] = {line = 101, file = "autozoom_object.ts"},["1049"] = {line = 102, file = "autozoom_object.ts"},["1052"] = {line = 105, file = "autozoom_object.ts"},["1053"] = {line = 106, file = "autozoom_object.ts"},["1054"] = {line = 107, file = "autozoom_object.ts"},["1055"] = {line = 108, file = "autozoom_object.ts"},["1057"] = {line = 110, file = "autozoom_object.ts"},["1058"] = {line = 111, file = "autozoom_object.ts"},["1059"] = {line = 112, file = "autozoom_object.ts"},["1061"] = {line = 75, file = "autozoom_object.ts"},["1062"] = {line = 115, file = "autozoom_object.ts"},["1063"] = {line = 116, file = "autozoom_object.ts"},["1064"] = {line = 117, file = "autozoom_object.ts"},["1067"] = {line = 120, file = "autozoom_object.ts"},["1068"] = {line = 121, file = "autozoom_object.ts"},["1069"] = {line = 121, file = "autozoom_object.ts"},["1070"] = {line = 121, file = "autozoom_object.ts"},["1071"] = {line = 121, file = "autozoom_object.ts"},["1072"] = {line = 121, file = "autozoom_object.ts"},["1074"] = {line = 115, file = "autozoom_object.ts"},["1075"] = {line = 126, file = "autozoom_object.ts"},["1076"] = {line = 130, file = "autozoom_object.ts"},["1077"] = {line = 131, file = "autozoom_object.ts"},["1079"] = {line = 133, file = "autozoom_object.ts"},["1080"] = {line = 134, file = "autozoom_object.ts"},["1083"] = {line = 137, file = "autozoom_object.ts"},["1084"] = {line = 138, file = "autozoom_object.ts"},["1087"] = {line = 141, file = "autozoom_object.ts"},["1088"] = {line = 142, file = "autozoom_object.ts"},["1089"] = {line = 143, file = "autozoom_object.ts"},["1090"] = {line = 144, file = "autozoom_object.ts"},["1091"] = {line = 145, file = "autozoom_object.ts"},["1093"] = {line = 147, file = "autozoom_object.ts"},["1094"] = {line = 147, file = "autozoom_object.ts"},["1095"] = {line = 148, file = "autozoom_object.ts"},["1096"] = {line = 149, file = "autozoom_object.ts"},["1097"] = {line = 150, file = "autozoom_object.ts"},["1098"] = {line = 151, file = "autozoom_object.ts"},["1099"] = {line = 151, file = "autozoom_object.ts"},["1100"] = {line = 151, file = "autozoom_object.ts"},["1101"] = {line = 151, file = "autozoom_object.ts"},["1102"] = {line = 151, file = "autozoom_object.ts"},["1103"] = {line = 152, file = "autozoom_object.ts"},["1106"] = {line = 147, file = "autozoom_object.ts"},["1109"] = {line = 156, file = "autozoom_object.ts"},["1110"] = {line = 156, file = "autozoom_object.ts"},["1111"] = {line = 157, file = "autozoom_object.ts"},["1112"] = {line = 157, file = "autozoom_object.ts"},["1113"] = {line = 157, file = "autozoom_object.ts"},["1114"] = {line = 157, file = "autozoom_object.ts"},["1115"] = {line = 157, file = "autozoom_object.ts"},["1119"] = {line = 161, file = "autozoom_object.ts"},["1120"] = {line = 161, file = "autozoom_object.ts"},["1121"] = {line = 161, file = "autozoom_object.ts"},["1122"] = {line = 161, file = "autozoom_object.ts"},["1123"] = {line = 161, file = "autozoom_object.ts"},["1127"] = {line = 165, file = "autozoom_object.ts"},["1128"] = {line = 165, file = "autozoom_object.ts"},["1129"] = {line = 165, file = "autozoom_object.ts"},["1130"] = {line = 165, file = "autozoom_object.ts"},["1131"] = {line = 165, file = "autozoom_object.ts"},["1132"] = {line = 126, file = "autozoom_object.ts"},["1133"] = {line = 168, file = "autozoom_object.ts"},["1135"] = {line = 169, file = "autozoom_object.ts"},["1136"] = {line = 169, file = "autozoom_object.ts"},["1137"] = {line = 170, file = "autozoom_object.ts"},["1138"] = {line = 171, file = "autozoom_object.ts"},["1139"] = {line = 172, file = "autozoom_object.ts"},["1140"] = {line = 172, file = "autozoom_object.ts"},["1141"] = {line = 172, file = "autozoom_object.ts"},["1142"] = {line = 172, file = "autozoom_object.ts"},["1143"] = {line = 172, file = "autozoom_object.ts"},["1146"] = {line = 169, file = "autozoom_object.ts"},["1149"] = {line = 176, file = "autozoom_object.ts"},["1150"] = {line = 176, file = "autozoom_object.ts"},["1151"] = {line = 176, file = "autozoom_object.ts"},["1152"] = {line = 176, file = "autozoom_object.ts"},["1153"] = {line = 176, file = "autozoom_object.ts"},["1154"] = {line = 168, file = "autozoom_object.ts"},["1155"] = {line = 178, file = "autozoom_object.ts"},["1156"] = {line = 179, file = "autozoom_object.ts"},["1157"] = {line = 178, file = "autozoom_object.ts"},["1158"] = {line = 181, file = "autozoom_object.ts"},["1159"] = {line = 182, file = "autozoom_object.ts"},["1160"] = {line = 181, file = "autozoom_object.ts"},["1161"] = {line = 185, file = "autozoom_object.ts"},["1162"] = {line = 186, file = "autozoom_object.ts"},["1163"] = {line = 187, file = "autozoom_object.ts"},["1164"] = {line = 185, file = "autozoom_object.ts"},["1165"] = {line = 190, file = "autozoom_object.ts"},["1166"] = {line = 191, file = "autozoom_object.ts"},["1167"] = {line = 192, file = "autozoom_object.ts"},["1169"] = {line = 190, file = "autozoom_object.ts"},["1170"] = {line = 196, file = "autozoom_object.ts"},["1171"] = {line = 197, file = "autozoom_object.ts"},["1172"] = {line = 198, file = "autozoom_object.ts"},["1174"] = {line = 196, file = "autozoom_object.ts"},["1175"] = {line = 205, file = "autozoom_object.ts"},["1176"] = {line = 206, file = "autozoom_object.ts"},["1177"] = {line = 207, file = "autozoom_object.ts"},["1178"] = {line = 208, file = "autozoom_object.ts"},["1179"] = {line = 209, file = "autozoom_object.ts"},["1182"] = {line = 214, file = "autozoom_object.ts"},["1183"] = {line = 215, file = "autozoom_object.ts"},["1184"] = {line = 217, file = "autozoom_object.ts"},["1185"] = {line = 218, file = "autozoom_object.ts"},["1187"] = {line = 205, file = "autozoom_object.ts"},["1188"] = {line = 222, file = "autozoom_object.ts"},["1189"] = {line = 223, file = "autozoom_object.ts"},["1190"] = {line = 224, file = "autozoom_object.ts"},["1191"] = {line = 224, file = "autozoom_object.ts"},["1192"] = {line = 224, file = "autozoom_object.ts"},["1193"] = {line = 224, file = "autozoom_object.ts"},["1194"] = {line = 224, file = "autozoom_object.ts"},["1195"] = {line = 222, file = "autozoom_object.ts"},["1196"] = {line = 227, file = "autozoom_object.ts"},["1197"] = {line = 228, file = "autozoom_object.ts"},["1198"] = {line = 229, file = "autozoom_object.ts"},["1201"] = {line = 232, file = "autozoom_object.ts"},["1202"] = {line = 233, file = "autozoom_object.ts"},["1203"] = {line = 234, file = "autozoom_object.ts"},["1204"] = {line = 234, file = "autozoom_object.ts"},["1205"] = {line = 234, file = "autozoom_object.ts"},["1206"] = {line = 234, file = "autozoom_object.ts"},["1207"] = {line = 234, file = "autozoom_object.ts"},["1210"] = {line = 238, file = "autozoom_object.ts"},["1211"] = {line = 239, file = "autozoom_object.ts"},["1212"] = {line = 240, file = "autozoom_object.ts"},["1213"] = {line = 240, file = "autozoom_object.ts"},["1214"] = {line = 240, file = "autozoom_object.ts"},["1215"] = {line = 240, file = "autozoom_object.ts"},["1216"] = {line = 240, file = "autozoom_object.ts"},["1217"] = {line = 240, file = "autozoom_object.ts"},["1218"] = {line = 240, file = "autozoom_object.ts"},["1219"] = {line = 227, file = "autozoom_object.ts"},["1220"] = {line = 243, file = "autozoom_object.ts"},["1221"] = {line = 244, file = "autozoom_object.ts"},["1222"] = {line = 245, file = "autozoom_object.ts"},["1224"] = {line = 243, file = "autozoom_object.ts"},["1225"] = {line = 249, file = "autozoom_object.ts"},["1226"] = {line = 250, file = "autozoom_object.ts"},["1227"] = {line = 251, file = "autozoom_object.ts"},["1228"] = {line = 252, file = "autozoom_object.ts"},["1229"] = {line = 253, file = "autozoom_object.ts"},["1230"] = {line = 254, file = "autozoom_object.ts"},["1231"] = {line = 255, file = "autozoom_object.ts"},["1232"] = {line = 249, file = "autozoom_object.ts"},["1233"] = {line = 258, file = "autozoom_object.ts"},["1234"] = {line = 259, file = "autozoom_object.ts"},["1235"] = {line = 260, file = "autozoom_object.ts"},["1236"] = {line = 261, file = "autozoom_object.ts"},["1237"] = {line = 262, file = "autozoom_object.ts"},["1238"] = {line = 258, file = "autozoom_object.ts"},["1239"] = {line = 265, file = "autozoom_object.ts"},["1240"] = {line = 266, file = "autozoom_object.ts"},["1241"] = {line = 267, file = "autozoom_object.ts"},["1242"] = {line = 268, file = "autozoom_object.ts"},["1243"] = {line = 269, file = "autozoom_object.ts"},["1244"] = {line = 269, file = "autozoom_object.ts"},["1245"] = {line = 269, file = "autozoom_object.ts"},["1246"] = {line = 269, file = "autozoom_object.ts"},["1247"] = {line = 269, file = "autozoom_object.ts"},["1251"] = {line = 273, file = "autozoom_object.ts"},["1252"] = {line = 273, file = "autozoom_object.ts"},["1253"] = {line = 273, file = "autozoom_object.ts"},["1254"] = {line = 273, file = "autozoom_object.ts"},["1255"] = {line = 273, file = "autozoom_object.ts"},["1256"] = {line = 265, file = "autozoom_object.ts"},["1257"] = {line = 276, file = "autozoom_object.ts"},["1258"] = {line = 277, file = "autozoom_object.ts"},["1259"] = {line = 278, file = "autozoom_object.ts"},["1260"] = {line = 279, file = "autozoom_object.ts"},["1261"] = {line = 280, file = "autozoom_object.ts"},["1262"] = {line = 280, file = "autozoom_object.ts"},["1263"] = {line = 280, file = "autozoom_object.ts"},["1264"] = {line = 280, file = "autozoom_object.ts"},["1265"] = {line = 280, file = "autozoom_object.ts"},["1269"] = {line = 284, file = "autozoom_object.ts"},["1270"] = {line = 284, file = "autozoom_object.ts"},["1271"] = {line = 284, file = "autozoom_object.ts"},["1272"] = {line = 284, file = "autozoom_object.ts"},["1273"] = {line = 284, file = "autozoom_object.ts"},["1274"] = {line = 276, file = "autozoom_object.ts"},["1275"] = {line = 287, file = "autozoom_object.ts"},["1276"] = {line = 290, file = "autozoom_object.ts"},["1277"] = {line = 291, file = "autozoom_object.ts"},["1278"] = {line = 287, file = "autozoom_object.ts"},["1279"] = {line = 294, file = "autozoom_object.ts"},["1280"] = {line = 295, file = "autozoom_object.ts"},["1281"] = {line = 296, file = "autozoom_object.ts"},["1282"] = {line = 294, file = "autozoom_object.ts"},["1283"] = {line = 299, file = "autozoom_object.ts"},["1284"] = {line = 300, file = "autozoom_object.ts"},["1285"] = {line = 301, file = "autozoom_object.ts"},["1286"] = {line = 302, file = "autozoom_object.ts"},["1287"] = {line = 302, file = "autozoom_object.ts"},["1288"] = {line = 302, file = "autozoom_object.ts"},["1289"] = {line = 302, file = "autozoom_object.ts"},["1290"] = {line = 302, file = "autozoom_object.ts"},["1291"] = {line = 299, file = "autozoom_object.ts"},["1292"] = {line = 305, file = "autozoom_object.ts"},["1293"] = {line = 306, file = "autozoom_object.ts"},["1294"] = {line = 307, file = "autozoom_object.ts"},["1295"] = {line = 305, file = "autozoom_object.ts"},["1296"] = {line = 310, file = "autozoom_object.ts"},["1297"] = {line = 311, file = "autozoom_object.ts"},["1298"] = {line = 312, file = "autozoom_object.ts"},["1299"] = {line = 310, file = "autozoom_object.ts"},["1300"] = {line = 315, file = "autozoom_object.ts"},["1301"] = {line = 316, file = "autozoom_object.ts"},["1302"] = {line = 317, file = "autozoom_object.ts"},["1306"] = {line = 321, file = "autozoom_object.ts"},["1307"] = {line = 321, file = "autozoom_object.ts"},["1308"] = {line = 322, file = "autozoom_object.ts"},["1309"] = {line = 321, file = "autozoom_object.ts"},["1312"] = {line = 315, file = "autozoom_object.ts"},["1313"] = {line = 326, file = "autozoom_object.ts"},["1315"] = {line = 330, file = "autozoom_object.ts"},["1316"] = {line = 330, file = "autozoom_object.ts"},["1317"] = {line = 331, file = "autozoom_object.ts"},["1318"] = {line = 332, file = "autozoom_object.ts"},["1319"] = {line = 333, file = "autozoom_object.ts"},["1322"] = {line = 330, file = "autozoom_object.ts"},["1325"] = {line = 338, file = "autozoom_object.ts"},["1326"] = {line = 338, file = "autozoom_object.ts"},["1327"] = {line = 338, file = "autozoom_object.ts"},["1328"] = {line = 338, file = "autozoom_object.ts"},["1329"] = {line = 338, file = "autozoom_object.ts"},["1330"] = {line = 326, file = "autozoom_object.ts"},["1338"] = {line = 2, file = "main.ts"},["1339"] = {line = 2, file = "main.ts"},["1340"] = {line = 9, file = "main.ts"},["1341"] = {line = 11, file = "main.ts"},["1342"] = {line = 12, file = "main.ts"},["1343"] = {line = 13, file = "main.ts"},["1344"] = {line = 14, file = "main.ts"},["1346"] = {line = 16, file = "main.ts"},["1347"] = {line = 17, file = "main.ts"},["1348"] = {line = 9, file = "main.ts"},["1349"] = {line = 22, file = "main.ts"}});
+__TS__SourceMapTraceBack(debug.getinfo(1).short_src, {["274"] = {line = 25, file = "utils.ts"},["275"] = {line = 25, file = "utils.ts"},["277"] = {line = 26, file = "utils.ts"},["278"] = {line = 27, file = "utils.ts"},["280"] = {line = 28, file = "utils.ts"},["282"] = {line = 29, file = "utils.ts"},["284"] = {line = 30, file = "utils.ts"},["286"] = {line = 31, file = "utils.ts"},["288"] = {line = 32, file = "utils.ts"},["290"] = {line = 33, file = "utils.ts"},["292"] = {line = 34, file = "utils.ts"},["295"] = {line = 36, file = "utils.ts"},["299"] = {line = 43, file = "utils.ts"},["300"] = {line = 44, file = "utils.ts"},["301"] = {line = 45, file = "utils.ts"},["303"] = {line = 43, file = "utils.ts"},["304"] = {line = 2, file = "utils.ts"},["305"] = {line = 4, file = "utils.ts"},["307"] = {line = 5, file = "utils.ts"},["308"] = {line = 6, file = "utils.ts"},["310"] = {line = 7, file = "utils.ts"},["313"] = {line = 9, file = "utils.ts"},["315"] = {line = 10, file = "utils.ts"},["318"] = {line = 12, file = "utils.ts"},["320"] = {line = 13, file = "utils.ts"},["323"] = {line = 15, file = "utils.ts"},["325"] = {line = 16, file = "utils.ts"},["329"] = {line = 19, file = "utils.ts"},["333"] = {line = 22, file = "utils.ts"},["334"] = {line = 22, file = "utils.ts"},["335"] = {line = 22, file = "utils.ts"},["336"] = {line = 22, file = "utils.ts"},["337"] = {line = 22, file = "utils.ts"},["338"] = {line = 4, file = "utils.ts"},["339"] = {line = 40, file = "utils.ts"},["340"] = {line = 41, file = "utils.ts"},["341"] = {line = 41, file = "utils.ts"},["342"] = {line = 41, file = "utils.ts"},["343"] = {line = 41, file = "utils.ts"},["344"] = {line = 41, file = "utils.ts"},["345"] = {line = 40, file = "utils.ts"},["346"] = {line = 50, file = "utils.ts"},["347"] = {line = 51, file = "utils.ts"},["348"] = {line = 50, file = "utils.ts"},["349"] = {line = 55, file = "utils.ts"},["350"] = {line = 56, file = "utils.ts"},["351"] = {line = 55, file = "utils.ts"},["358"] = {line = 10, file = "calculate-zoom-iris.ts"},["359"] = {line = 11, file = "calculate-zoom-iris.ts"},["360"] = {line = 12, file = "calculate-zoom-iris.ts"},["362"] = {line = 14, file = "calculate-zoom-iris.ts"},["363"] = {line = 15, file = "calculate-zoom-iris.ts"},["364"] = {line = 15, file = "calculate-zoom-iris.ts"},["365"] = {line = 15, file = "calculate-zoom-iris.ts"},["366"] = {line = 15, file = "calculate-zoom-iris.ts"},["367"] = {line = 10, file = "calculate-zoom-iris.ts"},["368"] = {line = 19, file = "calculate-zoom-iris.ts"},["369"] = {line = 22, file = "calculate-zoom-iris.ts"},["370"] = {line = 23, file = "calculate-zoom-iris.ts"},["371"] = {line = 19, file = "calculate-zoom-iris.ts"},["372"] = {line = 27, file = "calculate-zoom-iris.ts"},["373"] = {line = 36, file = "calculate-zoom-iris.ts"},["374"] = {line = 39, file = "calculate-zoom-iris.ts"},["375"] = {line = 43, file = "calculate-zoom-iris.ts"},["376"] = {line = 45, file = "calculate-zoom-iris.ts"},["377"] = {line = 45, file = "calculate-zoom-iris.ts"},["378"] = {line = 45, file = "calculate-zoom-iris.ts"},["379"] = {line = 45, file = "calculate-zoom-iris.ts"},["380"] = {line = 48, file = "calculate-zoom-iris.ts"},["381"] = {line = 49, file = "calculate-zoom-iris.ts"},["382"] = {line = 50, file = "calculate-zoom-iris.ts"},["383"] = {line = 51, file = "calculate-zoom-iris.ts"},["385"] = {line = 53, file = "calculate-zoom-iris.ts"},["386"] = {line = 54, file = "calculate-zoom-iris.ts"},["388"] = {line = 58, file = "calculate-zoom-iris.ts"},["390"] = {line = 27, file = "calculate-zoom-iris.ts"},["398"] = {line = 19, file = "handle-execs.ts"},["399"] = {line = 2, file = "handle-execs.ts"},["400"] = {line = 2, file = "handle-execs.ts"},["401"] = {line = 2, file = "handle-execs.ts"},["402"] = {line = 19, file = "handle-execs.ts"},["403"] = {line = 20, file = "handle-execs.ts"},["404"] = {line = 21, file = "handle-execs.ts"},["405"] = {line = 22, file = "handle-execs.ts"},["406"] = {line = 23, file = "handle-execs.ts"},["409"] = {line = 26, file = "handle-execs.ts"},["411"] = {line = 29, file = "handle-execs.ts"},["412"] = {line = 31, file = "handle-execs.ts"},["414"] = {line = 32, file = "handle-execs.ts"},["415"] = {line = 33, file = "handle-execs.ts"},["416"] = {line = 34, file = "handle-execs.ts"},["418"] = {line = 36, file = "handle-execs.ts"},["419"] = {line = 37, file = "handle-execs.ts"},["420"] = {line = 38, file = "handle-execs.ts"},["426"] = {line = 42, file = "handle-execs.ts"},["427"] = {line = 29, file = "handle-execs.ts"},["428"] = {line = 4, file = "handle-execs.ts"},["429"] = {line = 5, file = "handle-execs.ts"},["430"] = {line = 5, file = "handle-execs.ts"},["431"] = {line = 5, file = "handle-execs.ts"},["432"] = {line = 5, file = "handle-execs.ts"},["433"] = {line = 5, file = "handle-execs.ts"},["434"] = {line = 7, file = "handle-execs.ts"},["435"] = {line = 8, file = "handle-execs.ts"},["436"] = {line = 9, file = "handle-execs.ts"},["439"] = {line = 12, file = "handle-execs.ts"},["440"] = {line = 4, file = "handle-execs.ts"},["441"] = {line = 46, file = "handle-execs.ts"},["442"] = {line = 48, file = "handle-execs.ts"},["443"] = {line = 49, file = "handle-execs.ts"},["444"] = {line = 50, file = "handle-execs.ts"},["445"] = {line = 52, file = "handle-execs.ts"},["446"] = {line = 53, file = "handle-execs.ts"},["447"] = {line = 54, file = "handle-execs.ts"},["449"] = {line = 56, file = "handle-execs.ts"},["451"] = {line = 58, file = "handle-execs.ts"},["452"] = {line = 59, file = "handle-execs.ts"},["453"] = {line = 48, file = "handle-execs.ts"},["454"] = {line = 62, file = "handle-execs.ts"},["455"] = {line = 63, file = "handle-execs.ts"},["456"] = {line = 63, file = "handle-execs.ts"},["457"] = {line = 63, file = "handle-execs.ts"},["458"] = {line = 63, file = "handle-execs.ts"},["459"] = {line = 62, file = "handle-execs.ts"},["460"] = {line = 67, file = "handle-execs.ts"},["461"] = {line = 68, file = "handle-execs.ts"},["462"] = {line = 67, file = "handle-execs.ts"},["463"] = {line = 72, file = "handle-execs.ts"},["464"] = {line = 80, file = "handle-execs.ts"},["465"] = {line = 72, file = "handle-execs.ts"},["466"] = {line = 84, file = "handle-execs.ts"},["467"] = {line = 85, file = "handle-execs.ts"},["468"] = {line = 86, file = "handle-execs.ts"},["472"] = {line = 90, file = "handle-execs.ts"},["473"] = {line = 84, file = "handle-execs.ts"},["474"] = {line = 94, file = "handle-execs.ts"},["475"] = {line = 98, file = "handle-execs.ts"},["476"] = {line = 94, file = "handle-execs.ts"},["477"] = {line = 101, file = "handle-execs.ts"},["478"] = {line = 102, file = "handle-execs.ts"},["479"] = {line = 103, file = "handle-execs.ts"},["481"] = {line = 105, file = "handle-execs.ts"},["482"] = {line = 108, file = "handle-execs.ts"},["483"] = {line = 109, file = "handle-execs.ts"},["484"] = {line = 110, file = "handle-execs.ts"},["485"] = {line = 111, file = "handle-execs.ts"},["487"] = {line = 113, file = "handle-execs.ts"},["489"] = {line = 116, file = "handle-execs.ts"},["490"] = {line = 117, file = "handle-execs.ts"},["491"] = {line = 118, file = "handle-execs.ts"},["492"] = {line = 119, file = "handle-execs.ts"},["493"] = {line = 120, file = "handle-execs.ts"},["494"] = {line = 121, file = "handle-execs.ts"},["496"] = {line = 123, file = "handle-execs.ts"},["499"] = {line = 101, file = "handle-execs.ts"},["500"] = {line = 128, file = "handle-execs.ts"},["501"] = {line = 129, file = "handle-execs.ts"},["502"] = {line = 130, file = "handle-execs.ts"},["504"] = {line = 132, file = "handle-execs.ts"},["505"] = {line = 133, file = "handle-execs.ts"},["506"] = {line = 134, file = "handle-execs.ts"},["507"] = {line = 135, file = "handle-execs.ts"},["509"] = {line = 137, file = "handle-execs.ts"},["510"] = {line = 138, file = "handle-execs.ts"},["512"] = {line = 128, file = "handle-execs.ts"},["513"] = {line = 142, file = "handle-execs.ts"},["514"] = {line = 143, file = "handle-execs.ts"},["515"] = {line = 148, file = "handle-execs.ts"},["516"] = {line = 149, file = "handle-execs.ts"},["517"] = {line = 150, file = "handle-execs.ts"},["518"] = {line = 151, file = "handle-execs.ts"},["519"] = {line = 151, file = "handle-execs.ts"},["520"] = {line = 151, file = "handle-execs.ts"},["521"] = {line = 151, file = "handle-execs.ts"},["522"] = {line = 151, file = "handle-execs.ts"},["524"] = {line = 153, file = "handle-execs.ts"},["525"] = {line = 153, file = "handle-execs.ts"},["526"] = {line = 153, file = "handle-execs.ts"},["527"] = {line = 153, file = "handle-execs.ts"},["528"] = {line = 153, file = "handle-execs.ts"},["530"] = {line = 142, file = "handle-execs.ts"},["539"] = {line = 1, file = "types.ts"},["540"] = {line = 1, file = "types.ts"},["541"] = {line = 2, file = "types.ts"},["542"] = {line = 2, file = "types.ts"},["543"] = {line = 2, file = "types.ts"},["544"] = {line = 2, file = "types.ts"},["545"] = {line = 4, file = "types.ts"},["546"] = {line = 4, file = "types.ts"},["547"] = {line = 4, file = "types.ts"},["548"] = {line = 6, file = "types.ts"},["549"] = {line = 6, file = "types.ts"},["550"] = {line = 6, file = "types.ts"},["551"] = {line = 11, file = "types.ts"},["552"] = {line = 12, file = "types.ts"},["553"] = {line = 13, file = "types.ts"},["554"] = {line = 14, file = "types.ts"},["555"] = {line = 11, file = "types.ts"},["556"] = {line = 17, file = "types.ts"},["557"] = {line = 18, file = "types.ts"},["558"] = {line = 17, file = "types.ts"},["559"] = {line = 21, file = "types.ts"},["560"] = {line = 22, file = "types.ts"},["561"] = {line = 21, file = "types.ts"},["562"] = {line = 36, file = "types.ts"},["563"] = {line = 36, file = "types.ts"},["564"] = {line = 36, file = "types.ts"},["565"] = {line = 41, file = "types.ts"},["566"] = {line = 42, file = "types.ts"},["567"] = {line = 43, file = "types.ts"},["568"] = {line = 44, file = "types.ts"},["569"] = {line = 45, file = "types.ts"},["570"] = {line = 41, file = "types.ts"},["571"] = {line = 48, file = "types.ts"},["572"] = {line = 49, file = "types.ts"},["573"] = {line = 50, file = "types.ts"},["574"] = {line = 50, file = "types.ts"},["575"] = {line = 50, file = "types.ts"},["576"] = {line = 50, file = "types.ts"},["577"] = {line = 50, file = "types.ts"},["578"] = {line = 51, file = "types.ts"},["579"] = {line = 51, file = "types.ts"},["580"] = {line = 51, file = "types.ts"},["581"] = {line = 51, file = "types.ts"},["582"] = {line = 51, file = "types.ts"},["583"] = {line = 48, file = "types.ts"},["584"] = {line = 55, file = "types.ts"},["585"] = {line = 55, file = "types.ts"},["586"] = {line = 55, file = "types.ts"},["587"] = {line = 63, file = "types.ts"},["588"] = {line = 64, file = "types.ts"},["589"] = {line = 65, file = "types.ts"},["590"] = {line = 66, file = "types.ts"},["591"] = {line = 67, file = "types.ts"},["592"] = {line = 68, file = "types.ts"},["593"] = {line = 70, file = "types.ts"},["594"] = {line = 71, file = "types.ts"},["595"] = {line = 63, file = "types.ts"},["596"] = {line = 74, file = "types.ts"},["597"] = {line = 75, file = "types.ts"},["598"] = {line = 75, file = "types.ts"},["599"] = {line = 75, file = "types.ts"},["600"] = {line = 75, file = "types.ts"},["601"] = {line = 75, file = "types.ts"},["602"] = {line = 76, file = "types.ts"},["603"] = {line = 74, file = "types.ts"},["604"] = {line = 79, file = "types.ts"},["605"] = {line = 80, file = "types.ts"},["606"] = {line = 81, file = "types.ts"},["607"] = {line = 81, file = "types.ts"},["608"] = {line = 81, file = "types.ts"},["609"] = {line = 81, file = "types.ts"},["610"] = {line = 81, file = "types.ts"},["611"] = {line = 82, file = "types.ts"},["613"] = {line = 84, file = "types.ts"},["614"] = {line = 85, file = "types.ts"},["615"] = {line = 85, file = "types.ts"},["616"] = {line = 85, file = "types.ts"},["617"] = {line = 85, file = "types.ts"},["618"] = {line = 85, file = "types.ts"},["619"] = {line = 86, file = "types.ts"},["621"] = {line = 79, file = "types.ts"},["622"] = {line = 90, file = "types.ts"},["623"] = {line = 91, file = "types.ts"},["624"] = {line = 90, file = "types.ts"},["625"] = {line = 94, file = "types.ts"},["626"] = {line = 95, file = "types.ts"},["627"] = {line = 96, file = "types.ts"},["628"] = {line = 96, file = "types.ts"},["629"] = {line = 96, file = "types.ts"},["630"] = {line = 96, file = "types.ts"},["631"] = {line = 96, file = "types.ts"},["633"] = {line = 98, file = "types.ts"},["634"] = {line = 99, file = "types.ts"},["635"] = {line = 99, file = "types.ts"},["636"] = {line = 99, file = "types.ts"},["637"] = {line = 99, file = "types.ts"},["638"] = {line = 99, file = "types.ts"},["640"] = {line = 94, file = "types.ts"},["641"] = {line = 103, file = "types.ts"},["642"] = {line = 104, file = "types.ts"},["643"] = {line = 103, file = "types.ts"},["644"] = {line = 106, file = "types.ts"},["645"] = {line = 107, file = "types.ts"},["646"] = {line = 106, file = "types.ts"},["647"] = {line = 111, file = "types.ts"},["648"] = {line = 111, file = "types.ts"},["649"] = {line = 111, file = "types.ts"},["650"] = {line = 118, file = "types.ts"},["651"] = {line = 119, file = "types.ts"},["652"] = {line = 120, file = "types.ts"},["653"] = {line = 121, file = "types.ts"},["654"] = {line = 122, file = "types.ts"},["655"] = {line = 123, file = "types.ts"},["656"] = {line = 118, file = "types.ts"},["657"] = {line = 126, file = "types.ts"},["658"] = {line = 127, file = "types.ts"},["659"] = {line = 127, file = "types.ts"},["660"] = {line = 127, file = "types.ts"},["661"] = {line = 127, file = "types.ts"},["662"] = {line = 127, file = "types.ts"},["663"] = {line = 126, file = "types.ts"},["664"] = {line = 130, file = "types.ts"},["665"] = {line = 133, file = "types.ts"},["667"] = {line = 134, file = "types.ts"},["668"] = {line = 134, file = "types.ts"},["669"] = {line = 135, file = "types.ts"},["671"] = {line = 137, file = "types.ts"},["672"] = {line = 137, file = "types.ts"},["673"] = {line = 139, file = "types.ts"},["674"] = {line = 140, file = "types.ts"},["675"] = {line = 141, file = "types.ts"},["676"] = {line = 142, file = "types.ts"},["677"] = {line = 143, file = "types.ts"},["680"] = {line = 137, file = "types.ts"},["683"] = {line = 134, file = "types.ts"},["686"] = {line = 130, file = "types.ts"},["687"] = {line = 157, file = "types.ts"},["688"] = {line = 157, file = "types.ts"},["689"] = {line = 157, file = "types.ts"},["690"] = {line = 162, file = "types.ts"},["691"] = {line = 163, file = "types.ts"},["692"] = {line = 164, file = "types.ts"},["693"] = {line = 165, file = "types.ts"},["694"] = {line = 162, file = "types.ts"},["695"] = {line = 168, file = "types.ts"},["696"] = {line = 169, file = "types.ts"},["697"] = {line = 171, file = "types.ts"},["698"] = {line = 172, file = "types.ts"},["699"] = {line = 173, file = "types.ts"},["700"] = {line = 175, file = "types.ts"},["701"] = {line = 176, file = "types.ts"},["703"] = {line = 178, file = "types.ts"},["704"] = {line = 179, file = "types.ts"},["705"] = {line = 179, file = "types.ts"},["706"] = {line = 179, file = "types.ts"},["707"] = {line = 179, file = "types.ts"},["708"] = {line = 179, file = "types.ts"},["709"] = {line = 179, file = "types.ts"},["710"] = {line = 179, file = "types.ts"},["711"] = {line = 179, file = "types.ts"},["713"] = {line = 181, file = "types.ts"},["714"] = {line = 181, file = "types.ts"},["715"] = {line = 181, file = "types.ts"},["716"] = {line = 181, file = "types.ts"},["717"] = {line = 181, file = "types.ts"},["718"] = {line = 181, file = "types.ts"},["719"] = {line = 181, file = "types.ts"},["720"] = {line = 183, file = "types.ts"},["721"] = {line = 168, file = "types.ts"},["730"] = {line = 2, file = "load-patch.ts"},["731"] = {line = 2, file = "load-patch.ts"},["732"] = {line = 2, file = "load-patch.ts"},["733"] = {line = 2, file = "load-patch.ts"},["734"] = {line = 2, file = "load-patch.ts"},["735"] = {line = 3, file = "load-patch.ts"},["736"] = {line = 3, file = "load-patch.ts"},["737"] = {line = 21, file = "load-patch.ts"},["738"] = {line = 22, file = "load-patch.ts"},["739"] = {line = 23, file = "load-patch.ts"},["740"] = {line = 24, file = "load-patch.ts"},["741"] = {line = 24, file = "load-patch.ts"},["742"] = {line = 24, file = "load-patch.ts"},["743"] = {line = 26, file = "load-patch.ts"},["746"] = {line = 31, file = "load-patch.ts"},["747"] = {line = 32, file = "load-patch.ts"},["748"] = {line = 33, file = "load-patch.ts"},["750"] = {line = 24, file = "load-patch.ts"},["751"] = {line = 24, file = "load-patch.ts"},["752"] = {line = 37, file = "load-patch.ts"},["753"] = {line = 37, file = "load-patch.ts"},["754"] = {line = 37, file = "load-patch.ts"},["755"] = {line = 37, file = "load-patch.ts"},["756"] = {line = 21, file = "load-patch.ts"},["757"] = {line = 40, file = "load-patch.ts"},["758"] = {line = 41, file = "load-patch.ts"},["759"] = {line = 42, file = "load-patch.ts"},["760"] = {line = 43, file = "load-patch.ts"},["761"] = {line = 43, file = "load-patch.ts"},["762"] = {line = 43, file = "load-patch.ts"},["763"] = {line = 45, file = "load-patch.ts"},["766"] = {line = 50, file = "load-patch.ts"},["767"] = {line = 51, file = "load-patch.ts"},["768"] = {line = 52, file = "load-patch.ts"},["770"] = {line = 43, file = "load-patch.ts"},["771"] = {line = 43, file = "load-patch.ts"},["772"] = {line = 55, file = "load-patch.ts"},["773"] = {line = 56, file = "load-patch.ts"},["775"] = {line = 58, file = "load-patch.ts"},["776"] = {line = 59, file = "load-patch.ts"},["778"] = {line = 61, file = "load-patch.ts"},["779"] = {line = 61, file = "load-patch.ts"},["780"] = {line = 61, file = "load-patch.ts"},["781"] = {line = 61, file = "load-patch.ts"},["782"] = {line = 40, file = "load-patch.ts"},["783"] = {line = 64, file = "load-patch.ts"},["784"] = {line = 65, file = "load-patch.ts"},["785"] = {line = 66, file = "load-patch.ts"},["786"] = {line = 67, file = "load-patch.ts"},["787"] = {line = 68, file = "load-patch.ts"},["789"] = {line = 70, file = "load-patch.ts"},["790"] = {line = 71, file = "load-patch.ts"},["791"] = {line = 72, file = "load-patch.ts"},["792"] = {line = 70, file = "load-patch.ts"},["793"] = {line = 64, file = "load-patch.ts"},["794"] = {line = 76, file = "load-patch.ts"},["795"] = {line = 77, file = "load-patch.ts"},["796"] = {line = 78, file = "load-patch.ts"},["797"] = {line = 81, file = "load-patch.ts"},["798"] = {line = 81, file = "load-patch.ts"},["799"] = {line = 81, file = "load-patch.ts"},["800"] = {line = 82, file = "load-patch.ts"},["801"] = {line = 83, file = "load-patch.ts"},["802"] = {line = 84, file = "load-patch.ts"},["804"] = {line = 86, file = "load-patch.ts"},["805"] = {line = 86, file = "load-patch.ts"},["806"] = {line = 86, file = "load-patch.ts"},["807"] = {line = 88, file = "load-patch.ts"},["808"] = {line = 89, file = "load-patch.ts"},["809"] = {line = 90, file = "load-patch.ts"},["810"] = {line = 91, file = "load-patch.ts"},["811"] = {line = 92, file = "load-patch.ts"},["812"] = {line = 92, file = "load-patch.ts"},["813"] = {line = 92, file = "load-patch.ts"},["814"] = {line = 92, file = "load-patch.ts"},["815"] = {line = 92, file = "load-patch.ts"},["816"] = {line = 92, file = "load-patch.ts"},["817"] = {line = 92, file = "load-patch.ts"},["818"] = {line = 93, file = "load-patch.ts"},["820"] = {line = 86, file = "load-patch.ts"},["821"] = {line = 86, file = "load-patch.ts"},["822"] = {line = 81, file = "load-patch.ts"},["823"] = {line = 81, file = "load-patch.ts"},["824"] = {line = 97, file = "load-patch.ts"},["825"] = {line = 76, file = "load-patch.ts"},["826"] = {line = 100, file = "load-patch.ts"},["827"] = {line = 101, file = "load-patch.ts"},["828"] = {line = 100, file = "load-patch.ts"},["829"] = {line = 104, file = "load-patch.ts"},["830"] = {line = 106, file = "load-patch.ts"},["831"] = {line = 107, file = "load-patch.ts"},["832"] = {line = 107, file = "load-patch.ts"},["833"] = {line = 108, file = "load-patch.ts"},["834"] = {line = 108, file = "load-patch.ts"},["835"] = {line = 108, file = "load-patch.ts"},["836"] = {line = 108, file = "load-patch.ts"},["837"] = {line = 107, file = "load-patch.ts"},["838"] = {line = 110, file = "load-patch.ts"},["841"] = {line = 115, file = "load-patch.ts"},["844"] = {line = 118, file = "load-patch.ts"},["845"] = {line = 119, file = "load-patch.ts"},["846"] = {line = 121, file = "load-patch.ts"},["847"] = {line = 124, file = "load-patch.ts"},["849"] = {line = 126, file = "load-patch.ts"},["850"] = {line = 126, file = "load-patch.ts"},["851"] = {line = 127, file = "load-patch.ts"},["852"] = {line = 127, file = "load-patch.ts"},["853"] = {line = 127, file = "load-patch.ts"},["854"] = {line = 127, file = "load-patch.ts"},["855"] = {line = 127, file = "load-patch.ts"},["856"] = {line = 127, file = "load-patch.ts"},["857"] = {line = 127, file = "load-patch.ts"},["858"] = {line = 126, file = "load-patch.ts"},["862"] = {line = 133, file = "load-patch.ts"},["863"] = {line = 134, file = "load-patch.ts"},["864"] = {line = 134, file = "load-patch.ts"},["865"] = {line = 134, file = "load-patch.ts"},["866"] = {line = 135, file = "load-patch.ts"},["869"] = {line = 139, file = "load-patch.ts"},["871"] = {line = 134, file = "load-patch.ts"},["872"] = {line = 134, file = "load-patch.ts"},["873"] = {line = 141, file = "load-patch.ts"},["876"] = {line = 144, file = "load-patch.ts"},["879"] = {line = 147, file = "load-patch.ts"},["880"] = {line = 147, file = "load-patch.ts"},["881"] = {line = 147, file = "load-patch.ts"},["882"] = {line = 147, file = "load-patch.ts"},["883"] = {line = 147, file = "load-patch.ts"},["884"] = {line = 147, file = "load-patch.ts"},["885"] = {line = 147, file = "load-patch.ts"},["886"] = {line = 147, file = "load-patch.ts"},["887"] = {line = 149, file = "load-patch.ts"},["888"] = {line = 150, file = "load-patch.ts"},["891"] = {line = 104, file = "load-patch.ts"},["892"] = {line = 165, file = "load-patch.ts"},["893"] = {line = 166, file = "load-patch.ts"},["894"] = {line = 167, file = "load-patch.ts"},["895"] = {line = 168, file = "load-patch.ts"},["896"] = {line = 169, file = "load-patch.ts"},["897"] = {line = 170, file = "load-patch.ts"},["898"] = {line = 171, file = "load-patch.ts"},["900"] = {line = 173, file = "load-patch.ts"},["901"] = {line = 173, file = "load-patch.ts"},["902"] = {line = 173, file = "load-patch.ts"},["903"] = {line = 173, file = "load-patch.ts"},["904"] = {line = 173, file = "load-patch.ts"},["906"] = {line = 174, file = "load-patch.ts"},["907"] = {line = 174, file = "load-patch.ts"},["908"] = {line = 175, file = "load-patch.ts"},["909"] = {line = 175, file = "load-patch.ts"},["910"] = {line = 175, file = "load-patch.ts"},["911"] = {line = 175, file = "load-patch.ts"},["912"] = {line = 175, file = "load-patch.ts"},["913"] = {line = 176, file = "load-patch.ts"},["914"] = {line = 178, file = "load-patch.ts"},["916"] = {line = 179, file = "load-patch.ts"},["917"] = {line = 179, file = "load-patch.ts"},["918"] = {line = 180, file = "load-patch.ts"},["919"] = {line = 183, file = "load-patch.ts"},["920"] = {line = 183, file = "load-patch.ts"},["921"] = {line = 183, file = "load-patch.ts"},["922"] = {line = 183, file = "load-patch.ts"},["923"] = {line = 183, file = "load-patch.ts"},["924"] = {line = 183, file = "load-patch.ts"},["925"] = {line = 183, file = "load-patch.ts"},["926"] = {line = 179, file = "load-patch.ts"},["929"] = {line = 174, file = "load-patch.ts"},["932"] = {line = 186, file = "load-patch.ts"},["933"] = {line = 165, file = "load-patch.ts"},["940"] = {line = 3, file = "create-macros.ts"},["941"] = {line = 4, file = "create-macros.ts"},["943"] = {line = 5, file = "create-macros.ts"},["944"] = {line = 5, file = "create-macros.ts"},["945"] = {line = 6, file = "create-macros.ts"},["946"] = {line = 7, file = "create-macros.ts"},["947"] = {line = 5, file = "create-macros.ts"},["950"] = {line = 3, file = "create-macros.ts"},["957"] = {line = 1, file = "macros.ts"},["958"] = {line = 2, file = "macros.ts"},["959"] = {line = 8, file = "macros.ts"},["960"] = {line = 14, file = "macros.ts"},["961"] = {line = 20, file = "macros.ts"},["962"] = {line = 26, file = "macros.ts"},["963"] = {line = 32, file = "macros.ts"},["964"] = {line = 38, file = "macros.ts"},["965"] = {line = 44, file = "macros.ts"},["966"] = {line = 50, file = "macros.ts"},["967"] = {line = 56, file = "macros.ts"},["968"] = {line = 62, file = "macros.ts"},["969"] = {line = 68, file = "macros.ts"},["970"] = {line = 74, file = "macros.ts"},["971"] = {line = 80, file = "macros.ts"},["972"] = {line = 86, file = "macros.ts"},["973"] = {line = 92, file = "macros.ts"},["974"] = {line = 98, file = "macros.ts"},["975"] = {line = 1, file = "macros.ts"},["986"] = {line = 1, file = "autozoom_object.ts"},["987"] = {line = 1, file = "autozoom_object.ts"},["988"] = {line = 1, file = "autozoom_object.ts"},["989"] = {line = 1, file = "autozoom_object.ts"},["990"] = {line = 2, file = "autozoom_object.ts"},["991"] = {line = 2, file = "autozoom_object.ts"},["992"] = {line = 2, file = "autozoom_object.ts"},["993"] = {line = 3, file = "autozoom_object.ts"},["994"] = {line = 3, file = "autozoom_object.ts"},["995"] = {line = 4, file = "autozoom_object.ts"},["996"] = {line = 4, file = "autozoom_object.ts"},["997"] = {line = 5, file = "autozoom_object.ts"},["998"] = {line = 5, file = "autozoom_object.ts"},["999"] = {line = 6, file = "autozoom_object.ts"},["1000"] = {line = 6, file = "autozoom_object.ts"},["1001"] = {line = 9, file = "autozoom_object.ts"},["1002"] = {line = 9, file = "autozoom_object.ts"},["1003"] = {line = 9, file = "autozoom_object.ts"},["1005"] = {line = 14, file = "autozoom_object.ts"},["1006"] = {line = 15, file = "autozoom_object.ts"},["1007"] = {line = 17, file = "autozoom_object.ts"},["1008"] = {line = 18, file = "autozoom_object.ts"},["1009"] = {line = 20, file = "autozoom_object.ts"},["1010"] = {line = 224, file = "autozoom_object.ts"},["1011"] = {line = 225, file = "autozoom_object.ts"},["1012"] = {line = 227, file = "autozoom_object.ts"},["1013"] = {line = 24, file = "autozoom_object.ts"},["1014"] = {line = 25, file = "autozoom_object.ts"},["1015"] = {line = 26, file = "autozoom_object.ts"},["1016"] = {line = 28, file = "autozoom_object.ts"},["1017"] = {line = 23, file = "autozoom_object.ts"},["1018"] = {line = 32, file = "autozoom_object.ts"},["1019"] = {line = 33, file = "autozoom_object.ts"},["1020"] = {line = 34, file = "autozoom_object.ts"},["1022"] = {line = 36, file = "autozoom_object.ts"},["1024"] = {line = 32, file = "autozoom_object.ts"},["1025"] = {line = 39, file = "autozoom_object.ts"},["1026"] = {line = 40, file = "autozoom_object.ts"},["1027"] = {line = 41, file = "autozoom_object.ts"},["1029"] = {line = 43, file = "autozoom_object.ts"},["1030"] = {line = 44, file = "autozoom_object.ts"},["1031"] = {line = 45, file = "autozoom_object.ts"},["1033"] = {line = 47, file = "autozoom_object.ts"},["1034"] = {line = 49, file = "autozoom_object.ts"},["1035"] = {line = 39, file = "autozoom_object.ts"},["1036"] = {line = 51, file = "autozoom_object.ts"},["1037"] = {line = 52, file = "autozoom_object.ts"},["1038"] = {line = 53, file = "autozoom_object.ts"},["1039"] = {line = 55, file = "autozoom_object.ts"},["1041"] = {line = 57, file = "autozoom_object.ts"},["1042"] = {line = 51, file = "autozoom_object.ts"},["1043"] = {line = 59, file = "autozoom_object.ts"},["1044"] = {line = 60, file = "autozoom_object.ts"},["1045"] = {line = 61, file = "autozoom_object.ts"},["1047"] = {line = 63, file = "autozoom_object.ts"},["1049"] = {line = 59, file = "autozoom_object.ts"},["1050"] = {line = 66, file = "autozoom_object.ts"},["1051"] = {line = 67, file = "autozoom_object.ts"},["1052"] = {line = 68, file = "autozoom_object.ts"},["1053"] = {line = 69, file = "autozoom_object.ts"},["1054"] = {line = 70, file = "autozoom_object.ts"},["1055"] = {line = 71, file = "autozoom_object.ts"},["1056"] = {line = 72, file = "autozoom_object.ts"},["1057"] = {line = 72, file = "autozoom_object.ts"},["1058"] = {line = 72, file = "autozoom_object.ts"},["1059"] = {line = 72, file = "autozoom_object.ts"},["1060"] = {line = 72, file = "autozoom_object.ts"},["1061"] = {line = 73, file = "autozoom_object.ts"},["1062"] = {line = 66, file = "autozoom_object.ts"},["1063"] = {line = 78, file = "autozoom_object.ts"},["1064"] = {line = 79, file = "autozoom_object.ts"},["1065"] = {line = 80, file = "autozoom_object.ts"},["1067"] = {line = 81, file = "autozoom_object.ts"},["1068"] = {line = 81, file = "autozoom_object.ts"},["1069"] = {line = 81, file = "autozoom_object.ts"},["1070"] = {line = 81, file = "autozoom_object.ts"},["1071"] = {line = 82, file = "autozoom_object.ts"},["1072"] = {line = 82, file = "autozoom_object.ts"},["1073"] = {line = 82, file = "autozoom_object.ts"},["1074"] = {line = 82, file = "autozoom_object.ts"},["1075"] = {line = 83, file = "autozoom_object.ts"},["1076"] = {line = 84, file = "autozoom_object.ts"},["1077"] = {line = 84, file = "autozoom_object.ts"},["1078"] = {line = 84, file = "autozoom_object.ts"},["1079"] = {line = 84, file = "autozoom_object.ts"},["1080"] = {line = 84, file = "autozoom_object.ts"},["1081"] = {line = 85, file = "autozoom_object.ts"},["1083"] = {line = 87, file = "autozoom_object.ts"},["1084"] = {line = 88, file = "autozoom_object.ts"},["1085"] = {line = 89, file = "autozoom_object.ts"},["1086"] = {line = 90, file = "autozoom_object.ts"},["1087"] = {line = 91, file = "autozoom_object.ts"},["1091"] = {line = 93, file = "autozoom_object.ts"},["1092"] = {line = 78, file = "autozoom_object.ts"},["1093"] = {line = 96, file = "autozoom_object.ts"},["1094"] = {line = 97, file = "autozoom_object.ts"},["1095"] = {line = 98, file = "autozoom_object.ts"},["1098"] = {line = 102, file = "autozoom_object.ts"},["1099"] = {line = 103, file = "autozoom_object.ts"},["1102"] = {line = 106, file = "autozoom_object.ts"},["1103"] = {line = 107, file = "autozoom_object.ts"},["1106"] = {line = 110, file = "autozoom_object.ts"},["1107"] = {line = 111, file = "autozoom_object.ts"},["1110"] = {line = 114, file = "autozoom_object.ts"},["1111"] = {line = 115, file = "autozoom_object.ts"},["1114"] = {line = 118, file = "autozoom_object.ts"},["1115"] = {line = 119, file = "autozoom_object.ts"},["1118"] = {line = 122, file = "autozoom_object.ts"},["1119"] = {line = 123, file = "autozoom_object.ts"},["1122"] = {line = 126, file = "autozoom_object.ts"},["1123"] = {line = 127, file = "autozoom_object.ts"},["1124"] = {line = 128, file = "autozoom_object.ts"},["1125"] = {line = 129, file = "autozoom_object.ts"},["1127"] = {line = 131, file = "autozoom_object.ts"},["1128"] = {line = 132, file = "autozoom_object.ts"},["1129"] = {line = 133, file = "autozoom_object.ts"},["1131"] = {line = 96, file = "autozoom_object.ts"},["1132"] = {line = 136, file = "autozoom_object.ts"},["1133"] = {line = 137, file = "autozoom_object.ts"},["1134"] = {line = 138, file = "autozoom_object.ts"},["1137"] = {line = 141, file = "autozoom_object.ts"},["1138"] = {line = 142, file = "autozoom_object.ts"},["1139"] = {line = 142, file = "autozoom_object.ts"},["1140"] = {line = 142, file = "autozoom_object.ts"},["1141"] = {line = 142, file = "autozoom_object.ts"},["1142"] = {line = 142, file = "autozoom_object.ts"},["1144"] = {line = 136, file = "autozoom_object.ts"},["1145"] = {line = 147, file = "autozoom_object.ts"},["1146"] = {line = 151, file = "autozoom_object.ts"},["1147"] = {line = 152, file = "autozoom_object.ts"},["1149"] = {line = 154, file = "autozoom_object.ts"},["1150"] = {line = 155, file = "autozoom_object.ts"},["1153"] = {line = 158, file = "autozoom_object.ts"},["1154"] = {line = 159, file = "autozoom_object.ts"},["1157"] = {line = 162, file = "autozoom_object.ts"},["1158"] = {line = 163, file = "autozoom_object.ts"},["1159"] = {line = 164, file = "autozoom_object.ts"},["1160"] = {line = 165, file = "autozoom_object.ts"},["1161"] = {line = 166, file = "autozoom_object.ts"},["1163"] = {line = 168, file = "autozoom_object.ts"},["1164"] = {line = 168, file = "autozoom_object.ts"},["1165"] = {line = 169, file = "autozoom_object.ts"},["1166"] = {line = 170, file = "autozoom_object.ts"},["1167"] = {line = 171, file = "autozoom_object.ts"},["1168"] = {line = 172, file = "autozoom_object.ts"},["1169"] = {line = 172, file = "autozoom_object.ts"},["1170"] = {line = 172, file = "autozoom_object.ts"},["1171"] = {line = 172, file = "autozoom_object.ts"},["1172"] = {line = 172, file = "autozoom_object.ts"},["1173"] = {line = 173, file = "autozoom_object.ts"},["1176"] = {line = 168, file = "autozoom_object.ts"},["1179"] = {line = 177, file = "autozoom_object.ts"},["1180"] = {line = 177, file = "autozoom_object.ts"},["1181"] = {line = 178, file = "autozoom_object.ts"},["1182"] = {line = 178, file = "autozoom_object.ts"},["1183"] = {line = 178, file = "autozoom_object.ts"},["1184"] = {line = 178, file = "autozoom_object.ts"},["1185"] = {line = 178, file = "autozoom_object.ts"},["1189"] = {line = 182, file = "autozoom_object.ts"},["1190"] = {line = 182, file = "autozoom_object.ts"},["1191"] = {line = 182, file = "autozoom_object.ts"},["1192"] = {line = 182, file = "autozoom_object.ts"},["1193"] = {line = 182, file = "autozoom_object.ts"},["1197"] = {line = 186, file = "autozoom_object.ts"},["1198"] = {line = 186, file = "autozoom_object.ts"},["1199"] = {line = 186, file = "autozoom_object.ts"},["1200"] = {line = 186, file = "autozoom_object.ts"},["1201"] = {line = 186, file = "autozoom_object.ts"},["1202"] = {line = 147, file = "autozoom_object.ts"},["1203"] = {line = 189, file = "autozoom_object.ts"},["1205"] = {line = 190, file = "autozoom_object.ts"},["1206"] = {line = 190, file = "autozoom_object.ts"},["1207"] = {line = 191, file = "autozoom_object.ts"},["1208"] = {line = 193, file = "autozoom_object.ts"},["1209"] = {line = 194, file = "autozoom_object.ts"},["1210"] = {line = 194, file = "autozoom_object.ts"},["1211"] = {line = 194, file = "autozoom_object.ts"},["1212"] = {line = 194, file = "autozoom_object.ts"},["1213"] = {line = 194, file = "autozoom_object.ts"},["1216"] = {line = 190, file = "autozoom_object.ts"},["1219"] = {line = 198, file = "autozoom_object.ts"},["1220"] = {line = 198, file = "autozoom_object.ts"},["1221"] = {line = 198, file = "autozoom_object.ts"},["1222"] = {line = 198, file = "autozoom_object.ts"},["1223"] = {line = 198, file = "autozoom_object.ts"},["1224"] = {line = 189, file = "autozoom_object.ts"},["1225"] = {line = 200, file = "autozoom_object.ts"},["1226"] = {line = 201, file = "autozoom_object.ts"},["1227"] = {line = 200, file = "autozoom_object.ts"},["1228"] = {line = 203, file = "autozoom_object.ts"},["1229"] = {line = 204, file = "autozoom_object.ts"},["1230"] = {line = 203, file = "autozoom_object.ts"},["1231"] = {line = 207, file = "autozoom_object.ts"},["1232"] = {line = 208, file = "autozoom_object.ts"},["1233"] = {line = 209, file = "autozoom_object.ts"},["1234"] = {line = 207, file = "autozoom_object.ts"},["1235"] = {line = 212, file = "autozoom_object.ts"},["1236"] = {line = 213, file = "autozoom_object.ts"},["1237"] = {line = 214, file = "autozoom_object.ts"},["1239"] = {line = 212, file = "autozoom_object.ts"},["1240"] = {line = 218, file = "autozoom_object.ts"},["1241"] = {line = 219, file = "autozoom_object.ts"},["1242"] = {line = 220, file = "autozoom_object.ts"},["1244"] = {line = 218, file = "autozoom_object.ts"},["1245"] = {line = 229, file = "autozoom_object.ts"},["1246"] = {line = 230, file = "autozoom_object.ts"},["1249"] = {line = 233, file = "autozoom_object.ts"},["1250"] = {line = 234, file = "autozoom_object.ts"},["1251"] = {line = 235, file = "autozoom_object.ts"},["1252"] = {line = 236, file = "autozoom_object.ts"},["1253"] = {line = 237, file = "autozoom_object.ts"},["1256"] = {line = 242, file = "autozoom_object.ts"},["1257"] = {line = 243, file = "autozoom_object.ts"},["1258"] = {line = 245, file = "autozoom_object.ts"},["1259"] = {line = 246, file = "autozoom_object.ts"},["1261"] = {line = 229, file = "autozoom_object.ts"},["1262"] = {line = 250, file = "autozoom_object.ts"},["1263"] = {line = 251, file = "autozoom_object.ts"},["1264"] = {line = 252, file = "autozoom_object.ts"},["1265"] = {line = 252, file = "autozoom_object.ts"},["1266"] = {line = 252, file = "autozoom_object.ts"},["1267"] = {line = 252, file = "autozoom_object.ts"},["1268"] = {line = 252, file = "autozoom_object.ts"},["1269"] = {line = 250, file = "autozoom_object.ts"},["1270"] = {line = 255, file = "autozoom_object.ts"},["1271"] = {line = 256, file = "autozoom_object.ts"},["1272"] = {line = 257, file = "autozoom_object.ts"},["1275"] = {line = 260, file = "autozoom_object.ts"},["1276"] = {line = 261, file = "autozoom_object.ts"},["1277"] = {line = 262, file = "autozoom_object.ts"},["1278"] = {line = 262, file = "autozoom_object.ts"},["1279"] = {line = 262, file = "autozoom_object.ts"},["1280"] = {line = 262, file = "autozoom_object.ts"},["1281"] = {line = 262, file = "autozoom_object.ts"},["1284"] = {line = 266, file = "autozoom_object.ts"},["1285"] = {line = 267, file = "autozoom_object.ts"},["1286"] = {line = 268, file = "autozoom_object.ts"},["1287"] = {line = 269, file = "autozoom_object.ts"},["1288"] = {line = 270, file = "autozoom_object.ts"},["1289"] = {line = 270, file = "autozoom_object.ts"},["1290"] = {line = 270, file = "autozoom_object.ts"},["1291"] = {line = 270, file = "autozoom_object.ts"},["1292"] = {line = 270, file = "autozoom_object.ts"},["1293"] = {line = 270, file = "autozoom_object.ts"},["1294"] = {line = 270, file = "autozoom_object.ts"},["1295"] = {line = 255, file = "autozoom_object.ts"},["1296"] = {line = 273, file = "autozoom_object.ts"},["1297"] = {line = 274, file = "autozoom_object.ts"},["1298"] = {line = 275, file = "autozoom_object.ts"},["1300"] = {line = 273, file = "autozoom_object.ts"},["1301"] = {line = 279, file = "autozoom_object.ts"},["1302"] = {line = 280, file = "autozoom_object.ts"},["1303"] = {line = 281, file = "autozoom_object.ts"},["1304"] = {line = 282, file = "autozoom_object.ts"},["1305"] = {line = 283, file = "autozoom_object.ts"},["1306"] = {line = 284, file = "autozoom_object.ts"},["1307"] = {line = 285, file = "autozoom_object.ts"},["1308"] = {line = 279, file = "autozoom_object.ts"},["1309"] = {line = 288, file = "autozoom_object.ts"},["1310"] = {line = 289, file = "autozoom_object.ts"},["1311"] = {line = 290, file = "autozoom_object.ts"},["1312"] = {line = 291, file = "autozoom_object.ts"},["1313"] = {line = 292, file = "autozoom_object.ts"},["1314"] = {line = 293, file = "autozoom_object.ts"},["1315"] = {line = 288, file = "autozoom_object.ts"},["1316"] = {line = 296, file = "autozoom_object.ts"},["1317"] = {line = 297, file = "autozoom_object.ts"},["1318"] = {line = 298, file = "autozoom_object.ts"},["1319"] = {line = 299, file = "autozoom_object.ts"},["1320"] = {line = 300, file = "autozoom_object.ts"},["1321"] = {line = 300, file = "autozoom_object.ts"},["1322"] = {line = 300, file = "autozoom_object.ts"},["1323"] = {line = 300, file = "autozoom_object.ts"},["1324"] = {line = 300, file = "autozoom_object.ts"},["1328"] = {line = 304, file = "autozoom_object.ts"},["1329"] = {line = 304, file = "autozoom_object.ts"},["1330"] = {line = 304, file = "autozoom_object.ts"},["1331"] = {line = 304, file = "autozoom_object.ts"},["1332"] = {line = 304, file = "autozoom_object.ts"},["1333"] = {line = 296, file = "autozoom_object.ts"},["1334"] = {line = 307, file = "autozoom_object.ts"},["1335"] = {line = 308, file = "autozoom_object.ts"},["1336"] = {line = 309, file = "autozoom_object.ts"},["1337"] = {line = 310, file = "autozoom_object.ts"},["1338"] = {line = 311, file = "autozoom_object.ts"},["1339"] = {line = 311, file = "autozoom_object.ts"},["1340"] = {line = 311, file = "autozoom_object.ts"},["1341"] = {line = 311, file = "autozoom_object.ts"},["1342"] = {line = 311, file = "autozoom_object.ts"},["1346"] = {line = 315, file = "autozoom_object.ts"},["1347"] = {line = 315, file = "autozoom_object.ts"},["1348"] = {line = 315, file = "autozoom_object.ts"},["1349"] = {line = 315, file = "autozoom_object.ts"},["1350"] = {line = 315, file = "autozoom_object.ts"},["1351"] = {line = 307, file = "autozoom_object.ts"},["1352"] = {line = 318, file = "autozoom_object.ts"},["1353"] = {line = 321, file = "autozoom_object.ts"},["1354"] = {line = 322, file = "autozoom_object.ts"},["1355"] = {line = 318, file = "autozoom_object.ts"},["1356"] = {line = 325, file = "autozoom_object.ts"},["1357"] = {line = 326, file = "autozoom_object.ts"},["1358"] = {line = 327, file = "autozoom_object.ts"},["1359"] = {line = 325, file = "autozoom_object.ts"},["1360"] = {line = 330, file = "autozoom_object.ts"},["1361"] = {line = 331, file = "autozoom_object.ts"},["1362"] = {line = 332, file = "autozoom_object.ts"},["1363"] = {line = 333, file = "autozoom_object.ts"},["1364"] = {line = 333, file = "autozoom_object.ts"},["1365"] = {line = 333, file = "autozoom_object.ts"},["1366"] = {line = 333, file = "autozoom_object.ts"},["1367"] = {line = 333, file = "autozoom_object.ts"},["1368"] = {line = 330, file = "autozoom_object.ts"},["1369"] = {line = 336, file = "autozoom_object.ts"},["1370"] = {line = 337, file = "autozoom_object.ts"},["1371"] = {line = 338, file = "autozoom_object.ts"},["1372"] = {line = 336, file = "autozoom_object.ts"},["1373"] = {line = 341, file = "autozoom_object.ts"},["1374"] = {line = 342, file = "autozoom_object.ts"},["1375"] = {line = 343, file = "autozoom_object.ts"},["1376"] = {line = 341, file = "autozoom_object.ts"},["1377"] = {line = 346, file = "autozoom_object.ts"},["1378"] = {line = 347, file = "autozoom_object.ts"},["1379"] = {line = 348, file = "autozoom_object.ts"},["1383"] = {line = 352, file = "autozoom_object.ts"},["1384"] = {line = 352, file = "autozoom_object.ts"},["1385"] = {line = 353, file = "autozoom_object.ts"},["1386"] = {line = 352, file = "autozoom_object.ts"},["1389"] = {line = 346, file = "autozoom_object.ts"},["1390"] = {line = 357, file = "autozoom_object.ts"},["1392"] = {line = 361, file = "autozoom_object.ts"},["1393"] = {line = 361, file = "autozoom_object.ts"},["1394"] = {line = 362, file = "autozoom_object.ts"},["1395"] = {line = 363, file = "autozoom_object.ts"},["1396"] = {line = 364, file = "autozoom_object.ts"},["1399"] = {line = 361, file = "autozoom_object.ts"},["1402"] = {line = 369, file = "autozoom_object.ts"},["1403"] = {line = 369, file = "autozoom_object.ts"},["1404"] = {line = 369, file = "autozoom_object.ts"},["1405"] = {line = 369, file = "autozoom_object.ts"},["1406"] = {line = 369, file = "autozoom_object.ts"},["1407"] = {line = 357, file = "autozoom_object.ts"},["1415"] = {line = 2, file = "main.ts"},["1416"] = {line = 2, file = "main.ts"},["1417"] = {line = 9, file = "main.ts"},["1418"] = {line = 11, file = "main.ts"},["1419"] = {line = 12, file = "main.ts"},["1420"] = {line = 13, file = "main.ts"},["1421"] = {line = 14, file = "main.ts"},["1423"] = {line = 16, file = "main.ts"},["1424"] = {line = 17, file = "main.ts"},["1425"] = {line = 9, file = "main.ts"},["1426"] = {line = 22, file = "main.ts"}});
 return require("src.main", ...)
