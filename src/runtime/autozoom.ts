@@ -1,11 +1,12 @@
 /** @noSelfInFile */
 import { armCommand, normalizeFids, parseArmList, rewriteCueCommand } from "../engine/arm-command";
+import { programCommands, releaseCommands } from "../engine/program";
 import { evaluate, FaderOutput, FixtureResult, MarkerSample } from "../engine/fixture-state";
 import { vec, Vec3 } from "../engine/vec";
 import { Desk } from "../desk";
 import { fidKey, fmtInt, fmtNum } from "../format";
 import { MarkerReadings, PatchFixture, PatchScan, SeqRef } from "../model";
-import { Config, CONFIG_KEY, defaultConfig, INSTANCE_KEY, offsetLabel, parseConfig, pruneConfig, serializeConfig } from "../store/config";
+import { applySetup, Config, CONFIG_KEY, defaultConfig, INSTANCE_KEY, offsetLabel, parseConfig, pruneConfig, serializeConfig } from "../store/config";
 import { buildViews, layoutCells, RowState, stateLabel } from "../ui/view-model";
 
 export const CAPTURE_SECONDS = 15;
@@ -112,6 +113,63 @@ export class AutoZoom {
             const r = this.results[fidKey(f.fid)];
             this.desk.log(`  ${fmtInt(f.fid)} ${f.name}: ${r === undefined ? "-" : stateLabel(r.state)}`);
         }
+    }
+
+    // ---------- tap-to-program, setup, size ----------
+    Program(fid: number, cid: number): void {
+        const f = this.fixture(fid);
+        if (f === undefined) {
+            this.desk.log(`Fixture ${fmtInt(fid)} is not an AutoZoom fixture`);
+            return;
+        }
+        if (this.desk.readProgrammerCid(f) === cid) {
+            this.desk.runCommands(releaseCommands(fid));
+        } else {
+            this.desk.runCommands(programCommands(fid, cid, f.optics, this.config.offset));
+        }
+        this.update();
+    }
+
+    Setup(): void {
+        this.desk.later(() => {
+            const answers = this.desk.setupDialog(this.config);
+            if (answers === undefined) return;
+            const rate = this.config.rate;
+            const result = applySetup(this.config, answers);
+            for (const e of result.errors) this.desk.log(e);
+            this.config = result.config;
+            this.markDirty();
+            if (this.config.rate !== rate && this.running) this.desk.log("The new refresh rate applies after Stop and Start");
+            this.say("Setup saved");
+            this.update();
+        });
+    }
+
+    Size(fid: number): void {
+        const f = this.fixture(fid);
+        if (f === undefined) {
+            this.desk.log(`Fixture ${fmtInt(fid)} is not an AutoZoom fixture`);
+            return;
+        }
+        this.desk.later(() => {
+            const key = fidKey(fid);
+            const current = this.config.size[key];
+            const answer = this.desk.prompt(`Beam size of ${fmtInt(fid)} in metres (empty = global fader)`, current === undefined ? "" : fmtNum(current));
+            if (answer === undefined) return;
+            const text = answer.trim().replace(",", ".");
+            if (text === "") {
+                delete this.config.size[key];
+            } else {
+                const n = Number(text);
+                if (n !== n || n <= 0) {
+                    this.desk.log("Size must be a number of metres above 0");
+                    return;
+                }
+                this.config.size[key] = n;
+            }
+            this.markDirty();
+            this.update();
+        });
     }
 
     // ---------- loop ----------
