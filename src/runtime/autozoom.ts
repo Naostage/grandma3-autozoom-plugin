@@ -23,6 +23,7 @@ export class AutoZoom {
     private warned: { [key: string]: boolean } = {};
     private dirtyAt: number | undefined;
     private lastSize: number | undefined;
+    private loopGen = 0;
 
     constructor(protected readonly desk: Desk, private readonly id: string) {}
 
@@ -50,7 +51,12 @@ export class AutoZoom {
     Start(): void {
         if (this.running) return;
         this.running = true;
-        this.desk.startLoop(this.config.rate, () => this.tick(), () => this.onLoopStopped());
+        const gen = ++this.loopGen;
+        this.desk.startLoop(
+            this.config.rate,
+            () => { if (gen === this.loopGen) this.tick(); },
+            () => { if (gen === this.loopGen) this.onLoopStopped(); },
+        );
         this.say("AutoZoom started");
     }
 
@@ -58,8 +64,19 @@ export class AutoZoom {
         this.saveConfig();
         if (!this.running) return;
         this.running = false;
+        this.loopGen++;
         this.desk.stopLoop();
         this.update();
+        for (const f of this.scanned.fixtures) {
+            const key = fidKey(f.fid);
+            if (this.sent[key] === "release") continue;
+            try {
+                this.desk.releaseFaders(f);
+            } catch (e) {
+                this.warnOnce(`release:${key}:${tostring(e)}`, `Fixture ${fmtInt(f.fid)}: release failed: ${tostring(e)}`);
+            }
+            this.sent[key] = "release";
+        }
         this.say("AutoZoom stopped");
     }
 
@@ -99,6 +116,7 @@ export class AutoZoom {
         if (this.desk.loadText(INSTANCE_KEY) !== this.id) {
             this.desk.log("Another AutoZoom instance took over; this one stops");
             this.running = false;
+            this.loopGen++;
             this.desk.stopLoop();
             return;
         }
@@ -207,7 +225,7 @@ export class AutoZoom {
     }
 
     protected markDirty(): void {
-        this.dirtyAt = this.desk.now();
+        if (this.running) this.dirtyAt = this.desk.now(); else this.saveConfig();
     }
 
     protected saveConfig(): void {

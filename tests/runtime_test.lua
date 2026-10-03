@@ -91,3 +91,30 @@ T.test("stop releases faders and shows offline", function()
   T.eq(d.releases[#d.releases], 101, "tracking fixture released on stop"); T.eq(d.views["status"].text:sub(1, 7), "Offline", "offline")
   T.eq(d.views["st 101"].text, "Offline\nLead +0/+0/+0", "row offline")
 end)
+
+T.test("stop releases a fixture whose live read throws", function()
+  local d, a = setup()
+  a:Install(); a:ArmAll(); a:Start()
+  d.cids[101] = 1; d.cids[102] = 1; d.markers["1"] = { pos = { x = 0, y = 0, z = 0 } }
+  d:tick()
+  d.offsetError = { [101] = "boom" }
+  d.releases = {}
+  a:Stop()
+  local got = {}; for _, f in ipairs(d.releases) do got[f] = true end
+  T.truthy(got[101], "101 released"); T.truthy(got[102], "102 released")
+end)
+
+T.test("config changes while stopped are saved immediately", function()
+  local d, a = setup()
+  a:Install(); a:Arm("101")
+  T.eq(az().config.parseConfig(d.saved["AutoZoom.config"]).config.armed, { 101 }, "saved right away")
+end)
+
+T.test("late cleanup of an old loop does not stop a newer one", function()
+  local d, a = setup()
+  d.stopLoop = function(self) self.oldLoop = self.loop; self.loop = nil end
+  a:Install(); a:Start(); a:Stop(); a:Start()
+  d.oldLoop.cleanup()
+  d:tick()
+  T.eq(d.views["status"].text:sub(1, 7), "Running", "still running")
+end)
