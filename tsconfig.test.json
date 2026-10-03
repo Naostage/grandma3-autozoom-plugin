@@ -6,7 +6,6 @@
     "luaBundleEntry": "./src/testing/exports.ts",
     "luaBundle": "./build/azlib.lua",
     "luaLibImport": "require-minimal",
-    "noImplicitSelf": true,
     "noHeader": true
   },
   "compilerOptions": {
