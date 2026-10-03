@@ -54,3 +54,23 @@ T.test("unknown cue or cancelled prompt writes nothing", function()
   d:tick(); d:runLaters()
   T.eq(d.logs[#d.logs], "Capture cancelled", "cancelled prompt")
 end)
+
+local function has(list, text)
+  for _, l in ipairs(list) do if l == text then return true end end
+  return false
+end
+
+T.test("stopping during a capture cancels it", function()
+  local d, a = setup()
+  a:Capture(); d:tick()
+  a:Stop()
+  T.truthy(has(d.logs, "Capture cancelled"), "cancelled logged")
+  T.eq(d.views["capture"].text, "Capture\narms → cue", "idle button")
+end)
+
+T.test("capture is refused while stopped", function()
+  local d, a = setup()
+  a:Stop(); a:Capture()
+  T.eq(d.logs[#d.logs], "Start AutoZoom to use Capture", "refused")
+  T.eq(d.views["capture"].text, "Capture\narms → cue", "idle button")
+end)

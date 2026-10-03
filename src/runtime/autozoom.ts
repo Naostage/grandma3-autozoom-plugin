@@ -68,6 +68,7 @@ export class AutoZoom {
         this.running = false;
         this.loopGen++;
         this.desk.stopLoop();
+        if (this.captureUntil !== undefined) this.endCapture("Capture cancelled");
         this.update();
         for (const f of this.scanned.fixtures) {
             const key = fidKey(f.fid);
@@ -148,6 +149,10 @@ export class AutoZoom {
     Capture(): void {
         if (this.captureUntil !== undefined) {
             this.endCapture("Capture cancelled");
+            return;
+        }
+        if (!this.running) {
+            this.say("Start AutoZoom to use Capture");
             return;
         }
         const current = this.desk.selectedSequence();
