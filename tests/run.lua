@@ -6,6 +6,7 @@ local FILES = {
   "smoke_test",
   "json_test",
   "config_test",
+  "beam_test",
 }
 
 for _, name in ipairs(FILES) do
