@@ -52,7 +52,8 @@ Backward compatibility with 1.x shows, commands and object names is **not** requ
 | P7 | Writing a cue part's `Command` property from Lua (BeatGrid does `part.Command = …`). | Capture |
 | P8 | `SelectedSequence()` changes when a sequence is tapped in the pool and with an executor's Select key. | Capture |
 | P9 | Parent (group) position and rotation properties, to compute a fixture's stage position. | Distance |
-| P10 | Layout element click runs its macro/sequence (not yet clicked in probe 1); `SetFader` accepts fractional values. | Layout, resolution |
+| P10 | Layout element click runs its macro (not yet clicked in probe 1); layout Y axis direction; multi-line `CUSTOMTEXTTEXT`; `SetFader` accepts fractional values. | Layout, resolution |
+| P11 | `MessageBox` with `inputs` and `selectors` returns the typed values. | Setup |
 
 If P2 or P9 show rotations matter, the engine composes them; if P6/P8 fail, Capture falls back to typing the sequence and cue numbers in the prompt.
 
@@ -62,13 +63,14 @@ TypeScript → Lua (TypeScriptToLua), one plugin, modules with one job each:
 
 | Module | Responsibility | Depends on |
 |---|---|---|
-| `runtime` | Single live instance, start/stop, update loop, error containment | everything below |
-| `console` | All grandMA3 access: patch scan, UI channel lookup, live attribute reads, PSN reads, sequence/fader/cue access, command execution | MA3 API only |
+| `runtime` | Single live instance, start/stop, update loop, error containment, commands | `Desk` interface, `engine`, `ui` view model, `store` |
+| `desk` | The `Desk` interface: every console operation the runtime needs. Lets the runtime be tested with a fake desk | — |
+| `console` | `MaDesk`, the grandMA3 implementation of `Desk`: patch scan, UI channel lookup, live attribute reads, PSN reads, sequence/fader/cue access, layout, prompts, command execution | MA3 API only |
 | `engine` | Pure logic: aim point, zoom/iris math, per-fixture state machine | nothing (pure) |
-| `ui-layout` | Generate the layout and refresh its elements | `console` |
-| `capture` | Capture flow | `console`, `ui-layout` |
-| `program` | Tap-to-program and Setup dialog | `console` |
-| `store` | Load/save config JSON in `GlobalVars` | `console` |
+| `ui` view model | Pure: layout geometry and the text/colours of every cell | `engine` |
+| `store` | Config JSON encode/decode/validation (I/O goes through `Desk`) | — |
+
+Capture, tap-to-program, Setup and Size are runtime commands built on `Desk` and pure helpers.
 
 `engine` stays pure so the Lua test harness can cover it exhaustively.
 
@@ -93,9 +95,7 @@ TypeScript → Lua (TypeScriptToLua), one plugin, modules with one job each:
 | Sequence per fixture | `AZ_ZOOM_<fid>` | One cue: Zoom at maximum (`At Absolute Physical <zoom max>`); driven by its Temp fader |
 | Sequence per fixture (if iris) | `AZ_IRIS_<fid>` | One cue: Iris at maximum; driven by its Temp fader |
 | Sequence | `AZ_SIZE` | Global size fader (Master fader read by the plugin) |
-| Sequences | `AZ_BTN_<action>` / `AZ_ARM_<fid>` | Layout buttons (BeatGrid model): cue command calls the plugin; name and appearance show state |
-| Macros | `AZ Start`, `AZ Stop`, `AZ Rebuild` | Command-line / executor access |
-| Appearances | `AZ armed`, `AZ idle`, `AZ warn`, `AZ error`, `AZ capture` | Button colours |
+| Macros | `AZ <cell key>` (one per layout cell) | Layout buttons: one line `Lua "AZ:<Command>(...)"`; display-only cells get an empty macro. Live text and colours are written to the layout element (`CUSTOMTEXTTEXT`, `CUSTOMTEXTCOLOR`, `BORDERCOLOR`), the route verified in probe 1 |
 
 Old objects in other datapools (1.x `AZ_ZOOM_*` etc.) are not migrated.
 
@@ -165,7 +165,7 @@ Tapping the same cell again releases those values from the programmer. The user 
 
 **Setup** (popup) — saved in config:
 
-- XYZ offset source: **XYZ preset** (pick a preset; only `XYZ_X/Y/Z` are recalled from it) or **Values** (three faders, metres).
+- XYZ offset source: **XYZ preset** (preset number; only `XYZ_X/Y/Z` are recalled from it) or **Values** (X, Y, Z in metres, typed in the dialog: grandMA3's `MessageBox` offers text inputs and selectors, not faders).
 - Size fader range (default 0.5–5 m), refresh rate.
 - Rebuild layout, rescan patch.
 
