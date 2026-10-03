@@ -1,12 +1,14 @@
 /** @noSelfInFile */
-import { normalizeFids, parseArmList } from "../engine/arm-command";
+import { armCommand, normalizeFids, parseArmList, rewriteCueCommand } from "../engine/arm-command";
 import { evaluate, FaderOutput, FixtureResult, MarkerSample } from "../engine/fixture-state";
 import { vec, Vec3 } from "../engine/vec";
 import { Desk } from "../desk";
-import { fidKey, fmtInt } from "../format";
-import { MarkerReadings, PatchFixture, PatchScan } from "../model";
+import { fidKey, fmtInt, fmtNum } from "../format";
+import { MarkerReadings, PatchFixture, PatchScan, SeqRef } from "../model";
 import { Config, CONFIG_KEY, defaultConfig, INSTANCE_KEY, offsetLabel, parseConfig, pruneConfig, serializeConfig } from "../store/config";
 import { buildViews, layoutCells, RowState, stateLabel } from "../ui/view-model";
+
+export const CAPTURE_SECONDS = 15;
 
 interface Live { cid: number; programmerCid: number; offset: Vec3 }
 
@@ -143,8 +145,53 @@ export class AutoZoom {
         this.render(markers, globalSize);
     }
 
+    Capture(): void {
+        if (this.captureUntil !== undefined) {
+            this.endCapture("Capture cancelled");
+            return;
+        }
+        const current = this.desk.selectedSequence();
+        this.captureStartId = current?.id;
+        this.captureUntil = this.desk.now() + CAPTURE_SECONDS;
+        this.message = current === undefined
+            ? "Select the sequence to store the arms in"
+            : `Select the sequence to store the arms in (to use Seq ${fmtInt(current.no)}, select another sequence first, then it)`;
+        this.update();
+    }
+
     protected beforeUpdate(): void {
-        // Capture (Task 9) hooks in here.
+        if (this.captureUntil === undefined) return;
+        if (this.desk.now() > this.captureUntil) {
+            this.endCapture("Capture timed out");
+            return;
+        }
+        const seq = this.desk.selectedSequence();
+        if (seq === undefined || seq.id === this.captureStartId) return;
+        this.captureUntil = undefined;
+        this.desk.later(() => this.storeArms(seq));
+    }
+
+    private storeArms(seq: SeqRef): void {
+        const suggested = this.desk.selectedCue(seq) ?? this.desk.runningCue(seq);
+        const answer = this.desk.prompt(`Store AutoZoom arms in Seq ${fmtInt(seq.no)} '${seq.name}': cue number`, suggested === undefined ? "" : fmtNum(suggested));
+        if (answer === undefined) {
+            this.endCapture("Capture cancelled");
+            return;
+        }
+        const cue = Number(answer.trim());
+        const existing = answer.trim() !== "" && cue === cue ? this.desk.readCueCommand(seq, cue) : undefined;
+        if (existing === undefined) {
+            this.endCapture(`Seq ${fmtInt(seq.no)} has no cue ${answer.trim()}; nothing stored`);
+            return;
+        }
+        const ok = this.desk.writeCueCommand(seq, cue, rewriteCueCommand(existing, armCommand(this.config.armed)));
+        this.endCapture(ok ? `Stored in Seq ${fmtInt(seq.no)} '${seq.name}' cue ${fmtNum(cue)}` : `Could not write the command of Seq ${fmtInt(seq.no)} cue ${fmtNum(cue)}`);
+    }
+
+    private endCapture(message: string): void {
+        this.captureUntil = undefined;
+        this.captureStartId = undefined;
+        this.say(message);
     }
 
     private updateFixture(f: PatchFixture, markers: MarkerReadings, globalSize: number): void {
