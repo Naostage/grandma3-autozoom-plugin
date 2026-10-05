@@ -1,23 +1,23 @@
+/** @noSelfInFile */
+import { MaDesk } from "./console/ma-desk";
+import { AutoZoom } from "./runtime/autozoom";
 
-import { AZ_Global_Type } from "./autozoom_object";
-import { PrintEcho, SetLogLevel } from "./utils";
+declare let AZ: AutoZoom | undefined;
 
-
-
-declare var AZ : AZ_Global_Type; 
-
-function main(display: any, args: any) {
-    // if AZ exists, we clean it up
+function main(_display: unknown, _args: unknown): void {
     if (AZ !== undefined) {
-        AZ.DisableAllFixtures();
-        AZ.Cleanup();
-        AZ.Disable();
-    }   
-    AZ = new AZ_Global_Type();
-    AZ.Init();
+        try {
+            AZ.Stop();
+        } catch (e) {
+            Printf("[AZ] The previous AutoZoom instance did not stop cleanly: " + tostring(e));
+        }
+    }
+    const id = string.format("%d-%d", os.time(), math.random(1, 1000000));
+    AZ = new AutoZoom(new MaDesk(), id);
+    Printf("[AZ] AutoZoom 2.0.0 by Naostage");
+    AZ.Install();
+    AZ.Start();
 }
 
-// ignore error for this : 
-// @ts-ignore
+// @ts-ignore: grandMA3 runs the chunk's returned function
 return main;
-

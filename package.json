@@ -1,13 +1,13 @@
 {
   "name": "gma3_autozoom",
-  "version": "1.1.2.0",
+  "version": "2.0.0.0",
   "description": "Autozoom plugin for grandma3",
   "private": true,
   "scripts": {
     "build": "tstl && node scripts/generateXML.js",
     "build:test": "tstl -p tsconfig.test.json",
     "dev": "tstl --watch",
-    "test": "npm run build && npm run build:test && lua tests/run.lua && lua tests/harness.lua"
+    "test": "npm run build && npm run build:test && lua tests/run.lua"
   },
   "author": "naostage",
   "license": "ISC",

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <GMA3 DataVersion="2.3.2.0">
-<UserPlugin Name="GMA3 Autozoom" Version="1.1.2.0" Author="naostage">
+<UserPlugin Name="GMA3 Autozoom" Version="2.0.0.0" Author="naostage">
     <ComponentLua FileName="autozoom-grandma3.lua" />
 </UserPlugin>
 </GMA3>
