@@ -22,7 +22,7 @@ export const APPEARANCES: { [kind: string]: { name: string; rgba: string } } = {
 export const GRID = { w: 130, markerW: 70, h: 64, gap: 6 };
 export const Y_DIR = -1; // layout "down" direction (probe P10)
 
-export interface HeaderState { running: boolean; captureSecondsLeft?: number; liveMarkers: number; globalSize: number; offsetLabel: string; message: string }
+export interface HeaderState { running: boolean; captureSecondsLeft?: number; pickSecondsLeft?: number; liveMarkers: number; globalSize: number; offsetLabel: string; message: string }
 export interface RowState {
     fixture: PatchFixture; armed: boolean; markerCid: number; programmerCid: number; offset: Vec3;
     result: FixtureResult; size: number; sizeFixed: boolean;
@@ -46,7 +46,7 @@ export function layoutCells(fixtures: PatchFixture[], markers: PatchMarker[]): C
     const step = GRID.h + GRID.gap;
     let x = 0;
     const header: [string, string][] = [
-        ["status", ""], ["toggle", "Toggle()"], ["capture", "Capture()"], ["setup", "Setup()"],
+        ["status", ""], ["toggle", "Toggle()"], ["capture", "Capture()"], ["setup", "Setup()"], ["offset", "PickOffset()"],
         ["armall", "ArmAll()"], ["disarmall", "DisarmAll()"], ["size", ""], ["message", ""],
     ];
     for (const [key, command] of header) {
@@ -95,6 +95,8 @@ export function buildViews(header: HeaderState, rows: RowState[], markers: Patch
     if (header.captureSecondsLeft !== undefined) cell("capture", `Select a sequence…\n${fmtInt(header.captureSecondsLeft)} s · tap to cancel`, "capture", COLORS.accent, COLORS.accent);
     else cell("capture", "Capture\narms → cue", "button");
     cell("setup", `Setup\nXYZ ${header.offsetLabel}`, "button");
+    if (header.pickSecondsLeft !== undefined) cell("offset", `Tap a preset…\n${fmtInt(header.pickSecondsLeft)} s · tap to cancel`, "capture", COLORS.accent, COLORS.accent);
+    else cell("offset", `Offset\n${header.offsetLabel}`, "button");
     cell("armall", "Arm all", "button");
     cell("disarmall", "Disarm all", "button");
     cell("size", `AZ_SIZE\n${fmtNum(header.globalSize)} m`, "header");

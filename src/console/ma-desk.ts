@@ -11,6 +11,7 @@ import { info } from "./log";
 import { scanPatch } from "./patch";
 import * as pool from "./pool";
 import * as ui from "./ui";
+import * as undo from "./undo";
 import * as vars from "./vars";
 
 export class MaDesk implements Desk {
@@ -60,6 +61,9 @@ export class MaDesk implements Desk {
     prompt(title: string, value: string): string | undefined { return ui.prompt(title, value); }
     setupDialog(current: Config): SetupAnswers | undefined { return ui.setupDialog(current); }
     runCommands(commands: string[]): void { ui.runCommands(commands); }
+    lastCommand(): string | undefined { return undo.lastCommand(); }
+    topUndoName(): string | undefined { return undo.topUndoName(); }
+    undoProgrammer(): void { undo.undoProgrammer(); }
 }
 
 export function createMaDesk(): MaDesk {

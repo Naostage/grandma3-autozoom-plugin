@@ -192,3 +192,14 @@ T.test("deleted appearance is skipped and recreated on install", function()
   for _, a in ipairs(M.appearances._kids) do if a.name == "AZ Button" then found = true end end
   T.truthy(found, "recreated")
 end)
+
+T.test("desk reads last command and undo name, oops restores OopsProgrammer", function()
+  M.reset()
+  M.cmdObj = { LastCommand = "OK: Preset 2.30", Undos = { UndoIndex = 0, [1] = { Name = "Preset 2.30" } } }
+  M.profile = { OopsProgrammer = false }
+  local desk = az().madesk.createMaDesk()
+  T.eq(desk:lastCommand(), "OK: Preset 2.30", "last command"); T.eq(desk:topUndoName(), "Preset 2.30", "undo name")
+  desk:undoProgrammer()
+  T.eq(M.cmds[#M.cmds], "Oops /nc", "oops"); T.eq(M.profile.OopsProgrammer, false, "restored")
+  T.eq(M.oopsProgrammerDuringOops, true, "was true during Oops")
+end)

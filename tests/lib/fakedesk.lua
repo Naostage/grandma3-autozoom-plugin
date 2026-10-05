@@ -11,8 +11,11 @@ function F.marker(cid, name) return { cid = cid, name = name or ("Marker " .. ci
 
 function F.new(scan)
   local d = { logs = {}, saved = {}, faders = {}, releases = {}, laters = {}, cmds = {}, t = 0,
-    cids = {}, offsets = {}, progCids = {}, markers = {}, answers = {}, runningCues = {}, selectedCues = {}, cues = {},
+    undos = 0, cids = {}, offsets = {}, progCids = {}, markers = {}, answers = {}, runningCues = {}, selectedCues = {}, cues = {},
     scanResult = scan or { fixtures = {}, markers = {}, problems = {} } }
+  function d:lastCommand() return self.lastCmd end
+  function d:topUndoName() return self.undoName end
+  function d:undoProgrammer() self.undos = self.undos + 1 end
   function d:now() return self.t end
   function d:log(m) self.logs[#self.logs + 1] = m end
   function d:loadText(k) return self.saved[k] end

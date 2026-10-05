@@ -7,7 +7,8 @@ import { Optics } from "./beam";
 export function programCommands(fid: number, cid: number, optics: Optics, offset: Config["offset"]): string[] {
     const cmds = [`Fixture ${fmtInt(fid)}`, `Attribute "XYZ_MArker" At ${fmtInt(cid)}`];
     if (offset.source === "preset" && offset.preset !== "") {
-        cmds.push(`Attribute "XYZ_X" Thru "XYZ_Z" At Preset ${offset.preset}`);
+        const target = offset.preset.startsWith("DataPool") ? offset.preset : `Preset ${offset.preset}`;
+        cmds.push(`Attribute "XYZ_X" Thru "XYZ_Z" At ${target}`);
     } else {
         cmds.push(`Attribute "XYZ_X" At ${fmtNum(offset.values[0])}`);
         cmds.push(`Attribute "XYZ_Y" At ${fmtNum(offset.values[1])}`);

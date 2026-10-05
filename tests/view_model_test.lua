@@ -9,10 +9,11 @@ T.test("layout cells cover header, marker heads and every row cell", function()
   local cells = az().view.layoutCells({ fx(101), fx(102) }, MARKERS)
   local keys = {}
   for _, c in ipairs(cells) do keys[c.key] = c.command end
+  T.eq(keys["offset"], "PickOffset()", "offset pick")
   T.eq(keys["toggle"], "Toggle()", "toggle"); T.eq(keys["capture"], "Capture()", "capture")
   T.eq(keys["arm 101"], "ArmToggle(101)", "arm"); T.eq(keys["mx 102 2"], "Program(102,2)", "matrix")
   T.eq(keys["sz 101"], "Size(101)", "size"); T.eq(keys["st 101"], "", "state is display only")
-  T.eq(keys["mh 2"], "", "marker head"); T.eq(#cells, 8 + 2 + 2 * (1 + 2 + 5), "count")
+  T.eq(keys["mh 2"], "", "marker head"); T.eq(#cells, 9 + 2 + 2 * (1 + 2 + 5), "count")
 end)
 
 T.test("views for a tracking row and a programmer cell", function()

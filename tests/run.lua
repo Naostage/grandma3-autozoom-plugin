@@ -13,6 +13,7 @@ local FILES = {
   "view_model_test",
   "runtime_test",
   "capture_test",
+  "preset_pick_test",
   "program_test",
   "console_patch_test",
   "console_desk_test",

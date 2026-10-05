@@ -1,5 +1,6 @@
 /** @noSelfInFile */
 import { armCommand, normalizeFids, parseArmList, rewriteCueCommand } from "../engine/arm-command";
+import { parsePresetCommand, undoMatches } from "../engine/preset-ref";
 import { programCommands, releaseCommands } from "../engine/program";
 import { evaluate, FaderOutput, FixtureResult, MarkerSample } from "../engine/fixture-state";
 import { vec, Vec3 } from "../engine/vec";
@@ -10,6 +11,7 @@ import { applySetup, Config, CONFIG_KEY, defaultConfig, INSTANCE_KEY, offsetLabe
 import { buildViews, layoutCells, RowState, stateLabel } from "../ui/view-model";
 
 export const CAPTURE_SECONDS = 15;
+export const PICK_SECONDS = 10;
 
 interface Live { cid: number; programmerCid: number; offset: Vec3 }
 
@@ -20,6 +22,8 @@ export class AutoZoom {
     protected message = "";
     protected captureUntil: number | undefined;
     protected captureStartId: string | undefined;
+    protected pickUntil: number | undefined;
+    protected pickBaseline: string | undefined;
     private results: { [fid: string]: FixtureResult } = {};
     private live: { [fid: string]: Live } = {};
     private sent: { [fid: string]: string } = {};
@@ -90,6 +94,7 @@ export class AutoZoom {
         this.loopGen++;
         this.desk.stopLoop();
         if (this.captureUntil !== undefined) this.endCapture("Capture cancelled");
+        if (this.pickUntil !== undefined) this.endPick("Preset pick cancelled");
         // Release first: a failing refresh below must never leave a fader driven.
         for (const f of this.scanned.fixtures) {
             const key = fidKey(f.fid);
@@ -257,7 +262,39 @@ export class AutoZoom {
         this.update();
     }
 
+    PickOffset(): void {
+        if (!this.ensureCurrent()) return;
+        if (this.pickUntil !== undefined) { this.endPick("Preset pick cancelled"); return; }
+        if (!this.running) { this.say("Start AutoZoom to pick a preset"); return; }
+        this.pickBaseline = this.desk.lastCommand();
+        this.pickUntil = this.desk.now() + PICK_SECONDS;
+        this.message = "Tap the preset that holds the XYZ offset";
+        this.update();
+    }
+
+    private updatePick(): void {
+        if (this.pickUntil === undefined) return;
+        if (this.desk.now() > this.pickUntil) { this.endPick("Preset pick timed out"); return; }
+        const cmd = this.desk.lastCommand();
+        if (cmd === undefined || cmd === this.pickBaseline) return;
+        const preset = parsePresetCommand(cmd);
+        if (preset === undefined) return;                      // unrelated command: keep waiting
+        const undoName = this.desk.topUndoName();
+        this.desk.log(`Preset pick saw "${cmd}", undo entry "${undoName ?? ""}"`);
+        if (undoMatches(undoName, cmd)) this.desk.undoProgrammer();
+        this.config.offset = { ...this.config.offset, source: "preset", preset };
+        this.markDirty();
+        this.endPick(`Offset preset ${preset}`);
+    }
+
+    private endPick(message: string): void {
+        this.pickUntil = undefined;
+        this.pickBaseline = undefined;
+        this.say(message);
+    }
+
     protected beforeUpdate(): void {
+        this.updatePick();
         if (this.captureUntil === undefined) return;
         if (this.desk.now() > this.captureUntil) {
             this.endCapture("Capture timed out");
@@ -334,8 +371,9 @@ export class AutoZoom {
         let liveMarkers = 0;
         for (const m of this.scanned.markers) if (markers[fidKey(m.cid)] !== undefined) liveMarkers++;
         const left = this.captureUntil === undefined ? undefined : Math.max(0, Math.ceil(this.captureUntil - this.desk.now()));
+        const pickLeft = this.pickUntil === undefined ? undefined : Math.max(0, Math.ceil(this.pickUntil - this.desk.now()));
         this.desk.refreshLayout(buildViews(
-            { running: this.running, captureSecondsLeft: left, liveMarkers, globalSize, offsetLabel: offsetLabel(this.config), message: this.message },
+            { running: this.running, captureSecondsLeft: left, pickSecondsLeft: pickLeft, liveMarkers, globalSize, offsetLabel: offsetLabel(this.config), message: this.message },
             rows, this.scanned.markers, markers,
         ));
     }

@@ -37,11 +37,16 @@ function M.reset()
     return a
   end
   M.time = 0
+  M.cmdObj = { LastCommand = nil, Undos = { UndoIndex = 0 } }
+  M.profile = { OopsProgrammer = false }
+  M.oopsProgrammerDuringOops = nil
   M.handles, M.handleIds, M.selected, M.textAnswer, M.boxAnswer = {}, {}, nil, nil, nil
 end
 
 function Printf(s) M.printed[#M.printed + 1] = s end
-function Cmd(s) M.cmds[#M.cmds + 1] = s; if M.onCmd then M.onCmd(s) end; return "Ok" end
+function CmdObj() return M.cmdObj end
+function CurrentProfile() return M.profile end
+function Cmd(s) M.cmds[#M.cmds + 1] = s; if s == "Oops /nc" then M.oopsProgrammerDuringOops = M.profile and M.profile.OopsProgrammer end; if M.onCmd then M.onCmd(s) end; return "Ok" end
 CmdIndirect = Cmd
 CmdIndirectWait = Cmd
 function Patch() return { Stages = M.stages, FixtureTypes = M.fixtureTypes } end

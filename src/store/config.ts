@@ -103,6 +103,6 @@ export function applySetup(current: Config, a: SetupAnswers): { config: Config; 
 }
 
 export function offsetLabel(c: Config): string {
-    if (c.offset.source === "preset") return "preset " + c.offset.preset;
+    if (c.offset.source === "preset") return "Preset " + c.offset.preset;
     return c.offset.values.map(v => fmtNum(v)).join("/") + " m";
 }
