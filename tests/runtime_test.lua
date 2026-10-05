@@ -142,3 +142,18 @@ T.test("a replaced instance neither saves on Stop nor obeys commands", function(
   b:Arm("102")
   T.eq(az().config.parseConfig(d.saved["AutoZoom.config"]).config.armed, { 102 }, "current instance still works")
 end)
+
+T.test("stop releases every fixture even when the refresh throws", function()
+  local d, a = setup()
+  a:Install(); a:ArmAll(); a:Start()
+  d.cids[101] = 1; d.cids[102] = 1; d.markers["1"] = { pos = { x = 0, y = 0, z = 0 } }
+  d:tick()
+  d.readMarkers = function() error("psn gone") end
+  d.releases = {}; d.logs = {}
+  local ok, err = pcall(function() a:Stop() end)
+  T.truthy(ok, "Stop does not raise: " .. tostring(err))
+  local got = {}; for _, f in ipairs(d.releases) do got[f] = true end
+  T.truthy(got[101], "101 released"); T.truthy(got[102], "102 released")
+  local n = 0; for _, l in ipairs(d.logs) do if l:find("psn gone") then n = n + 1 end end
+  T.eq(n, 1, "refresh error logged once")
+end)

@@ -90,7 +90,7 @@ export class AutoZoom {
         this.loopGen++;
         this.desk.stopLoop();
         if (this.captureUntil !== undefined) this.endCapture("Capture cancelled");
-        this.update();
+        // Release first: a failing refresh below must never leave a fader driven.
         for (const f of this.scanned.fixtures) {
             const key = fidKey(f.fid);
             if (this.sent[key] === "release") continue;
@@ -100,6 +100,11 @@ export class AutoZoom {
                 this.warnOnce(`release:${key}:${tostring(e)}`, `Fixture ${fmtInt(f.fid)}: release failed: ${tostring(e)}`);
             }
             this.sent[key] = "release";
+        }
+        try {
+            this.update();
+        } catch (e) {
+            this.warnOnce(`stop:${tostring(e)}`, `Refresh after stop failed: ${tostring(e)}`);
         }
         this.say("AutoZoom stopped");
     }
