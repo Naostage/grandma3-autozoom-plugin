@@ -28,6 +28,7 @@ function M.reset()
   M.psn = handle({}, {})
   M.dataPools = handle({}, {})
   M.time = 0
+  M.handles, M.handleIds, M.selected, M.textAnswer, M.boxAnswer = {}, {}, nil, nil, nil
 end
 
 function Printf(s) M.printed[#M.printed + 1] = s end
@@ -105,6 +106,64 @@ function M.tracker(cid, x, y, z, rot)
 end
 function M.psnSystem(trackers) M.psn._kids[#M.psn._kids + 1] = handle({}, trackers) end
 function M.setRt(fid, attr, value, source) M.rt[M.subIndexOf[fid] * 1000 + M.attrs[attr]] = { value = value, source = source } end
+
+local function find(coll, name) for _, c in ipairs(coll._kids) do if c.name == name then return c end end end
+local function remove(coll, name)
+  for i, c in ipairs(coll._kids) do if c.name == name then c._deleted = true; table.remove(coll._kids, i); return end end
+end
+
+function M.pool(name)
+  local p = handle({ name = name }, {})
+  p.Sequences = handle({}, {}); p.Macros = handle({}, {}); p.Layouts = handle({}, {})
+  M.dataPools._kids[#M.dataPools._kids + 1] = p
+  return p
+end
+
+-- Probe P6/P7: children are OffCue (no nil), CueZero (no 0), then user cues stored as cue number x 1000; command on the first part.
+function M.sequence(pool, name, cues)
+  local s = handle({ name = name, no = #pool.Sequences._kids + 1, faders = {}, master = nil, current = nil }, {})
+  function s:SetFader(o) self.faders[o.token] = o.value end
+  function s:GetFader(o) return self.master end
+  function s:CurrentChild() return self.current end
+  s._kids[1] = handle({ name = "OffCue" }, { handle({ Command = "" }, {}) })
+  s._kids[2] = handle({ no = 0, name = "CueZero" }, { handle({ Command = "" }, {}) })
+  for _, c in ipairs(cues or {}) do
+    s._kids[#s._kids + 1] = handle({ no = c.no * 1000, name = c.name or ("Cue " .. c.no) }, { handle({ Command = c.cmd or "" }, {}) })
+  end
+  pool.Sequences._kids[#pool.Sequences._kids + 1] = s
+  return s
+end
+
+function M.layoutObj(pool, name)
+  local l = handle({ name = name }, {})
+  function l:Append() local e = handle({}, {}); self._kids[#self._kids + 1] = e; return e end
+  pool.Layouts._kids[#pool.Layouts._kids + 1] = l
+  return l
+end
+
+M.onCmd = function(s)
+  local created = s:match("^Store DataPool '([^']+)' /nc$")
+  if created then if not find(M.dataPools, created) then M.pool(created) end return end
+  local p, kind, name = s:match("^Store DataPool '([^']+)' (%a+) '([^']+)' /o /nc$")
+  if p then
+    local dp = find(M.dataPools, p); if not dp then return end
+    if kind == "Sequence" and not find(dp.Sequences, name) then M.sequence(dp, name) end
+    if kind == "Macro" and not find(dp.Macros, name) then dp.Macros._kids[#dp.Macros._kids + 1] = handle({ name = name }, {}) end
+    if kind == "Layout" and not find(dp.Layouts, name) then M.layoutObj(dp, name) end
+    return
+  end
+  local dp2, lname = s:match("^Delete DataPool '([^']+)' Layout '([^']+)' /nc$")
+  if dp2 then local dp = find(M.dataPools, dp2); if dp then remove(dp.Layouts, lname) end end
+end
+
+function HandleToStr(h)
+  if not M.handleIds[h] then M.handles[#M.handles + 1] = h; M.handleIds[h] = "H" .. #M.handles end
+  return M.handleIds[h]
+end
+function StrToHandle(s) return M.handles[tonumber(s:sub(2))] end
+function SelectedSequence() return M.selected end
+function TextInput(title, value) M.lastPrompt = { title = title, value = value }; return M.textAnswer end
+function MessageBox(o) M.lastBox = o; return M.boxAnswer end
 
 M.reset()
 return M
