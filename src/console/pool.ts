@@ -1,6 +1,6 @@
 /** @noSelfInFile */
 import { fmtInt, fmtNum } from "../format";
-import { children, findChild } from "./handles";
+import { children, findChild, num } from "./handles";
 import { warnOnce } from "./log";
 
 export const POOL = "AutoZoom";
@@ -62,8 +62,10 @@ function writeMacroLine(name: string, command: string): void {
     Cmd(`Set ${POOL_ADDR} Macro '${name}'.1 Property 'Command' '${command}'`);
 }
 
+export const CELL_PREFIX = "AZ ";
+
 export function cellSequenceName(key: string): string {
-    return "AZ " + key;
+    return CELL_PREFIX + key;
 }
 
 // Layout cell = sequence (BeatGrid ensureSeq): cue 1 part 0 runs AZ:<luaCall> only while an AutoZoom instance
@@ -81,11 +83,36 @@ export function ensureCellSequence(name: string, luaCall: string): any {
         part.Command = command;
         return seq;
     }
-    const cues = children(seq);
-    const cue = cues[cues.length - 1];
-    const part = cue === undefined ? undefined : children(cue)[0];
+    let cue = findCueOne(seq);
+    if (cue === undefined) {
+        cue = seq.Append();
+        cue.No = 1;
+        cue.Create(1);
+    }
+    const part = children(cue)[0];
     if (part !== undefined && tostring(part.Command ?? "") !== command) part.Command = command;
     return seq;
+}
+
+// Cue 1 by name (BeatGrid), else by number (read back x1000); never OffCue/CueZero.
+function findCueOne(seq: any): any {
+    const named = seq["Cue 1"];
+    if (named !== undefined) return named;
+    for (const c of children(seq)) {
+        const n = num(c.no);
+        if (n === 1 || n === 1000) return c;
+    }
+    return undefined;
+}
+
+// 2.0.0.1 bound layout cells to `AZ <key>` macros; cells are sequences now. AZ Start is kept.
+export function removeCellMacros(): void {
+    const names: string[] = [];
+    for (const m of poolChildren("Macros")) {
+        const name = tostring(m.name ?? "");
+        if (name.startsWith(CELL_PREFIX) && name !== START_MACRO) names.push(name);
+    }
+    for (const name of names) Cmd(`Delete ${POOL_ADDR} Macro '${name}' /nc`);
 }
 
 // Macro with a raw command line, created once: an existing macro is left as the operator has it.

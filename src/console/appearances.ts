@@ -2,6 +2,7 @@
 import { APPEARANCES } from "../ui/view-model";
 import { fmtInt } from "../format";
 import { children, num } from "./handles";
+import { warnOnce } from "./log";
 
 // false = looked up and missing: no pool scan per changed cell until the next ensureAppearances().
 const cache: { [kind: string]: any } = {};
@@ -58,11 +59,17 @@ export function ensureAppearances(): void {
     const kinds: string[] = [];
     for (const kind in APPEARANCES) kinds.push(kind);
     kinds.sort();
-    // AZ appearances created below the far block (2.0.0.1 build) are removed and recreated far up.
+    // AZ appearances created below the far block (2.0.0.1 build) are deleted by number and recreated far up.
+    // One that survives the delete is kept where it is (found by name below, never duplicated).
     for (const kind of kinds) {
         const app = findByName(APPEARANCES[kind].name);
         const n = app === undefined ? undefined : num(app.No);
-        if (app !== undefined && n !== undefined && n < APPEARANCE_BASE) pool().Delete(n);
+        if (n === undefined || n >= APPEARANCE_BASE) continue;
+        try {
+            Cmd(`Delete Appearance ${fmtInt(n)} /nc`);
+        } catch (e) {
+            warnOnce("appearance-delete", `Could not move appearance ${fmtInt(n)} to ${fmtInt(APPEARANCE_BASE)}+: ${tostring(e)}`);
+        }
     }
     const missing = kinds.filter(k => findByName(APPEARANCES[k].name) === undefined);
     let next = missing.length > 0 ? farBase(missing.length) : 0;

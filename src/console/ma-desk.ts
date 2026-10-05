@@ -34,6 +34,11 @@ export class MaDesk implements Desk {
         }
         pool.ensureSizeSequence();
         pool.ensureRawMacro(pool.START_MACRO, `Call Plugin "${pool.PLUGIN_NAME}"`);
+        try {
+            pool.removeCellMacros();
+        } catch (e) {
+            warnOnce("cell-macros", "Could not remove the old layout macros: " + tostring(e));
+        }
         for (const f of scan.fixtures) {
             pool.ensureFaderSequence(pool.zoomSeqName(f.fid), f.fid, "Zoom", f.optics.zoomMax);
             if (f.optics.irisMax > f.optics.irisMin) pool.ensureFaderSequence(pool.irisSeqName(f.fid), f.fid, "Iris", f.optics.irisMax);

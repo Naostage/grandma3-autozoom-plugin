@@ -3,7 +3,7 @@ import { appearanceHandle } from "./appearances";
 import { CellSpec, Views } from "../model";
 import { children, findChild } from "./handles";
 import { warnOnce } from "./log";
-import { cellSequenceName, ensureCellSequence, ensurePool, findPool, POOL_ADDR } from "./pool";
+import { CELL_PREFIX, cellSequenceName, ensureCellSequence, ensurePool, findPool, POOL_ADDR } from "./pool";
 
 export const LAYOUT = "AutoZoom";
 const TAG = "AZ:";
@@ -16,7 +16,7 @@ let written: { [key: string]: string } = {};
 let sentinel: any = undefined;
 
 const HIDDEN: [string, boolean | number][] = [
-    ["VisibilityObjectName", false], ["VisibilityIcon", false], ["VisibilityID", false], ["VisibilityCID", false],
+    ["VisibilityElement", true], ["VisibilityObjectName", false], ["VisibilityIcon", false], ["VisibilityID", false], ["VisibilityCID", false],
     ["VisibilityValue", false], ["VisibilityBar", false], ["VisibilityBorder", false], ["BorderSize", 0],
 ];
 
@@ -31,8 +31,35 @@ function hideDetails(el: any): void {
     }
 }
 
+// Elements that reject Pause (unknown action on this version) fall back to Go+ on the command-less sequence.
+function setAction(el: any, clickable: boolean): void {
+    if (clickable) {
+        el.Action = "Go+";
+        return;
+    }
+    try {
+        el.Action = "Pause";       // BeatGrid: Pause for non-clickable cells
+    } catch (e) {
+        warnOnce("action", `Could not set layout element Action Pause: ${tostring(e)}`);
+        el.Action = "Go+";
+    }
+}
+
+// Cell sequences of cells that no longer exist (fixture removed). Fader sequences are AZ_…, never matched.
+function removeStaleSequences(pool: any, cells: CellSpec[]): void {
+    const wanted: { [name: string]: boolean } = {};
+    for (const cell of cells) wanted[cellSequenceName(cell.key)] = true;
+    const stale: string[] = [];
+    for (const s of children(pool.Sequences)) {
+        const name = tostring(s.name ?? "");
+        if (name.startsWith(CELL_PREFIX) && !wanted[name]) stale.push(name);
+    }
+    for (const name of stale) Cmd(`Delete ${POOL_ADDR} Sequence '${name}' /nc`);
+}
+
 export function buildLayout(cells: CellSpec[]): void {
     const pool = ensurePool();
+    removeStaleSequences(pool, cells);
     if (findChild(pool.Layouts, LAYOUT) !== undefined) Cmd(`Delete ${POOL_ADDR} Layout '${LAYOUT}' /nc`);
     Cmd(`Store ${POOL_ADDR} Layout '${LAYOUT}' /o /nc`);
     const layout = findChild(pool.Layouts, LAYOUT);
@@ -45,7 +72,7 @@ export function buildLayout(cells: CellSpec[]): void {
         const seq = ensureCellSequence(cellSequenceName(cell.key), cell.command);
         const el = layout.Append();
         el.Object = seq;
-        el.Action = cell.command === "" ? "Pause" : "Go+";     // BeatGrid: Pause for non-clickable cells
+        setAction(el, cell.command !== "");
         el.Note = TAG + cell.key;
         el.PosX = cell.x;
         el.PosY = cell.y;
@@ -102,7 +129,7 @@ export function refreshLayout(views: Views): void {
         el.BorderColor = view.border;
         const seq = sequences[key];
         const app = appearanceHandle(view.appearance);
-        if (seq !== undefined && IsObjectValid(seq) && app !== undefined) seq.Appearance = app;
+        if (seq !== undefined && IsObjectValid(seq) && app !== undefined && seq.Appearance !== app) seq.Appearance = app;
         written[key] = signature;
     }
 }

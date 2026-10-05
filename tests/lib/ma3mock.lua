@@ -50,8 +50,9 @@ function M.reset()
   function M.appearances:Resize(n) self.size = n end
   function M.appearances:Create(no, class) self.createdClass = class; return newAppearance(self, no) end
   function M.appearances:GetChildClass() return "Appearance" end
-  function M.appearances:Delete(no)
-    for i, a in ipairs(self._kids) do if a.No == no then a._deleted = true; table.remove(self._kids, i); return end end
+  -- Only reachable through the command line (`Delete Appearance <n> /nc`); the pool has no Delete(no) here.
+  function M.deleteAppearance(no)
+    for i, a in ipairs(M.appearances._kids) do if a.No == no then a._deleted = true; table.remove(M.appearances._kids, i); return end end
   end
   M.time = 0
   M.cmdObj = { LastCommand = nil, Undos = { UndoIndex = 0 } }
@@ -166,6 +167,8 @@ function M.sequence(pool, name, cues)
   -- New cue appended after the existing ones; Create(i) adds part i (Command empty).
   function s:Append()
     local cue = handle({ name = "" }, {})
+    -- Cues read back their number x1000 (probe P6/P7): .No = 1 is stored as no = 1000.
+    setmetatable(cue, { __newindex = function(t, k, v) if k == "No" then k, v = "no", v * 1000 end rawset(t, k, v) end })
     function cue:Create(i) local part = handle({ Command = "" }, {}); self._kids[#self._kids + 1] = part; return part end
     self._kids[#self._kids + 1] = cue
     return cue
@@ -197,8 +200,10 @@ M.onCmd = function(s)
     if kind == "Layout" and not find(dp.Layouts, name) then M.layoutObj(dp, name) end
     return
   end
-  local dp2, lname = s:match("^Delete DataPool '([^']+)' Layout '([^']+)' /nc$")
-  if dp2 then local dp = find(M.dataPools, dp2); if dp then remove(dp.Layouts, lname) end end
+  local dp2, dkind, dname = s:match("^Delete DataPool '([^']+)' (%a+) '([^']+)' /nc$")
+  if dp2 then local dp = find(M.dataPools, dp2); if dp and dp[dkind .. "s"] then remove(dp[dkind .. "s"], dname) end return end
+  local appNo = s:match("^Delete Appearance (%d+) /nc$")
+  if appNo then M.deleteAppearance(tonumber(appNo)) end
 end
 
 function HandleToStr(h)

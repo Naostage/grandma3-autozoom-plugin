@@ -317,6 +317,8 @@ T.test("far block holds the nine AZ appearances", function()
   for _, a in ipairs(M.appearances._kids) do if a.name:sub(1, 3) == "AZ " then nos[#nos + 1] = a.No end end
   table.sort(nos)
   T.eq(#nos, 9, "nine"); T.eq(nos[1], 9001, "first"); T.eq(nos[9], 9009, "contiguous")
+  T.eq(M.appearances.createdClass, "Appearance", "created with the pool's child class")
+  T.truthy(M.appearances.size >= 9009, "pool resized up to the block")
 end)
 
 T.test("far block skips occupied numbers", function()
@@ -342,6 +344,22 @@ T.test("low AZ appearance is moved to the far block", function()
     if a.name == "Other" then other = true end
   end
   T.eq(low, false, "moved"); T.eq(other, true, "others kept")
+  local issued = false
+  for _, c in ipairs(M.cmds) do if c == "Delete Appearance 7 /nc" then issued = true end end
+  T.truthy(issued, "deleted by number through the command line")
+end)
+
+T.test("a low AZ appearance that survives the delete is kept, not duplicated", function()
+  M.reset()
+  M.appearances._kids[#M.appearances._kids + 1] = M.handle({ name = "AZ Tracking", No = 7 }, {})
+  local orig = M.onCmd
+  M.onCmd = function(s) if not s:match("^Delete Appearance") then orig(s) end end
+  local desk = az().madesk.createMaDesk()
+  desk:install({ fixtures = {}, markers = {}, problems = {} })
+  M.onCmd = orig
+  local count, no = 0, nil
+  for _, a in ipairs(M.appearances._kids) do if a.name == "AZ Tracking" then count = count + 1; no = a.No end end
+  T.eq(count, 1, "one"); T.eq(no, 7, "kept where it is")
 end)
 
 T.test("cells are sequences coloured through the sequence appearance", function()
@@ -372,4 +390,67 @@ T.test("deleted cell sequence is skipped", function()
   local pool = M.dataPools._kids[1]
   for i, s in ipairs(pool.Sequences._kids) do if s.name == "AZ toggle" then s._deleted = true; table.remove(pool.Sequences._kids, i) break end end
   desk:refreshLayout({ toggle = { text = "Stop", border = "3ECF6EFF", textColor = "E6E8EBFF", appearance = "button" } })
+  T.eq(pool.Layouts._kids[1]._kids[1].CustomTextText, "Stop", "text still written")
+end)
+
+T.test("install removes the 2.0.0.1 cell macros and keeps AZ Start", function()
+  M.reset()
+  local pool = M.pool("AutoZoom")
+  for _, n in ipairs({ "AZ toggle", "AZ arm 101", "AZ Start" }) do pool.Macros._kids[#pool.Macros._kids + 1] = M.handle({ name = n }, {}) end
+  local desk = az().madesk.createMaDesk()
+  desk:install({ fixtures = {}, markers = {}, problems = {} })
+  T.eq(#pool.Macros._kids, 1, "one macro left"); T.eq(pool.Macros._kids[1].name, "AZ Start", "AZ Start kept")
+end)
+
+T.test("a cell sequence whose cue 1 was deleted gets a new cue 1 with the command", function()
+  M.reset()
+  local desk = az().madesk.createMaDesk()
+  desk:install({ fixtures = {}, markers = {}, problems = {} })
+  local cells = { { key = "toggle", x = 0, y = 0, w = 100, h = 60, command = "Toggle()" } }
+  desk:buildLayout(cells)
+  local seq = M.dataPools._kids[1].Layouts._kids[1]._kids[1].Object
+  T.eq(seq._kids[3].no, 1000, "cue 1 reads back x1000")
+  table.remove(seq._kids, 3)
+  desk:buildLayout(cells)
+  T.eq(#seq._kids, 3, "one new cue"); T.eq(seq._kids[3].no, 1000, "numbered 1")
+  T.eq(seq._kids[3]._kids[1].Command, [[Lua "if AZ then AZ:Toggle() end"]], "command written")
+  T.eq(seq._kids[1]._kids[1].Command, "", "OffCue untouched"); T.eq(seq._kids[2]._kids[1].Command, "", "CueZero untouched")
+end)
+
+T.test("layout build deletes stale cell sequences and keeps fader sequences", function()
+  M.reset()
+  local desk = az().madesk.createMaDesk()
+  desk:install({ fixtures = { fixture101() }, markers = {}, problems = {} })
+  local pool = M.dataPools._kids[1]
+  M.sequence(pool, "AZ arm 999")
+  desk:buildLayout({ { key = "toggle", x = 0, y = 0, w = 100, h = 60, command = "Toggle()" } })
+  local names = {}
+  for _, sq in ipairs(pool.Sequences._kids) do names[sq.name] = true end
+  T.eq(names["AZ arm 999"], nil, "stale deleted"); T.truthy(names["AZ_ZOOM_101"], "fader kept")
+  T.truthy(names["AZ_SIZE"], "size kept"); T.truthy(names["AZ toggle"], "current cell kept")
+end)
+
+T.test("an element that rejects Pause falls back to Go+", function()
+  M.reset()
+  local desk = az().madesk.createMaDesk()
+  desk:install({ fixtures = {}, markers = {}, problems = {} })
+  local orig = M.onCmd
+  M.onCmd = function(s)
+    orig(s)
+    local l = M.dataPools._kids[1].Layouts._kids[1]
+    if l and not l._patched then
+      l._patched = true
+      function l:Append()
+        local e = M.handle({}, {})
+        setmetatable(e, { __newindex = function(t, k, v) if k == "Action" and v == "Pause" then error("unknown action") end rawset(t, k, v) end })
+        self._kids[#self._kids + 1] = e
+        return e
+      end
+    end
+  end
+  local ok, err = pcall(desk.buildLayout, desk, { { key = "a", x = 0, y = 0, w = 1, h = 1, command = "" } })
+  M.onCmd = orig
+  T.truthy(ok, "build did not throw: " .. tostring(err))
+  local el = M.dataPools._kids[1].Layouts._kids[1]._kids[1]
+  T.eq(el.Action, "Go+", "fallback"); T.eq(el.VisibilityElement, true, "element visible")
 end)
