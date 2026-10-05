@@ -203,3 +203,16 @@ T.test("desk reads last command and undo name, oops restores OopsProgrammer", fu
   T.eq(M.cmds[#M.cmds], "Oops /nc", "oops"); T.eq(M.profile.OopsProgrammer, false, "restored")
   T.eq(M.oopsProgrammerDuringOops, true, "was true during Oops")
 end)
+
+T.test("a failing Oops is logged and OopsProgrammer is still restored", function()
+  M.reset()
+  M.profile = { OopsProgrammer = false }
+  local orig = M.onCmd
+  M.onCmd = function(s) if s == "Oops /nc" then error("denied") end end
+  local desk = az().madesk.createMaDesk()
+  desk:undoProgrammer()
+  M.onCmd = orig
+  T.eq(M.profile.OopsProgrammer, false, "restored")
+  local found = false; for _, p in ipairs(M.printed) do if p:find("[AZ] Oops failed", 1, true) then found = true end end
+  T.truthy(found, "failure printed")
+end)

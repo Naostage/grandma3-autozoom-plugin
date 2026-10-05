@@ -62,9 +62,11 @@ T.test("pick times out, cancels and is refused when stopped or not current", fun
   T.eq(d.logs[#d.logs], "Preset pick timed out", "timeout")
   a:PickOffset(); a:PickOffset()
   T.eq(d.logs[#d.logs], "Preset pick cancelled", "cancel")
+  d.logs = {}
   a:PickOffset(); a:Stop()
   local cancelled = false; for _, l in ipairs(d.logs) do if l == "Preset pick cancelled" then cancelled = true end end
   T.truthy(cancelled, "stop cancels")
+  T.truthy(d.views["offset"].text:sub(1, 7) == "Offset\n", "offset cell idle after stop")
   a:PickOffset()
   T.eq(d.logs[#d.logs], "Start AutoZoom to pick a preset", "refused when stopped")
   d.saved["AutoZoom.instance"] = "other"
@@ -76,4 +78,18 @@ T.test("program commands accept a data pool preset address", function()
   local optics = { zoomMin = 10, zoomMax = 40, irisMin = 0, irisMax = 0 }
   local cmds = az().program.programCommands(102, 4, optics, { source = "preset", preset = "DataPool 4 Preset 2.30", values = { 0, 0, 0 } })
   T.eq(cmds[3], 'Attribute "XYZ_X" Thru "XYZ_Z" At DataPool 4 Preset 2.30', "data pool address")
+end)
+
+T.test("a failing pick poll ends the pick and does not stop the fixtures being driven", function()
+  local d = F.new({ fixtures = { F.fixture(101) }, markers = { F.marker(1) }, problems = {} })
+  local a = az().runtime.createAutoZoom(d, "id")
+  a:Install(); a:Arm("101"); a:Start()
+  d.cids[101] = 1; d.markers["1"] = { pos = { x = 0, y = 0, z = 0 } }; d.size = 0
+  a:PickOffset()
+  d.lastCommand = function() error("boom") end
+  d:tick()
+  local failed = false; for _, l in ipairs(d.logs) do if l:find("Preset pick failed", 1, true) then failed = true end end
+  T.truthy(failed, "failure logged")
+  T.truthy(#d.faders >= 1, "fixture still driven")
+  T.truthy(d.views["offset"].text:sub(1, 7) == "Offset\n", "pick ended")
 end)

@@ -294,7 +294,11 @@ export class AutoZoom {
     }
 
     protected beforeUpdate(): void {
-        this.updatePick();
+        try {
+            this.updatePick();
+        } catch (e) {
+            this.endPick("Preset pick failed: " + tostring(e));
+        }
         if (this.captureUntil === undefined) return;
         if (this.desk.now() > this.captureUntil) {
             this.endCapture("Capture timed out");

@@ -1,4 +1,6 @@
 /** @noSelfInFile */
+import { info } from "./log";
+
 export function lastCommand(): string | undefined {
     const o: any = CmdObj();
     const v = o.LastCommand;
@@ -19,6 +21,8 @@ export function undoProgrammer(): void {
     profile.OopsProgrammer = true;
     try {
         Cmd("Oops /nc");
+    } catch (e) {
+        info("Oops failed: " + tostring(e));
     } finally {
         profile.OopsProgrammer = saved;
     }
