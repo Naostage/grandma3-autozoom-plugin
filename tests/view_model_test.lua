@@ -35,3 +35,25 @@ T.test("capture header shows countdown and instructions", function()
   T.eq(views["capture"].text, "Select a sequence…\n12 s · tap to cancel", "capture")
   T.eq(views["message"].text, "Select a sequence", "message")
 end)
+
+T.test("cells carry appearance kinds", function()
+  local v = az().view
+  local header = { running = true, liveMarkers = 1, globalSize = 2, offsetLabel = "0/0/0 m", message = "hi" }
+  local row = { fixture = fx(101), armed = true, markerCid = 1, programmerCid = 2, offset = { x = 0, y = 0, z = 0 },
+    result = { state = "too-wide", output = { kind = "set", zoom = 100, iris = 100 }, distance = 5, achieved = 4, zoom = 100, iris = 100 },
+    size = 2, sizeFixed = false }
+  local views = v.buildViews(header, { row }, MARKERS, { ["1"] = { pos = { x = 0, y = 0, z = 0 } } })
+  T.eq(views["status"].appearance, "tracking", "status running")
+  T.eq(views["toggle"].appearance, "button", "button")
+  T.eq(views["size"].appearance, "header", "size value")
+  T.eq(views["message"].appearance, "header", "message")
+  T.eq(views["mh 1"].appearance, "tracking", "live marker head")
+  T.eq(views["mh 2"].appearance, "nopsn", "marker head without PSN")
+  T.eq(views["arm 101"].appearance, "tracking", "armed")
+  T.eq(views["mx 101 1"].appearance, "tracking", "followed (too-wide counts as driven)")
+  T.eq(views["mx 101 2"].appearance, "programmer", "programmer cell")
+  T.eq(views["st 101"].appearance, "warn", "too wide")
+  T.eq(views["zo 101"].appearance, "idle", "value cell")
+  T.eq(views["sz 101"].appearance, "button", "size cell is tappable")
+  T.eq(v.APPEARANCES.tracking, { name = "AZ Tracking", rgba = "137A38E0" }, "palette")
+end)

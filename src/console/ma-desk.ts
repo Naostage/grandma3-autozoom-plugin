@@ -3,6 +3,7 @@ import { Desk } from "../desk";
 import { Vec3 } from "../engine/vec";
 import { CellSpec, MarkerReadings, PatchFixture, PatchScan, SeqRef, Views } from "../model";
 import { Config, SetupAnswers } from "../store/config";
+import { ensureAppearances } from "./appearances";
 import * as cues from "./cues";
 import * as layout from "./layout";
 import * as live from "./live";
@@ -25,6 +26,7 @@ export class MaDesk implements Desk {
     }
     install(scan: PatchScan): void {
         pool.ensurePool();
+        ensureAppearances();
         pool.ensureSizeSequence();
         pool.ensureRawMacro(pool.START_MACRO, `Call Plugin "${pool.PLUGIN_NAME}"`);
         for (const f of scan.fixtures) {

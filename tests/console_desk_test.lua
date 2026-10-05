@@ -44,10 +44,10 @@ T.test("layout build tags elements and refresh writes only changes", function()
   local layout = M.dataPools._kids[1].Layouts._kids[1]
   T.eq(#layout._kids, 2, "elements"); T.eq(layout._kids[1].Note, "AZ:toggle", "tag"); T.eq(layout._kids[1].PosX, 0, "x")
   T.truthy(table.concat(M.cmds, "\n"):find([[Property 'Command' 'Lua "if AZ then AZ:Toggle() end"']], 1, true), "macro command")
-  desk:refreshLayout({ toggle = { text = "Stop", border = "3ECF6EFF", textColor = "E6E8EBFF" } })
+  desk:refreshLayout({ toggle = { text = "Stop", border = "3ECF6EFF", textColor = "E6E8EBFF", appearance = "button" } })
   T.eq(layout._kids[1].CustomTextText, "Stop", "text"); T.eq(layout._kids[1].BorderColor, "3ECF6EFF", "border")
   layout._kids[1].CustomTextText = "tampered"
-  desk:refreshLayout({ toggle = { text = "Stop", border = "3ECF6EFF", textColor = "E6E8EBFF" } })
+  desk:refreshLayout({ toggle = { text = "Stop", border = "3ECF6EFF", textColor = "E6E8EBFF", appearance = "button" } })
   T.eq(layout._kids[1].CustomTextText, "tampered", "unchanged view not rewritten")
 end)
 
@@ -112,7 +112,7 @@ local function builtLayout()
   desk:buildLayout({ { key = "a", x = 0, y = 0, w = 1, h = 1, command = "" }, { key = "b", x = 1, y = 0, w = 1, h = 1, command = "" } })
   return desk
 end
-local VIEWS = { a = { text = "A", border = "1", textColor = "2" }, b = { text = "B", border = "1", textColor = "2" } }
+local VIEWS = { a = { text = "A", border = "1", textColor = "2", appearance = "button" }, b = { text = "B", border = "1", textColor = "2", appearance = "button" } }
 
 T.test("refresh with the layout deleted creates nothing", function()
   local desk = builtLayout()
@@ -146,4 +146,49 @@ T.test("a reloaded layout gets its texts rewritten although the views did not ch
   fresh[1].CustomTextText = "tampered"
   desk:refreshLayout(VIEWS)
   T.eq(fresh[1].CustomTextText, "tampered", "then unchanged views are skipped again")
+end)
+
+T.test("install creates the AutoZoom appearances once with their colours", function()
+  M.reset()
+  local desk = az().madesk.createMaDesk()
+  desk:install({ fixtures = {}, markers = {}, problems = {} })
+  local byName = {}
+  for _, a in ipairs(M.appearances._kids) do byName[a.name] = a end
+  T.eq(byName["AZ Tracking"].IMAGERGBA, "137A38E0", "tracking colour")
+  T.eq(byName["AZ Idle"].IMAGERGBA, "10121CD9", "idle colour")
+  local n = #M.appearances._kids
+  T.eq(n, 9, "nine appearances")
+  byName["AZ Tracking"].IMAGERGBA = "FFFFFFFF"
+  desk:install({ fixtures = {}, markers = {}, problems = {} })
+  T.eq(#M.appearances._kids, n, "no duplicates"); T.eq(byName["AZ Tracking"].IMAGERGBA, "137A38E0", "colour reapplied")
+end)
+
+T.test("layout elements hide object details and get the cell appearance", function()
+  M.reset()
+  local desk = az().madesk.createMaDesk()
+  desk:install({ fixtures = {}, markers = {}, problems = {} })
+  desk:buildLayout({ { key = "toggle", x = 0, y = 0, w = 100, h = 60, command = "Toggle()" } })
+  local el = M.dataPools._kids[1].Layouts._kids[1]._kids[1]
+  T.eq(el.VisibilityIcon, false, "icon hidden"); T.eq(el.VisibilityObjectName, false, "name hidden")
+  T.eq(el.VisibilityBorder, false, "no border"); T.eq(el.VisibilityValue, false, "no value")
+  desk:refreshLayout({ toggle = { text = "Stop", border = "3ECF6EFF", textColor = "E6E8EBFF", appearance = "button" } })
+  T.eq(el.Appearance.name, "AZ Button", "button appearance")
+  el.Appearance = "tampered"
+  desk:refreshLayout({ toggle = { text = "Stop", border = "3ECF6EFF", textColor = "E6E8EBFF", appearance = "button" } })
+  T.eq(el.Appearance, "tampered", "unchanged view not rewritten")
+  desk:refreshLayout({ toggle = { text = "Stop", border = "3ECF6EFF", textColor = "E6E8EBFF", appearance = "error" } })
+  T.eq(el.Appearance.name, "AZ Error", "appearance switched")
+end)
+
+T.test("deleted appearance is skipped and recreated on install", function()
+  M.reset()
+  local desk = az().madesk.createMaDesk()
+  desk:install({ fixtures = {}, markers = {}, problems = {} })
+  desk:buildLayout({ { key = "toggle", x = 0, y = 0, w = 100, h = 60, command = "Toggle()" } })
+  for i, a in ipairs(M.appearances._kids) do if a.name == "AZ Button" then a._deleted = true; table.remove(M.appearances._kids, i) break end end
+  desk:refreshLayout({ toggle = { text = "Stop", border = "3ECF6EFF", textColor = "E6E8EBFF", appearance = "button" } })
+  desk:install({ fixtures = {}, markers = {}, problems = {} })
+  local found = false
+  for _, a in ipairs(M.appearances._kids) do if a.name == "AZ Button" then found = true end end
+  T.truthy(found, "recreated")
 end)

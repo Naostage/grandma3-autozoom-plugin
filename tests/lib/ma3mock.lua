@@ -20,6 +20,7 @@ function M.reset()
       end
     end
   end
+  if M.appearances then for _, a in ipairs(M.appearances._kids) do a._deleted = true end end
   M.printed, M.cmds, M.vars, M.rt, M.timers = {}, {}, {}, {}, {}
   M.subfixtures, M.subIndexOf, M.nextSub = {}, {}, 0
   M.attrs = { XYZ_MArker = 13, XYZ_X = 9, XYZ_Y = 10, XYZ_Z = 11 }
@@ -27,6 +28,14 @@ function M.reset()
   M.fixtureTypes = handle({}, {})
   M.psn = handle({}, {})
   M.dataPools = handle({}, {})
+  M.appearances = handle({}, {})
+  function M.appearances:Find(name) for _, a in ipairs(self._kids) do if a.name == name then return a end end end
+  function M.appearances:Acquire()
+    local a = handle({ name = "" }, {})
+    setmetatable(a, { __newindex = function(t, k, v) if k == "Name" then k = "name" end rawset(t, k, v) end })
+    self._kids[#self._kids + 1] = a
+    return a
+  end
   M.time = 0
   M.handles, M.handleIds, M.selected, M.textAnswer, M.boxAnswer = {}, {}, nil, nil, nil
 end
@@ -36,7 +45,7 @@ function Cmd(s) M.cmds[#M.cmds + 1] = s; if M.onCmd then M.onCmd(s) end; return 
 CmdIndirect = Cmd
 CmdIndirectWait = Cmd
 function Patch() return { Stages = M.stages, FixtureTypes = M.fixtureTypes } end
-function ShowData() return { DataPools = M.dataPools, PSNProtocol = M.psn } end
+function ShowData() return { DataPools = M.dataPools, PSNProtocol = M.psn, Appearances = M.appearances } end
 function GlobalVars() return "GlobalVars" end
 function GetVar(_, k) return M.vars[k] end
 function SetVar(_, k, v) M.vars[k] = v end

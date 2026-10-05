@@ -1,4 +1,5 @@
 /** @noSelfInFile */
+import { appearanceHandle } from "./appearances";
 import { CellSpec, Views } from "../model";
 import { children, findChild } from "./handles";
 import { ensureMacro, ensurePool, findPool, POOL_ADDR } from "./pool";
@@ -34,9 +35,14 @@ export function buildLayout(cells: CellSpec[]): void {
         el.PosY = cell.y;
         el.Width = cell.w;
         el.Height = cell.h;
-        el.VisibilityObjectName = "Hidden";
-        el.VisibilityIcon = "Hidden";
-        el.VisibilityBorder = "Visible";
+        el.VisibilityObjectName = false;
+        el.VisibilityIcon = false;
+        el.VisibilityID = false;
+        el.VisibilityCID = false;
+        el.VisibilityValue = false;
+        el.VisibilityBar = false;
+        el.VisibilityBorder = false;
+        el.BorderSize = 0;
         elements[cell.key] = el;
         if (sentinel === undefined) sentinel = el;
     }
@@ -68,7 +74,7 @@ export function refreshLayout(views: Views): void {
     }
     for (const key in views) {
         const view = views[key];
-        const signature = `${view.text}|${view.border}|${view.textColor}`;
+        const signature = `${view.text}|${view.border}|${view.textColor}|${view.appearance}`;
         if (written[key] === signature) continue;
         let el = elements[key];
         if (el === undefined || !IsObjectValid(el)) {
@@ -81,6 +87,8 @@ export function refreshLayout(views: Views): void {
         el.CustomTextText = view.text;
         el.CustomTextColor = view.textColor;
         el.BorderColor = view.border;
+        const app = appearanceHandle(view.appearance);
+        if (app !== undefined) el.Appearance = app;
         written[key] = signature;
     }
 }

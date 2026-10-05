@@ -15,6 +15,7 @@ export interface PatchScan { fixtures: PatchFixture[]; markers: PatchMarker[]; p
 export interface MarkerReading { pos: Vec3; rot?: Vec3 }
 export type MarkerReadings = { [cid: string]: MarkerReading };
 export interface CellSpec { key: string; x: number; y: number; w: number; h: number; command: string }
-export interface CellView { text: string; border: string; textColor: string }
+export type AppearanceKind = "tracking" | "warn" | "nopsn" | "error" | "programmer" | "capture" | "button" | "header" | "idle";
+export interface CellView { text: string; border: string; textColor: string; appearance: AppearanceKind }
 export type Views = { [key: string]: CellView };
 export interface SeqRef { id: string; no: number; name: string }
