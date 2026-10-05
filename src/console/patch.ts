@@ -68,15 +68,27 @@ function transformOf(node: any, parent: Transform): Transform {
 }
 
 function readSpace(h: any): Space | undefined {
-    if (h === undefined || typeof h !== "object") return undefined;
+    if (h === undefined || typeof h === "string" || typeof h === "number" || typeof h === "boolean") return undefined;   // handles are tables (mock) or userdata (console)
     const minX = num(h.MINX), minY = num(h.MINY), minZ = num(h.MINZ);
     const maxX = num(h.MAXX), maxY = num(h.MAXY), maxZ = num(h.MAXZ);
     if (minX === undefined || minY === undefined || minZ === undefined || maxX === undefined || maxY === undefined || maxZ === undefined) return undefined;
     return { min: vec(minX, minY, minZ), max: vec(maxX, maxY, maxZ) };
 }
 
+// "2 'MArker 1 Target'" -> "MArker 1 Target"; without quotes the whole trimmed string
+function nameFromRef(ref: string): string {
+    const a = ref.indexOf("'");
+    if (a >= 0) {
+        const b = ref.indexOf("'", a + 1);
+        if (b >= 0) return ref.substring(a + 1, b);
+    }
+    return ref.trim();
+}
+
 function targetSpaceOf(marker: any, stage: any): Space {
-    return readSpace(marker.TARGETSPACE)
+    const ref = marker.TARGETSPACE;
+    const byRef = typeof ref === "string" ? readSpace(findChild(stage.Spaces, nameFromRef(ref))) : readSpace(ref);
+    return byRef
         ?? readSpace(findChild(stage.Spaces, `${tostring(marker.name)} Target`))
         ?? DEFAULT_TARGET_SPACE;
 }

@@ -36,6 +36,13 @@ T.test("marker target space falls back to '<name> Target' in stage.Spaces", func
   T.eq(az().patch.scanPatch().markers[1].targetSpace, space({ -10, -20, 0 }, { 10, 20, 5 }), "named space")
 end)
 
+T.test("marker TARGETSPACE given as a name string is looked up in stage.Spaces", function()
+  M.reset()
+  local m = M.marker(1, "Lead"); m.TARGETSPACE = "2 'Custom Space'"
+  M.stage({ m }, { M.space("Stage", { -35, -35, 0 }, { 35, 35, 35 }), M.space("Custom Space", { -10, -20, 0 }, { 10, 20, 5 }) })
+  T.eq(az().patch.scanPatch().markers[1].targetSpace, space({ -10, -20, 0 }, { 10, 20, 5 }), "string ref")
+end)
+
 T.test("marker with no target space gets the default", function()
   M.reset()
   M.stage({ M.marker(1, "Lead") })
