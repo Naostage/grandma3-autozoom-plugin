@@ -9,7 +9,7 @@ Tick each line on a copy of a real show. Note the System Monitor output for any 
 5. [ ] Store a cue with that programmer, clear, play the cue: matrix cell lit green, state Tracking, zoom % changes as the performer moves.
 6. [ ] Move AZ_SIZE: beam size follows; set a fixed size on one fixture: it ignores the fader.
 7. [ ] Stop the PSN source: state "No PSN data", zoom holds.
-8. [ ] Capture: tap, select the sequence, confirm the running cue: cue command contains `Lua "AZ:Arm('…')"`; disarm all, replay the cue: arms restored.
+8. [ ] Capture: tap, select the sequence, confirm the running cue: cue command contains `Lua "if AZ then AZ:Arm('…') end"`; disarm all, replay the cue: arms restored.
 9. [ ] Capture into the running cue, and into another cue by typing its number in the prompt.
 10. [ ] Setup: switch offset source to a preset, tap a marker cell: XYZ comes from the preset only.
 11. [ ] Save the show, load another show, load it back, run the plugin: arms, sizes and Setup are kept.
@@ -18,7 +18,8 @@ Tick each line on a copy of a real show. Note the System Monitor output for any 
 14. [ ] Rescan after moving a fixture group: distances change accordingly.
 15. [ ] Watch the update rate at 30 Hz with all fixtures armed: no UI stutter.
 16. [ ] Layout cell glyphs (●, …, ·, —) render correctly on the console.
-17. [ ] Layout macro buttons created inside DataPool 'AutoZoom' run their `Lua "AZ:..."` command when tapped.
+17. [ ] Layout macro buttons created inside DataPool 'AutoZoom' run their `Lua "if AZ then AZ:... end"` command when tapped.
 18. [ ] AZ_ZOOM/AZ_IRIS Temp faders move zoom/iris smoothly (FaderTemp readback was inconclusive in the probe).
 19. [ ] A marker with a resized/renamed Target space: offsets still match the programmer values.
 20. [ ] PSN tracker ISONLINE value when receiving data is recognised (marker header turns green; stop the feed → No PSN data).
+21. [ ] Load another show and back without running the plugin: replaying a captured cue and tapping layout buttons raise no Lua error; the AZ Start macro (`Call Plugin "GMA3 Autozoom"`) starts AutoZoom.

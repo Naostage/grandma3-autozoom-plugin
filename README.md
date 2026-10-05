@@ -10,6 +10,8 @@ Requires grandMA3 2.5 or later.
 2. Import the plugin and run it. It creates the **AutoZoom** data pool with the **AutoZoom** layout, one `AZ_ZOOM_<fid>` / `AZ_IRIS_<fid>` sequence per fixture and the `AZ_SIZE` sequence. Creating missing sequences clears the programmer.
 3. Open the AutoZoom layout in a view.
 
+After loading a show (or a reboot), run the plugin again, or the **AZ Start** macro it creates in the AutoZoom data pool (assign it where you like). The layout texts are only live while AutoZoom runs; until then they show the last values and the buttons do nothing. The AZ Start macro calls the plugin by its name (`Call Plugin "GMA3 Autozoom"`): renaming the plugin breaks it.
+
 Fixtures appear when their fixture type mode has XYZ enabled and a Zoom channel. Set the zoom and iris physical ranges of the fixture type to the manufacturer's optical data.
 
 ## Using the layout
@@ -17,7 +19,7 @@ Fixtures appear when their fixture type mode has XYZ enabled and a Zoom channel.
 - **Marker cells**: a lit cell shows the marker the fixture currently follows (green tracking, amber no PSN data, grey disarmed). Tap a cell to put that fixture in the programmer on that marker, with the Setup XYZ offset and zoom/iris at minimum (red **P**); tap it again to send `Off Fixture <fid>`, which removes all of that fixture's values from the programmer.
 - **State, Distance, Zoom, Iris**: live values. "Too wide"/"Too small" mean the beam size is outside the fixture's optics.
 - **Size**: "Global" follows the `AZ_SIZE` fader (range set in Setup); tap to type a fixed size in metres.
-- **Capture**: tap, then select a sequence (pool tile or executor Select key). Confirm the cue number (pre-filled with the running cue). Type another cue number to store elsewhere. The current arms are written into that cue as `Lua "AZ:Arm('101,102')"`; replaying the cue restores them. If the target sequence is already selected, select another sequence first. Capture works only while AutoZoom is running; it is refused when stopped, and Stop cancels a capture in progress.
+- **Capture**: tap, then select a sequence (pool tile or executor Select key). Confirm the cue number (pre-filled with the running cue). Type another cue number to store elsewhere. The current arms are written into that cue as `Lua "if AZ then AZ:Arm('101,102') end"`; replaying the cue restores them (and does nothing while AutoZoom is not running). If the target sequence is already selected, select another sequence first. Capture works only while AutoZoom is running; it is refused when stopped, and Stop cancels a capture in progress.
 - **Setup**: XYZ offset source (preset number or X/Y/Z values), size fader range, refresh rate. XYZ offsets are read relative to the followed marker's Target space (from the show), so they are correct whatever the space size. Marker positions come from PSN trackers (each tracker's MArker ID must be set).
 - **Start/Stop**: stopping releases every AutoZoom fader.
 

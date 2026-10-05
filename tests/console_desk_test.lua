@@ -17,6 +17,7 @@ T.test("install creates pool, fader sequences and size sequence once", function(
   T.truthy(joined:find('Attribute "Iris" At Absolute Physical 1', 1, true), "iris max")
   T.truthy(joined:find("Store DataPool 'AutoZoom' Sequence 'AZ_ZOOM_101' /o /nc", 1, true), "zoom seq")
   T.truthy(joined:find("Store DataPool 'AutoZoom' Sequence 'AZ_SIZE' /o /nc", 1, true), "size seq")
+  T.truthy(joined:find([[Set DataPool 'AutoZoom' Macro 'AZ Start'.1 Property 'Command' 'Call Plugin "GMA3 Autozoom"']], 1, true), "AZ Start macro")
   local n = #M.cmds
   desk:install({ fixtures = { fixture101() }, markers = {}, problems = {} })
   T.eq(#M.cmds, n, "second install changes nothing")
@@ -42,7 +43,7 @@ T.test("layout build tags elements and refresh writes only changes", function()
   desk:buildLayout({ { key = "toggle", x = 0, y = 0, w = 100, h = 60, command = "Toggle()" }, { key = "status", x = 110, y = 0, w = 100, h = 60, command = "" } })
   local layout = M.dataPools._kids[1].Layouts._kids[1]
   T.eq(#layout._kids, 2, "elements"); T.eq(layout._kids[1].Note, "AZ:toggle", "tag"); T.eq(layout._kids[1].PosX, 0, "x")
-  T.truthy(table.concat(M.cmds, "\n"):find([[Property 'Command' 'Lua "AZ:Toggle()"']], 1, true), "macro command")
+  T.truthy(table.concat(M.cmds, "\n"):find([[Property 'Command' 'Lua "if AZ then AZ:Toggle() end"']], 1, true), "macro command")
   desk:refreshLayout({ toggle = { text = "Stop", border = "3ECF6EFF", textColor = "E6E8EBFF" } })
   T.eq(layout._kids[1].CustomTextText, "Stop", "text"); T.eq(layout._kids[1].BorderColor, "3ECF6EFF", "border")
   layout._kids[1].CustomTextText = "tampered"

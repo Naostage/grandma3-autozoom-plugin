@@ -6,6 +6,8 @@ import { warnOnce } from "./log";
 export const POOL = "AutoZoom";
 export const POOL_ADDR = `DataPool '${POOL}'`;
 export const SIZE_SEQ = "AZ_SIZE";
+export const PLUGIN_NAME = "GMA3 Autozoom";          // package.json plugin_name: renaming the plugin breaks the AZ Start macro
+export const START_MACRO = "AZ Start";
 
 export function zoomSeqName(fid: number): string { return "AZ_ZOOM_" + fmtInt(fid); }
 export function irisSeqName(fid: number): string { return "AZ_IRIS_" + fmtInt(fid); }
@@ -54,12 +56,26 @@ export function ensureSizeSequence(): void {
     Cmd(`Store ${POOL_ADDR} Sequence '${SIZE_SEQ}' /o /nc`);
 }
 
+// Macro line commands are set inside '…', so they must not contain single quotes.
+function writeMacroLine(name: string, command: string): void {
+    Cmd(`Store ${POOL_ADDR} Macro '${name}'.1 /o /nc`);
+    Cmd(`Set ${POOL_ADDR} Macro '${name}'.1 Property 'Command' '${command}'`);
+}
+
+// Layout button macro: its line runs AZ:<luaCall> only while an AutoZoom instance exists (no Lua error after a show load).
 export function ensureMacro(name: string, luaCall: string): void {
     const pool = ensurePool();
     if (findChild(pool.Macros, name) === undefined) Cmd(`Store ${POOL_ADDR} Macro '${name}' /o /nc`);
     if (luaCall === "") return;
-    Cmd(`Store ${POOL_ADDR} Macro '${name}'.1 /o /nc`);
-    Cmd(`Set ${POOL_ADDR} Macro '${name}'.1 Property 'Command' 'Lua "AZ:${luaCall}"'`);
+    writeMacroLine(name, `Lua "if AZ then AZ:${luaCall} end"`);
+}
+
+// Macro with a raw command line, created once: an existing macro is left as the operator has it.
+export function ensureRawMacro(name: string, command: string): void {
+    const pool = ensurePool();
+    if (findChild(pool.Macros, name) !== undefined) return;
+    Cmd(`Store ${POOL_ADDR} Macro '${name}' /o /nc`);
+    writeMacroLine(name, command);
 }
 
 export function setTemp(name: string, value: number): void {

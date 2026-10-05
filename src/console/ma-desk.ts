@@ -26,6 +26,7 @@ export class MaDesk implements Desk {
     install(scan: PatchScan): void {
         pool.ensurePool();
         pool.ensureSizeSequence();
+        pool.ensureRawMacro(pool.START_MACRO, `Call Plugin "${pool.PLUGIN_NAME}"`);
         for (const f of scan.fixtures) {
             pool.ensureFaderSequence(pool.zoomSeqName(f.fid), f.fid, "Zoom", f.optics.zoomMax);
             if (f.optics.irisMax > f.optics.irisMin) pool.ensureFaderSequence(pool.irisSeqName(f.fid), f.fid, "Iris", f.optics.irisMax);

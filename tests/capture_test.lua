@@ -19,7 +19,7 @@ T.test("capture stores arms in the running cue after a selection change", functi
   d.selected = MAIN; d.runningCues["S12"] = 2; d.answers = { "2" }
   d:tick(); d:runLaters()
   T.eq(d.lastPrompt.value, "2", "prefilled with running cue")
-  T.eq(d.cues["S12"][2], [[Go+ Sequence 3; Lua "AZ:Arm('101,102')"]], "rewritten")
+  T.eq(d.cues["S12"][2], [[Go+ Sequence 3; Lua "if AZ then AZ:Arm('101,102') end"]], "rewritten")
   T.eq(d.logs[#d.logs], "Stored in Seq 12 'Main' cue 2", "feedback")
 end)
 
@@ -27,7 +27,7 @@ T.test("selected cue wins over running cue", function()
   local d, a = setup()
   a:Capture(); d.selected = MAIN; d.runningCues["S12"] = 1; d.selectedCues["S12"] = 3; d.answers = { "3" }
   d:tick(); d:runLaters()
-  T.eq(d.lastPrompt.value, "3", "prefill"); T.eq(d.cues["S12"][3], [[Lua "AZ:Arm('101,102')"]], "stored")
+  T.eq(d.lastPrompt.value, "3", "prefill"); T.eq(d.cues["S12"][3], [[Lua "if AZ then AZ:Arm('101,102') end"]], "stored")
 end)
 
 T.test("capture start explains how to pick an already selected sequence", function()

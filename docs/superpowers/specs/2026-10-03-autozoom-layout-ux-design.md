@@ -95,7 +95,8 @@ Capture, tap-to-program, Setup and Size are runtime commands built on `Desk` and
 | Sequence per fixture | `AZ_ZOOM_<fid>` | One cue: Zoom at maximum (`At Absolute Physical <zoom max>`); driven by its Temp fader |
 | Sequence per fixture (if iris) | `AZ_IRIS_<fid>` | One cue: Iris at maximum; driven by its Temp fader |
 | Sequence | `AZ_SIZE` | Global size fader (Master fader read by the plugin) |
-| Macros | `AZ <cell key>` (one per layout cell) | Layout buttons: one line `Lua "AZ:<Command>(...)"`; display-only cells get an empty macro. Live text and colours are written to the layout element (`CUSTOMTEXTTEXT`, `CUSTOMTEXTCOLOR`, `BORDERCOLOR`), the route verified in probe 1 |
+| Macros | `AZ <cell key>` (one per layout cell) | Layout buttons: one line `Lua "if AZ then AZ:<Command>(...) end"` (no error when AutoZoom is not running); display-only cells get an empty macro. Live text and colours are written to the layout element (`CUSTOMTEXTTEXT`, `CUSTOMTEXTCOLOR`, `BORDERCOLOR`), the route verified in probe 1 |
+| Macro | `AZ Start` | One line `Call Plugin "GMA3 Autozoom"`: starts AutoZoom after a show load or reboot; created once, the operator assigns it where they want. Renaming the plugin breaks it |
 
 Old objects in other datapools (1.x `AZ_ZOOM_*` etc.) are not migrated.
 
@@ -148,7 +149,7 @@ Marker column headers show name, CID and PSN status. Offline state: everything g
 1. Tap **Capture** → button turns amber "Select a sequence…" with a 15 s countdown.
 2. Select the target sequence: tap it in the Sequence pool or press an executor's Select key (the plugin watches `SelectedSequence()`; `Go` does not count, so nothing fires).
 3. A prompt (TextInput) opens, pre-filled with the cue **selected in the Sequence Sheet** if any, else the sequence's **running cue**; empty if neither. Enter to confirm or type another cue number.
-4. The plugin writes `Lua "AZ:Arm('<sorted armed fids>')"` into that cue's command: other commands are kept, any previous `AZ:Arm(...)` is replaced.
+4. The plugin writes `Lua "if AZ then AZ:Arm('<sorted armed fids>') end"` into that cue's command: other commands are kept, any previous `AZ:Arm(...)` is replaced.
 5. Feedback on the layout and in the System Monitor: "Stored in Seq 12 'Main' cue 3".
 
 Cancel: tap Capture again, Esc in the prompt, or timeout. Unknown cue → nothing written, message shown.

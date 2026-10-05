@@ -19,7 +19,7 @@ export function formatArmList(fids: number[]): string {
 }
 
 export function armCommand(fids: number[]): string {
-    return `Lua "AZ:Arm('${formatArmList(fids)}')"`;
+    return `Lua "if AZ then AZ:Arm('${formatArmList(fids)}') end"`;
 }
 
 export function parseArmList(text: string): number[] {
