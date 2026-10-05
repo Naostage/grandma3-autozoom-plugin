@@ -129,9 +129,15 @@ export class AutoZoom {
 
     ArmToggle(fid: number): void {
         if (!this.ensureCurrent()) return;
-        const armed = this.config.armed.filter(f => f !== fid);
-        if (armed.length === this.config.armed.length) armed.push(fid);
-        this.setArmed(armed);
+        if (this.fixture(fid) === undefined) {
+            this.desk.log(`Not AutoZoom fixtures, ignored: ${fmtInt(fid)}`);
+            return;
+        }
+        const disarmed = this.config.disarmed.filter(f => f !== fid);
+        if (disarmed.length === this.config.disarmed.length) disarmed.push(fid);
+        this.config.disarmed = disarmed;
+        this.markDirty();
+        this.update();
     }
 
     ArmAll(): void {
@@ -146,7 +152,7 @@ export class AutoZoom {
 
     Status(): void {
         if (!this.ensureCurrent()) return;
-        this.desk.log(`AutoZoom ${this.running ? "running" : "stopped"}, ${fmtInt(this.config.armed.length)} armed`);
+        this.desk.log(`AutoZoom ${this.running ? "running" : "stopped"}, ${fmtInt(this.scanned.fixtures.length - this.config.disarmed.length)} armed`);
         for (const f of this.scanned.fixtures) {
             const r = this.results[fidKey(f.fid)];
             this.desk.log(`  ${fmtInt(f.fid)} ${f.name}: ${r === undefined ? "-" : stateLabel(r.state)}`);
@@ -342,7 +348,7 @@ export class AutoZoom {
             this.endCapture(`Seq ${fmtInt(seq.no)} has no cue ${answer.trim()}; nothing stored`);
             return;
         }
-        const ok = this.desk.writeCueCommand(seq, cue, rewriteCueCommand(existing, armCommand(this.config.armed)));
+        const ok = this.desk.writeCueCommand(seq, cue, rewriteCueCommand(existing, armCommand(this.scanned.fixtures.map(f => f.fid).filter(fid => this.isArmed(fid)))));
         this.endCapture(ok ? `Stored in Seq ${fmtInt(seq.no)} '${seq.name}' cue ${fmtNum(cue)}` : `Could not write the command of Seq ${fmtInt(seq.no)} cue ${fmtNum(cue)}`);
     }
 
@@ -403,7 +409,7 @@ export class AutoZoom {
 
     // ---------- helpers ----------
     protected isArmed(fid: number): boolean {
-        return this.config.armed.indexOf(fid) >= 0;
+        return this.config.disarmed.indexOf(fid) < 0;
     }
 
     protected fixture(fid: number): PatchFixture | undefined {
@@ -414,7 +420,7 @@ export class AutoZoom {
         const known = normalizeFids(fids).filter(fid => this.fixture(fid) !== undefined);
         const unknown = normalizeFids(fids).filter(fid => this.fixture(fid) === undefined);
         if (unknown.length > 0) this.desk.log(`Not AutoZoom fixtures, ignored: ${unknown.map(f => fmtInt(f)).join(", ")}`);
-        this.config.armed = known;
+        this.config.disarmed = this.scanned.fixtures.map(f => f.fid).filter(fid => known.indexOf(fid) < 0);
         this.markDirty();
         this.update();
     }

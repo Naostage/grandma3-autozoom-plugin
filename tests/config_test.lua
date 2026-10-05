@@ -19,26 +19,42 @@ end)
 T.test("config round trip", function()
   local c = az().config
   local cfg = c.defaultConfig()
-  cfg.armed = { 101, 103 }; cfg.size["104"] = 1.5; cfg.offset.source = "preset"; cfg.offset.preset = "2.12"
+  cfg.disarmed = { 101, 103 }; cfg.size["104"] = 1.5; cfg.offset.source = "preset"; cfg.offset.preset = "2.12"
   T.eq(c.parseConfig(c.serializeConfig(cfg)).config, cfg, "config")
 end)
 
 T.test("unreadable config warns and falls back", function()
   local r = az().config.parseConfig("not json")
-  T.truthy(r.warning, "warning"); T.eq(r.config.armed, {}, "armed")
+  T.truthy(r.warning, "warning"); T.eq(r.config.disarmed, {}, "disarmed")
 end)
 
 T.test("invalid fields fall back individually", function()
-  local r = az().config.parseConfig('{"armed":[101,"x"],"rate":500,"range":[3,1],"size":{"104":-1,"105":2}}')
-  T.eq(r.config.armed, { 101 }, "armed"); T.eq(r.config.rate, 30, "rate")
+  local r = az().config.parseConfig('{"disarmed":[101,"x"],"rate":500,"range":[3,1],"size":{"104":-1,"105":2}}')
+  T.eq(r.config.disarmed, { 101 }, "disarmed"); T.eq(r.config.rate, 30, "rate")
   T.eq(r.config.range, { 0.5, 5 }, "range"); T.eq(r.config.size, { ["105"] = 2 }, "size")
+end)
+
+T.test("default config has nothing disarmed", function()
+  T.eq(az().config.defaultConfig().disarmed, {}, "disarmed")
+end)
+
+T.test("a config from an older build (armed list) means all armed", function()
+  local r = az().config.parseConfig('{"armed":[101]}')
+  T.eq(r.config.disarmed, {}, "disarmed"); T.eq(r.warning, nil, "no warning")
+end)
+
+T.test("serialize writes disarmed and no armed", function()
+  local c = az().config
+  local cfg = c.defaultConfig(); cfg.disarmed = { 102 }
+  local text = c.serializeConfig(cfg)
+  T.truthy(text:find('"disarmed"', 1, true), "disarmed written"); T.eq(text:find('"armed"', 1, true), nil, "no armed")
 end)
 
 T.test("prune drops fixtures that left the patch", function()
   local c = az().config
-  local cfg = c.defaultConfig(); cfg.armed = { 101, 999 }; cfg.size["999"] = 2; cfg.size["101"] = 1
+  local cfg = c.defaultConfig(); cfg.disarmed = { 101, 999 }; cfg.size["999"] = 2; cfg.size["101"] = 1
   local p = c.pruneConfig(cfg, { 101, 102 })
-  T.eq(p.armed, { 101 }, "armed"); T.eq(p.size, { ["101"] = 1 }, "size")
+  T.eq(p.disarmed, { 101 }, "disarmed"); T.eq(p.size, { ["101"] = 1 }, "size")
 end)
 
 T.test("applySetup validates answers", function()

@@ -6,7 +6,7 @@ import { decode, encode } from "./json";
 export type OffsetSource = "preset" | "values";
 
 export interface Config {
-    armed: number[];
+    disarmed: number[];                 // fixtures excluded from AutoZoom; every other scanned fixture is armed
     size: { [fid: string]: number };   // fixed beam size (m) per fixture; absent = global fader
     range: number[];                    // [min, max] metres of the AZ_SIZE fader
     rate: number;                       // updates per second
@@ -18,7 +18,7 @@ export const INSTANCE_KEY = "AutoZoom.instance";
 const UNREADABLE = "Saved AutoZoom settings were unreadable; defaults restored";
 
 export function defaultConfig(): Config {
-    return { armed: [], size: {}, range: [0.5, 5], rate: 30, offset: { source: "values", preset: "", values: [0, 0, 0] } };
+    return { disarmed: [], size: {}, range: [0.5, 5], rate: 30, offset: { source: "values", preset: "", values: [0, 0, 0] } };
 }
 
 function num(v: unknown): number | undefined {
@@ -35,8 +35,8 @@ export function parseConfig(text: string | undefined): { config: Config; warning
         return { config, warning: UNREADABLE };
     }
     if (typeof raw !== "object") return { config, warning: UNREADABLE };
-    if (Array.isArray(raw.armed)) {
-        for (const fid of raw.armed) if (num(fid) !== undefined) config.armed.push(Math.floor(fid));
+    if (Array.isArray(raw.disarmed)) {
+        for (const fid of raw.disarmed) if (num(fid) !== undefined) config.disarmed.push(Math.floor(fid));
     }
     if (typeof raw.size === "object") {
         for (const key in raw.size) {
@@ -62,17 +62,17 @@ export function parseConfig(text: string | undefined): { config: Config; warning
 }
 
 export function serializeConfig(c: Config): string {
-    return encode({ v: 1, armed: c.armed, size: c.size, range: c.range, rate: c.rate, offset: c.offset });
+    return encode({ v: 1, disarmed: c.disarmed, size: c.size, range: c.range, rate: c.rate, offset: c.offset });
 }
 
 export function pruneConfig(config: Config, fids: number[]): Config {
     const keep: { [fid: string]: boolean } = {};
     for (const fid of fids) keep[fidKey(fid)] = true;
-    const armed: number[] = [];
-    for (const fid of config.armed) if (keep[fidKey(fid)]) armed.push(fid);
+    const disarmed: number[] = [];
+    for (const fid of config.disarmed) if (keep[fidKey(fid)]) disarmed.push(fid);
     const size: { [fid: string]: number } = {};
     for (const key in config.size) if (keep[key]) size[key] = config.size[key];
-    return { ...config, armed, size };
+    return { ...config, disarmed, size };
 }
 
 export interface SetupAnswers { source: OffsetSource; preset: string; x: string; y: string; z: string; min: string; max: string; rate: string }
