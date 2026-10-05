@@ -71,6 +71,11 @@ export class AutoZoom {
         this.desk.later(() => this.Rescan());
     }
 
+    // Removed in 2.0.0.2; kept so old cues and macros that call it get a message instead of an error.
+    Capture(): void {
+        this.desk.log("Capture was removed in 2.0.0.2");
+    }
+
     Start(): void {
         if (!this.ensureCurrent()) return;
         if (this.running) return;
