@@ -118,3 +118,27 @@ T.test("late cleanup of an old loop does not stop a newer one", function()
   d:tick()
   T.eq(d.views["status"].text:sub(1, 7), "Running", "still running")
 end)
+
+T.test("a replaced instance neither saves on Stop nor obeys commands", function()
+  local d = F.new({ fixtures = { F.fixture(101), F.fixture(102) }, markers = { F.marker(1, "Lead") }, problems = {} })
+  local a = az().runtime.createAutoZoom(d, "id-A")
+  d.saved["AutoZoom.config"] = '{"armed":[102]}'
+  a:Install(); a:Start()
+  local b = az().runtime.createAutoZoom(d, "id-B")
+  d.saved["AutoZoom.config"] = '{"armed":[101]}'
+  b:Install()
+  local cfg = d.saved["AutoZoom.config"]
+  d.releases = {}
+  a:Stop()
+  T.eq(d.saved["AutoZoom.config"], cfg, "Stop of the old instance does not save")
+  T.eq(#d.releases, 0, "old instance releases nothing")
+  T.eq(d.loop, nil, "old loop stopped")
+  d.logs = {}
+  a:Arm("101,102"); a:ArmAll(); a:DisarmAll(); a:ArmToggle(101); a:Toggle(); a:Start(); a:Capture(); a:Program(101, 1); a:Setup(); a:Size(101); a:Rescan(); a:Status()
+  T.eq(d.saved["AutoZoom.config"], cfg, "commands of the old instance do not save")
+  T.eq(d.logs[1], "Run the AutoZoom plugin for this show", "told to run the plugin")
+  T.eq(#d.logs, 12, "every command refused")
+  T.eq(d.loop, nil, "old instance did not start"); T.eq(#d.laters, 0, "no dialogs"); T.eq(#d.cmds, 0, "no programmer commands")
+  b:Arm("102")
+  T.eq(az().config.parseConfig(d.saved["AutoZoom.config"]).config.armed, { 102 }, "current instance still works")
+end)

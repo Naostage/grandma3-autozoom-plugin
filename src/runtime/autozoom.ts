@@ -31,6 +31,16 @@ export class AutoZoom {
     constructor(protected readonly desk: Desk, private readonly id: string) {}
 
     // ---------- lifecycle ----------
+    private isCurrent(): boolean {
+        return this.desk.loadText(INSTANCE_KEY) === this.id;
+    }
+
+    private ensureCurrent(): boolean {
+        if (this.isCurrent()) return true;
+        this.desk.log("Run the AutoZoom plugin for this show");
+        return false;
+    }
+
     Install(): void {
         const loaded = parseConfig(this.desk.loadText(CONFIG_KEY));
         if (loaded.warning !== undefined) this.desk.log(loaded.warning);
@@ -40,6 +50,7 @@ export class AutoZoom {
     }
 
     Rescan(): void {
+        if (!this.ensureCurrent()) return;
         this.scanned = this.desk.scan();
         for (const p of this.scanned.problems) this.desk.log(p);
         this.config = pruneConfig(this.config, this.scanned.fixtures.map(f => f.fid));
@@ -52,6 +63,7 @@ export class AutoZoom {
     }
 
     Start(): void {
+        if (!this.ensureCurrent()) return;
         if (this.running) return;
         this.running = true;
         const gen = ++this.loopGen;
@@ -64,6 +76,14 @@ export class AutoZoom {
     }
 
     Stop(): void {
+        if (!this.isCurrent()) {
+            // Another instance owns this show: stop our own loop, touch nothing else.
+            if (!this.running) return;
+            this.running = false;
+            this.loopGen++;
+            this.desk.stopLoop();
+            return;
+        }
         this.saveConfig();
         if (!this.running) return;
         this.running = false;
@@ -85,29 +105,35 @@ export class AutoZoom {
     }
 
     Toggle(): void {
+        if (!this.ensureCurrent()) return;
         if (this.running) this.Stop(); else this.Start();
     }
 
     // ---------- arms ----------
     Arm(list: string): void {
+        if (!this.ensureCurrent()) return;
         this.setArmed(parseArmList(list));
     }
 
     ArmToggle(fid: number): void {
+        if (!this.ensureCurrent()) return;
         const armed = this.config.armed.filter(f => f !== fid);
         if (armed.length === this.config.armed.length) armed.push(fid);
         this.setArmed(armed);
     }
 
     ArmAll(): void {
+        if (!this.ensureCurrent()) return;
         this.setArmed(this.scanned.fixtures.map(f => f.fid));
     }
 
     DisarmAll(): void {
+        if (!this.ensureCurrent()) return;
         this.setArmed([]);
     }
 
     Status(): void {
+        if (!this.ensureCurrent()) return;
         this.desk.log(`AutoZoom ${this.running ? "running" : "stopped"}, ${fmtInt(this.config.armed.length)} armed`);
         for (const f of this.scanned.fixtures) {
             const r = this.results[fidKey(f.fid)];
@@ -117,6 +143,7 @@ export class AutoZoom {
 
     // ---------- tap-to-program, setup, size ----------
     Program(fid: number, cid: number): void {
+        if (!this.ensureCurrent()) return;
         const f = this.fixture(fid);
         if (f === undefined) {
             this.desk.log(`Fixture ${fmtInt(fid)} is not an AutoZoom fixture`);
@@ -131,6 +158,7 @@ export class AutoZoom {
     }
 
     Setup(): void {
+        if (!this.ensureCurrent()) return;
         this.desk.later(() => {
             const answers = this.desk.setupDialog(this.config);
             if (answers === undefined) return;
@@ -146,6 +174,7 @@ export class AutoZoom {
     }
 
     Size(fid: number): void {
+        if (!this.ensureCurrent()) return;
         const f = this.fixture(fid);
         if (f === undefined) {
             this.desk.log(`Fixture ${fmtInt(fid)} is not an AutoZoom fixture`);
@@ -174,7 +203,7 @@ export class AutoZoom {
 
     // ---------- loop ----------
     protected tick(): void {
-        if (this.desk.loadText(INSTANCE_KEY) !== this.id) {
+        if (!this.isCurrent()) {
             this.desk.log("Another AutoZoom instance took over; this one stops");
             this.running = false;
             this.loopGen++;
@@ -205,6 +234,7 @@ export class AutoZoom {
     }
 
     Capture(): void {
+        if (!this.ensureCurrent()) return;
         if (this.captureUntil !== undefined) {
             this.endCapture("Capture cancelled");
             return;
