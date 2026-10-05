@@ -132,6 +132,59 @@ T.test("a reloaded layout gets its texts rewritten although the views did not ch
   T.eq(fresh[1].CustomTextText, "tampered", "then unchanged views are skipped again")
 end)
 
+local function cellA(x) return { key = "a", x = x, y = 0, w = 1, h = 1, command = "" } end
+local function cellB() return { key = "b", x = 1, y = 0, w = 1, h = 1, command = "" } end
+
+T.test("rebuilding keeps the layout object and never deletes it", function()
+  M.reset()
+  local desk = az().madesk.createMaDesk()
+  desk:install({ fixtures = {}, markers = {}, problems = {} })
+  desk:buildLayout({ cellA(0), cellB() })
+  local layout = M.dataPools._kids[1].Layouts._kids[1]
+  M.cmds = {}
+  desk:buildLayout({ cellA(0), cellB() })
+  T.eq(#M.dataPools._kids[1].Layouts._kids, 1, "one layout"); T.truthy(M.dataPools._kids[1].Layouts._kids[1] == layout, "same handle")
+  T.truthy(not (layout._deleted), "not deleted")
+  for _, c in ipairs(M.cmds) do T.truthy(not (c:find("Delete DataPool 'AutoZoom' Layout", 1, true)), "no layout delete: " .. c) end
+end)
+
+T.test("rebuilding reuses a tagged element and updates it", function()
+  M.reset()
+  local desk = az().madesk.createMaDesk()
+  desk:install({ fixtures = {}, markers = {}, problems = {} })
+  desk:buildLayout({ cellA(0), cellB() })
+  local layout = M.dataPools._kids[1].Layouts._kids[1]
+  local el = layout._kids[1]
+  desk:buildLayout({ cellA(50), cellB() })
+  T.eq(#layout._kids, 2, "no duplicates"); T.truthy(layout._kids[1] == el, "same element"); T.eq(el.PosX, 50, "PosX updated")
+  T.eq(el.Note, "AZ:a", "tag kept")
+end)
+
+T.test("rebuilding deletes stale tagged elements and keeps operator elements", function()
+  M.reset()
+  local desk = az().madesk.createMaDesk()
+  desk:install({ fixtures = {}, markers = {}, problems = {} })
+  desk:buildLayout({ cellA(0), cellB() })
+  local layout = M.dataPools._kids[1].Layouts._kids[1]
+  local mine = layout:Append(); mine.Note = "my button"
+  local plain = layout:Append()
+  local b = layout._kids[2]
+  desk:buildLayout({ cellA(0) })
+  T.truthy(b._deleted, "stale AZ element deleted")
+  T.truthy(not (mine._deleted), "operator element kept"); T.truthy(not (plain._deleted), "unnoted element kept")
+  T.eq(#layout._kids, 3, "a + two operator elements")
+end)
+
+T.test("texts are rewritten after a rebuild", function()
+  local desk = builtLayout()
+  desk:refreshLayout(VIEWS)
+  local layout = M.dataPools._kids[1].Layouts._kids[1]
+  desk:buildLayout({ cellA(0), cellB() })
+  layout._kids[1].CustomTextText = "tampered"
+  desk:refreshLayout(VIEWS)
+  T.eq(layout._kids[1].CustomTextText, "A", "rewritten after rebuild")
+end)
+
 T.test("install creates the AutoZoom appearances once with their colours", function()
   M.reset()
   local desk = az().madesk.createMaDesk()

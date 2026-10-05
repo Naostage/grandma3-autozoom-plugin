@@ -58,20 +58,32 @@ function removeStaleSequences(pool: any, cells: CellSpec[]): void {
     for (const name of stale) Cmd(`Delete ${POOL_ADDR} Sequence '${name}' /nc`);
 }
 
+// Edits the layout in place (BeatGrid model): the layout object is never deleted, because operator views reference it.
+// Elements are matched by their AZ:<key> note; elements without that note belong to the operator and are never touched.
 export function buildLayout(cells: CellSpec[]): void {
     const pool = ensurePool();
     removeStaleSequences(pool, cells);
-    if (findChild(pool.Layouts, LAYOUT) !== undefined) Cmd(`Delete ${POOL_ADDR} Layout '${LAYOUT}' /nc`);
-    Cmd(`Store ${POOL_ADDR} Layout '${LAYOUT}' /o /nc`);
+    if (findChild(pool.Layouts, LAYOUT) === undefined) Cmd(`Store ${POOL_ADDR} Layout '${LAYOUT}' /o /nc`);
     const layout = findChild(pool.Layouts, LAYOUT);
     if (layout === undefined) throw new Error("Could not create the AutoZoom layout");
+    const existing: { [key: string]: any } = {};
+    const doomedDupes: any[] = [];
+    for (const el of children(layout)) {
+        const note = tostring(el.Note ?? "");
+        if (!note.startsWith(TAG)) continue;
+        const key = note.substring(TAG.length);
+        if (existing[key] === undefined) existing[key] = el;
+        else doomedDupes.push(el);      // duplicate tag: keep the first
+    }
     elements = {};
     sequences = {};
     written = {};
     sentinel = undefined;
+    const wanted: { [key: string]: boolean } = {};
     for (const cell of cells) {
+        wanted[cell.key] = true;
         const seq = ensureCellSequence(cellSequenceName(cell.key), cell.command);
-        const el = layout.Append();
+        const el = existing[cell.key] ?? layout.Append();
         el.Object = seq;
         setAction(el, cell.command !== "");
         el.Note = TAG + cell.key;
@@ -83,6 +95,22 @@ export function buildLayout(cells: CellSpec[]): void {
         elements[cell.key] = el;
         sequences[cell.key] = seq;
         if (sentinel === undefined) sentinel = el;
+    }
+    const doomed: any[] = [];
+    for (const key in existing) if (!wanted[key]) doomed.push(existing[key]);
+    for (const el of doomedDupes) doomed.push(el);
+    const nos: number[] = [];
+    for (const el of doomed) {
+        const no = tonumber(el.No);
+        if (no !== undefined) nos.push(no);
+    }
+    nos.sort((x, y) => y - x);      // highest first: deleting does not shift the numbers still to delete
+    for (const no of nos) {
+        try {
+            layout.Delete(no);
+        } catch (e) {
+            warnOnce("layoutdelete", `Could not delete stale layout element ${no}: ${tostring(e)}`);
+        }
     }
 }
 

@@ -203,7 +203,7 @@ All through the global: `Lua "AZ:<Command>(...)"`.
 ## 12. Error handling
 
 - Every MA3 call that is not verified on 2.5 goes through a guarded wrapper; failures are logged once with context and degrade (e.g. Capture without `SelectedSequence` asks for the sequence number too).
-- Layout element missing (user deleted it) → next Rebuild recreates it; refresh skips missing elements silently.
+- Layout element missing (user deleted it) → next Rebuild re-appends it (the layout itself is kept); refresh skips missing elements silently.
 - PSN lost → hold last values and show it; marker CID unknown → release and show Error.
 
 ## 13. Testing
@@ -237,6 +237,7 @@ Layout elements showed the bound macro's default "paper" appearance. Every cell 
 - Appearances live in the show's **Appearances pool** (`ShowData().Appearances`) — appearances cannot live in a data pool, so this is the one exception to "everything in DataPool AutoZoom". They are found by name (`AZ …`), created when missing, and their `IMAGERGBA` is (re)applied at every install/Rescan; never duplicated.
 - The AZ appearances occupy a contiguous block of free numbers from 9001 (BeatGrid's `Resize` + `Create(no, GetChildClass())`), so they stay clear of the operator's own appearances; AZ appearances found below 9001 (2.0.0.1 build) are deleted and recreated there.
 - Every cell is a sequence `AZ <key>` in the AutoZoom pool (cue 1 runs the cell's command; display-only cells have none, element Action `Pause`, clickable cells `Go+`); the plugin sets the sequence's `Appearance` when the cell's kind changes (same write-only-on-change rule as the text); element `Appearance` stays empty (BeatGrid model). Macro-bound elements showed the macro's paper look on the console and no fill.
+- Rebuild (Rescan/install) edits the layout **in place**: the `AutoZoom` layout object is stored only when missing and never deleted (operator views reference it). Elements are matched by their `AZ:<key>` note and reused; elements whose key is gone are removed with `layout:Delete(no)` (highest `No` first); elements without an `AZ:` note are never touched.
 - Elements hide the bound object's name, icon, ID, CID, value and bar and draw no border (booleans `false`, as BeatGrid does).
 - Text stays white (`E6E8EBFF`), muted (`8E96A3FF`) for the message cell.
 

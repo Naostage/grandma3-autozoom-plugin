@@ -31,3 +31,4 @@ Tick each line on a copy of a real show. Note the System Monitor output for any 
 26. [ ] Rescan cell rebuilds the layout while running (no duplicate cells, AutoZoom keeps running).
 27. [ ] New fixtures are armed by default: patch a new XYZ fixture, tap Rescan: its Arm cell is green.
 28. [ ] Setup → Pick preset… while stopped: refused with "Start AutoZoom to pick a preset".
+29. [ ] Rescan and plugin re-run keep the AutoZoom layout object: a view showing it stays intact; elements you added to the layout yourself are kept.
