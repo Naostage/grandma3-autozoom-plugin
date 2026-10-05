@@ -1,5 +1,6 @@
 -- Runs the unit/integration tests. Use: lua tests/run.lua (from the repo root, after `npm run build:test`)
 package.path = "tests/?.lua;tests/lib/?.lua;" .. package.path
+require("ma3mock")
 local T = require("t")
 
 local FILES = {
@@ -13,6 +14,7 @@ local FILES = {
   "runtime_test",
   "capture_test",
   "program_test",
+  "console_patch_test",
 }
 
 for _, name in ipairs(FILES) do

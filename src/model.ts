@@ -9,7 +9,8 @@ export interface PatchFixture {
     optics: Optics;
     uich: { marker: number; x: number; y: number; z: number }; // UI channel indexes of XYZ_MArker, XYZ_X/Y/Z
 }
-export interface PatchMarker { cid: number; name: string }
+export interface Space { min: Vec3; max: Vec3 }
+export interface PatchMarker { cid: number; name: string; targetSpace: Space }
 export interface PatchScan { fixtures: PatchFixture[]; markers: PatchMarker[]; problems: string[] }
 export interface MarkerReading { pos: Vec3; rot?: Vec3 }
 export type MarkerReadings = { [cid: string]: MarkerReading };
