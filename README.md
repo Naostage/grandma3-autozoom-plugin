@@ -14,6 +14,12 @@ After loading a show (or a reboot), run the plugin again, or the **AZ Start** ma
 
 Fixtures appear when their fixture type mode has XYZ enabled and a Zoom channel. Set the zoom and iris physical ranges of the fixture type to the manufacturer's optical data.
 
+## Upgrading from 2.0.0.1
+- Delete the old plugin before importing the new version.
+- After upgrading, every XYZ fixture is armed; tap Arm to exclude one.
+- Cues stored with the old Capture still contain `Arm('...')` and set the arms when they run. Remove that command from the cue to rely on armed-by-default.
+- `Capture()` was removed; calling it only logs a message.
+
 ## Using the layout
 - **Header**: Status · Start/Stop · Setup · Rescan · AZ_SIZE · message.
 - **Arm column**: fixtures are armed by default, including newly patched ones; tap to disarm (exclude) a fixture, tap again to re-arm it. Only armed fixtures are driven.
