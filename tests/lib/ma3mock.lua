@@ -10,13 +10,19 @@ local function handle(props, kids)
 end
 M.handle = handle
 
+-- grandMA3 handles accept .Name writes and expose .name reads.
+local function nameSetter(t, k, v) if k == "Name" then k = "name" end rawset(t, k, v) end
+
 function M.reset()
   -- Invalidate handles of the previous test: the bundle caches handles across tests and checks IsObjectValid.
   if M.dataPools then
     for _, dp in ipairs(M.dataPools._kids) do
       dp._deleted = true
       for _, coll in ipairs({ dp.Sequences, dp.Macros, dp.Layouts }) do
-        if coll then for _, x in ipairs(coll._kids) do x._deleted = true; for _, e in ipairs(x._kids) do e._deleted = true end end end
+        if coll then for _, x in ipairs(coll._kids) do
+          x._deleted = true
+          for _, e in ipairs(x._kids) do e._deleted = true; for _, part in ipairs(e._kids or {}) do part._deleted = true end end
+        end end
       end
     end
   end
@@ -30,11 +36,22 @@ function M.reset()
   M.dataPools = handle({}, {})
   M.appearances = handle({}, {})
   function M.appearances:Find(name) for _, a in ipairs(self._kids) do if a.name == name then return a end end end
-  function M.appearances:Acquire()
-    local a = handle({ name = "" }, {})
-    setmetatable(a, { __newindex = function(t, k, v) if k == "Name" then k = "name" end rawset(t, k, v) end })
-    self._kids[#self._kids + 1] = a
+  local function newAppearance(pool, no)
+    local a = handle({ name = "", No = no }, {})
+    setmetatable(a, { __newindex = nameSetter })
+    pool._kids[#pool._kids + 1] = a
     return a
+  end
+  function M.appearances:Acquire()
+    local max = 0
+    for _, a in ipairs(self._kids) do if type(a.No) == "number" and a.No > max then max = a.No end end
+    return newAppearance(self, max + 1)
+  end
+  function M.appearances:Resize(n) self.size = n end
+  function M.appearances:Create(no, class) self.createdClass = class; return newAppearance(self, no) end
+  function M.appearances:GetChildClass() return "Appearance" end
+  function M.appearances:Delete(no)
+    for i, a in ipairs(self._kids) do if a.No == no then a._deleted = true; table.remove(self._kids, i); return end end
   end
   M.time = 0
   M.cmdObj = { LastCommand = nil, Undos = { UndoIndex = 0 } }
@@ -130,6 +147,12 @@ end
 function M.pool(name)
   local p = handle({ name = name }, {})
   p.Sequences = handle({}, {}); p.Macros = handle({}, {}); p.Layouts = handle({}, {})
+  -- BeatGrid's ensureSeq path: Acquire() an unnamed sequence, then .Name = …
+  function p.Sequences:Acquire()
+    local s = M.sequence(p, "")
+    setmetatable(s, { __newindex = nameSetter })
+    return s
+  end
   M.dataPools._kids[#M.dataPools._kids + 1] = p
   return p
 end
@@ -140,6 +163,13 @@ function M.sequence(pool, name, cues)
   function s:SetFader(o) self.faders[o.token] = o.value end
   function s:GetFader(o) return self.master end
   function s:CurrentChild() return self.current end
+  -- New cue appended after the existing ones; Create(i) adds part i (Command empty).
+  function s:Append()
+    local cue = handle({ name = "" }, {})
+    function cue:Create(i) local part = handle({ Command = "" }, {}); self._kids[#self._kids + 1] = part; return part end
+    self._kids[#self._kids + 1] = cue
+    return cue
+  end
   s._kids[1] = handle({ name = "OffCue" }, { handle({ Command = "" }, {}) })
   s._kids[2] = handle({ no = 0, name = "CueZero" }, { handle({ Command = "" }, {}) })
   for _, c in ipairs(cues or {}) do

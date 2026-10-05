@@ -95,7 +95,7 @@ Capture, tap-to-program, Setup and Size are runtime commands built on `Desk` and
 | Sequence per fixture | `AZ_ZOOM_<fid>` | One cue: Zoom at maximum (`At Absolute Physical <zoom max>`); driven by its Temp fader |
 | Sequence per fixture (if iris) | `AZ_IRIS_<fid>` | One cue: Iris at maximum; driven by its Temp fader |
 | Sequence | `AZ_SIZE` | Global size fader (Master fader read by the plugin) |
-| Macros | `AZ <cell key>` (one per layout cell) | Layout buttons: one line `Lua "if AZ then AZ:<Command>(...) end"` (no error when AutoZoom is not running); display-only cells get an empty macro. Live text and colours are written to the layout element (`CUSTOMTEXTTEXT`, `CUSTOMTEXTCOLOR`, `BORDERCOLOR`), the route verified in probe 1 |
+| Sequences | `AZ <cell key>` (one per layout cell, see §15.1) | Layout cells: cue 1 runs `Lua "if AZ then AZ:<Command>(...) end"` (no error when AutoZoom is not running); display-only cells have no command. Live text and colours are written to the layout element (`CUSTOMTEXTTEXT`, `CUSTOMTEXTCOLOR`, `BORDERCOLOR`), the route verified in probe 1 |
 | Macro | `AZ Start` | One line `Call Plugin "GMA3 Autozoom"`: starts AutoZoom after a show load or reboot; created once, the operator assigns it where they want. Renaming the plugin breaks it |
 
 Old objects in other datapools (1.x `AZ_ZOOM_*` etc.) are not migrated.
@@ -234,8 +234,10 @@ Layout elements showed the bound macro's default "paper" appearance. Every cell 
 | header | `AZ Header` | `171C3DB8` | AZ_SIZE value and message cells |
 | idle | `AZ Idle` | `10121CD9` | everything else (disarmed, empty matrix cells, values) |
 
-- Appearances live in the show's **Appearances pool** (`ShowData().Appearances`) — appearances cannot live in a data pool, so this is the one exception to "everything in DataPool AutoZoom". They are found by name (`AZ …`), created with `Acquire()` when missing, and their `IMAGERGBA` is (re)applied at every install/Rescan; never duplicated.
-- Elements hide the bound object's name, icon, ID, CID, value and bar and draw no border (booleans `false`, as BeatGrid does); `el.Appearance` is set to the cell's appearance and changed only when the cell's appearance kind changes (same write-only-on-change rule as the text).
+- Appearances live in the show's **Appearances pool** (`ShowData().Appearances`) — appearances cannot live in a data pool, so this is the one exception to "everything in DataPool AutoZoom". They are found by name (`AZ …`), created when missing, and their `IMAGERGBA` is (re)applied at every install/Rescan; never duplicated.
+- The AZ appearances occupy a contiguous block of free numbers from 9001 (BeatGrid's `Resize` + `Create(no, GetChildClass())`), so they stay clear of the operator's own appearances; AZ appearances found below 9001 (2.0.0.1 build) are deleted and recreated there.
+- Every cell is a sequence `AZ <key>` in the AutoZoom pool (cue 1 runs the cell's command; display-only cells have none, element Action `Pause`, clickable cells `Go+`); the plugin sets the sequence's `Appearance` when the cell's kind changes (same write-only-on-change rule as the text); element `Appearance` stays empty (BeatGrid model). Macro-bound elements showed the macro's paper look on the console and no fill.
+- Elements hide the bound object's name, icon, ID, CID, value and bar and draw no border (booleans `false`, as BeatGrid does).
 - Text stays white (`E6E8EBFF`), muted (`8E96A3FF`) for the message cell.
 
 ### 15.2 Offset preset pick

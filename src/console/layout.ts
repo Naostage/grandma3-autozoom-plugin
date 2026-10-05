@@ -3,16 +3,14 @@ import { appearanceHandle } from "./appearances";
 import { CellSpec, Views } from "../model";
 import { children, findChild } from "./handles";
 import { warnOnce } from "./log";
-import { ensureMacro, ensurePool, findPool, POOL_ADDR } from "./pool";
+import { cellSequenceName, ensureCellSequence, ensurePool, findPool, POOL_ADDR } from "./pool";
 
 export const LAYOUT = "AutoZoom";
 const TAG = "AZ:";
 
-export function macroName(key: string): string {
-    return "AZ " + key;
-}
-
 let elements: { [key: string]: any } = {};
+// Cell sequences carry the cell colour (seq.Appearance); the element's own Appearance stays empty (BeatGrid model).
+let sequences: { [key: string]: any } = {};
 let written: { [key: string]: string } = {};
 // One element checked every refresh: a reloaded/replaced layout invalidates it even when no view changed.
 let sentinel: any = undefined;
@@ -40,13 +38,14 @@ export function buildLayout(cells: CellSpec[]): void {
     const layout = findChild(pool.Layouts, LAYOUT);
     if (layout === undefined) throw new Error("Could not create the AutoZoom layout");
     elements = {};
+    sequences = {};
     written = {};
     sentinel = undefined;
     for (const cell of cells) {
-        ensureMacro(macroName(cell.key), cell.command);
+        const seq = ensureCellSequence(cellSequenceName(cell.key), cell.command);
         const el = layout.Append();
-        el.Object = findChild(pool.Macros, macroName(cell.key));
-        el.Action = "Go+";
+        el.Object = seq;
+        el.Action = cell.command === "" ? "Pause" : "Go+";     // BeatGrid: Pause for non-clickable cells
         el.Note = TAG + cell.key;
         el.PosX = cell.x;
         el.PosY = cell.y;
@@ -54,6 +53,7 @@ export function buildLayout(cells: CellSpec[]): void {
         el.Height = cell.h;
         hideDetails(el);
         elements[cell.key] = el;
+        sequences[cell.key] = seq;
         if (sentinel === undefined) sentinel = el;
     }
 }
@@ -62,6 +62,7 @@ export function buildLayout(cells: CellSpec[]): void {
 // Forgets what was written: the elements found may be new objects (layout reloaded) without our texts.
 function findElements(): void {
     elements = {};
+    sequences = {};
     written = {};
     sentinel = undefined;
     const pool = findPool();
@@ -71,7 +72,9 @@ function findElements(): void {
     for (const el of children(layout)) {
         const note = tostring(el.Note ?? "");
         if (!note.startsWith(TAG)) continue;
-        elements[note.substring(TAG.length)] = el;
+        const key = note.substring(TAG.length);
+        elements[key] = el;
+        sequences[key] = el.Object;
         if (sentinel === undefined) sentinel = el;
     }
 }
@@ -97,8 +100,9 @@ export function refreshLayout(views: Views): void {
         el.CustomTextText = view.text;
         el.CustomTextColor = view.textColor;
         el.BorderColor = view.border;
+        const seq = sequences[key];
         const app = appearanceHandle(view.appearance);
-        if (app !== undefined) el.Appearance = app;
+        if (seq !== undefined && IsObjectValid(seq) && app !== undefined) seq.Appearance = app;
         written[key] = signature;
     }
 }

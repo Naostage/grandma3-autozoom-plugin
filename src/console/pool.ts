@@ -62,12 +62,30 @@ function writeMacroLine(name: string, command: string): void {
     Cmd(`Set ${POOL_ADDR} Macro '${name}'.1 Property 'Command' '${command}'`);
 }
 
-// Layout button macro: its line runs AZ:<luaCall> only while an AutoZoom instance exists (no Lua error after a show load).
-export function ensureMacro(name: string, luaCall: string): void {
-    const pool = ensurePool();
-    if (findChild(pool.Macros, name) === undefined) Cmd(`Store ${POOL_ADDR} Macro '${name}' /o /nc`);
-    if (luaCall === "") return;
-    writeMacroLine(name, `Lua "if AZ then AZ:${luaCall} end"`);
+export function cellSequenceName(key: string): string {
+    return "AZ " + key;
+}
+
+// Layout cell = sequence (BeatGrid ensureSeq): cue 1 part 0 runs AZ:<luaCall> only while an AutoZoom instance
+// exists (no Lua error after a show load); display-only cells have no command.
+export function ensureCellSequence(name: string, luaCall: string): any {
+    const dp = ensurePool();
+    const command = luaCall === "" ? "" : `Lua "if AZ then AZ:${luaCall} end"`;
+    let seq = findSequence(name);
+    if (seq === undefined) {
+        seq = dp.Sequences.Acquire();
+        seq.Name = name;
+        const cue = seq.Append();
+        cue.No = 1;
+        const part = cue.Create(1);
+        part.Command = command;
+        return seq;
+    }
+    const cues = children(seq);
+    const cue = cues[cues.length - 1];
+    const part = cue === undefined ? undefined : children(cue)[0];
+    if (part !== undefined && tostring(part.Command ?? "") !== command) part.Command = command;
+    return seq;
 }
 
 // Macro with a raw command line, created once: an existing macro is left as the operator has it.

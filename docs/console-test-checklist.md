@@ -18,13 +18,13 @@ Tick each line on a copy of a real show. Note the System Monitor output for any 
 14. [ ] Rescan after moving a fixture group: distances change accordingly.
 15. [ ] Watch the update rate at 30 Hz with all fixtures armed: no UI stutter.
 16. [ ] Layout cell glyphs (●, …, ·, —) render correctly on the console.
-17. [ ] Layout macro buttons created inside DataPool 'AutoZoom' run their `Lua "if AZ then AZ:... end"` command when tapped.
+17. [ ] Layout cell sequences created inside DataPool 'AutoZoom' run their `Lua "if AZ then AZ:... end"` command when tapped.
 18. [ ] AZ_ZOOM/AZ_IRIS Temp faders move zoom/iris smoothly (FaderTemp readback was inconclusive in the probe).
 19. [ ] A marker with a resized/renamed Target space: offsets still match the programmer values.
 20. [ ] PSN tracker ISONLINE value when receiving data is recognised (marker header turns green; stop the feed → No PSN data).
 21. [ ] Load another show and back without running the plugin: replaying a captured cue and tapping layout buttons raise no Lua error; the AZ Start macro (`Call Plugin "GMA3 Autozoom"`) starts AutoZoom.
-22. [ ] Layout cells show tinted fills (no paper icon, no macro name); colours change with state (arm, tracking, no PSN, programmer P, capture waiting).
-23. [ ] Appearances pool contains the nine `AZ …` appearances once; Rescan does not duplicate them.
+22. [ ] Cells show tinted fills (no paper icon); colours follow state (arm, tracking, no PSN, programmer P, capture waiting).
+23. [ ] Appearances pool holds the nine AZ appearances at 9001+ once; Rescan neither duplicates nor moves them again.
 24. [ ] Offset pick with fixtures selected: tap Offset, tap an XYZ preset → cell shows "Preset X.Y", programmer is back to what it was, nothing else undone. Note the System Monitor line "Preset pick saw …".
 25. [ ] Offset pick with nothing selected: preset picked, no Oops.
 26. [ ] Offset pick ignores an unrelated command (e.g. Go on a sequence) and times out after 10 s.

@@ -43,7 +43,7 @@ T.test("layout build tags elements and refresh writes only changes", function()
   desk:buildLayout({ { key = "toggle", x = 0, y = 0, w = 100, h = 60, command = "Toggle()" }, { key = "status", x = 110, y = 0, w = 100, h = 60, command = "" } })
   local layout = M.dataPools._kids[1].Layouts._kids[1]
   T.eq(#layout._kids, 2, "elements"); T.eq(layout._kids[1].Note, "AZ:toggle", "tag"); T.eq(layout._kids[1].PosX, 0, "x")
-  T.truthy(table.concat(M.cmds, "\n"):find([[Property 'Command' 'Lua "if AZ then AZ:Toggle() end"']], 1, true), "macro command")
+  T.eq(layout._kids[1].Action, "Go+", "clickable cell"); T.eq(layout._kids[2].Action, "Pause", "display-only cell")
   desk:refreshLayout({ toggle = { text = "Stop", border = "3ECF6EFF", textColor = "E6E8EBFF", appearance = "button" } })
   T.eq(layout._kids[1].CustomTextText, "Stop", "text"); T.eq(layout._kids[1].BorderColor, "3ECF6EFF", "border")
   layout._kids[1].CustomTextText = "tampered"
@@ -163,7 +163,7 @@ T.test("install creates the AutoZoom appearances once with their colours", funct
   T.eq(#M.appearances._kids, n, "no duplicates"); T.eq(byName["AZ Tracking"].IMAGERGBA, "137A38E0", "colour reapplied")
 end)
 
-T.test("layout elements hide object details and get the cell appearance", function()
+T.test("layout elements hide object details and the sequence gets the cell appearance", function()
   M.reset()
   local desk = az().madesk.createMaDesk()
   desk:install({ fixtures = {}, markers = {}, problems = {} })
@@ -171,13 +171,31 @@ T.test("layout elements hide object details and get the cell appearance", functi
   local el = M.dataPools._kids[1].Layouts._kids[1]._kids[1]
   T.eq(el.VisibilityIcon, false, "icon hidden"); T.eq(el.VisibilityObjectName, false, "name hidden")
   T.eq(el.VisibilityBorder, false, "no border"); T.eq(el.VisibilityValue, false, "no value")
+  local seq = el.Object
   desk:refreshLayout({ toggle = { text = "Stop", border = "3ECF6EFF", textColor = "E6E8EBFF", appearance = "button" } })
-  T.eq(el.Appearance.name, "AZ Button", "button appearance")
-  el.Appearance = "tampered"
+  T.eq(seq.Appearance.name, "AZ Button", "button appearance")
+  seq.Appearance = "tampered"
   desk:refreshLayout({ toggle = { text = "Stop", border = "3ECF6EFF", textColor = "E6E8EBFF", appearance = "button" } })
-  T.eq(el.Appearance, "tampered", "unchanged view not rewritten")
+  T.eq(seq.Appearance, "tampered", "unchanged view not rewritten")
   desk:refreshLayout({ toggle = { text = "Stop", border = "3ECF6EFF", textColor = "E6E8EBFF", appearance = "error" } })
-  T.eq(el.Appearance.name, "AZ Error", "appearance switched")
+  T.eq(seq.Appearance.name, "AZ Error", "appearance switched")
+  T.eq(el.Appearance, nil, "element appearance never written")
+end)
+
+T.test("rebuilding the layout reuses the cell sequences and repairs their command", function()
+  M.reset()
+  local desk = az().madesk.createMaDesk()
+  desk:install({ fixtures = {}, markers = {}, problems = {} })
+  desk:buildLayout({ { key = "toggle", x = 0, y = 0, w = 100, h = 60, command = "Toggle()" } })
+  local pool = M.dataPools._kids[1]
+  local n = #pool.Sequences._kids
+  local seq = pool.Layouts._kids[1]._kids[1].Object
+  local part = seq._kids[#seq._kids]._kids[1]
+  part.Command = "tampered"
+  desk:buildLayout({ { key = "toggle", x = 0, y = 0, w = 100, h = 60, command = "Toggle()" } })
+  T.eq(#pool.Sequences._kids, n, "no new sequence")
+  T.eq(pool.Layouts._kids[1]._kids[1].Object, seq, "same sequence bound")
+  T.eq(part.Command, [[Lua "if AZ then AZ:Toggle() end"]], "command repaired")
 end)
 
 T.test("deleted appearance is skipped and recreated on install", function()
@@ -232,6 +250,7 @@ end)
 T.test("install survives an Appearances pool that cannot create", function()
   M.reset()
   function M.appearances:Acquire() error("no appearances here") end
+  function M.appearances:Create() error("no appearances here") end
   local desk = az().madesk.createMaDesk()
   desk:install({ fixtures = { fixture101() }, markers = {}, problems = {} })
   local joined = table.concat(M.cmds, "\n")
@@ -287,5 +306,70 @@ T.test("a missing appearance is looked up once until the next install", function
   T.eq(scans, 1, "one pool scan for five changed refreshes")
   desk:install({ fixtures = {}, markers = {}, problems = {} })
   desk:refreshLayout({ toggle = { text = "Stop again", border = "3ECF6EFF", textColor = "E6E8EBFF", appearance = "button" } })
-  T.eq(M.dataPools._kids[1].Layouts._kids[1]._kids[1].Appearance.name, "AZ Button", "recreated appearance used after install")
+  T.eq(M.dataPools._kids[1].Layouts._kids[1]._kids[1].Object.Appearance.name, "AZ Button", "recreated appearance used after install")
+end)
+
+T.test("far block holds the nine AZ appearances", function()
+  M.reset()
+  local desk = az().madesk.createMaDesk()
+  desk:install({ fixtures = {}, markers = {}, problems = {} })
+  local nos = {}
+  for _, a in ipairs(M.appearances._kids) do if a.name:sub(1, 3) == "AZ " then nos[#nos + 1] = a.No end end
+  table.sort(nos)
+  T.eq(#nos, 9, "nine"); T.eq(nos[1], 9001, "first"); T.eq(nos[9], 9009, "contiguous")
+end)
+
+T.test("far block skips occupied numbers", function()
+  M.reset()
+  M.appearances._kids[#M.appearances._kids + 1] = M.handle({ name = "Mine", No = 9003 }, {})
+  local desk = az().madesk.createMaDesk()
+  desk:install({ fixtures = {}, markers = {}, problems = {} })
+  local mine = 0
+  for _, a in ipairs(M.appearances._kids) do if a.No == 9003 then mine = mine + 1; T.eq(a.name, "Mine", "untouched") end end
+  T.eq(mine, 1, "no overwrite")
+  for _, a in ipairs(M.appearances._kids) do if a.name == "AZ Tracking" then T.truthy(a.No >= 9004, "after the occupied number") end end
+end)
+
+T.test("low AZ appearance is moved to the far block", function()
+  M.reset()
+  M.appearances._kids[#M.appearances._kids + 1] = M.handle({ name = "AZ Tracking", No = 7, IMAGERGBA = "137A38E0" }, {})
+  M.appearances._kids[#M.appearances._kids + 1] = M.handle({ name = "Other", No = 8 }, {})
+  local desk = az().madesk.createMaDesk()
+  desk:install({ fixtures = {}, markers = {}, problems = {} })
+  local low, other = false, false
+  for _, a in ipairs(M.appearances._kids) do
+    if a.name == "AZ Tracking" and a.No < 9001 then low = true end
+    if a.name == "Other" then other = true end
+  end
+  T.eq(low, false, "moved"); T.eq(other, true, "others kept")
+end)
+
+T.test("cells are sequences coloured through the sequence appearance", function()
+  M.reset()
+  local desk = az().madesk.createMaDesk()
+  desk:install({ fixtures = {}, markers = {}, problems = {} })
+  desk:buildLayout({ { key = "toggle", x = 0, y = 0, w = 100, h = 60, command = "Toggle()" }, { key = "status", x = 110, y = 0, w = 100, h = 60, command = "" } })
+  local pool = M.dataPools._kids[1]
+  local function seqNamed(n) for _, s in ipairs(pool.Sequences._kids) do if s.name == n then return s end end end
+  local toggle, status = seqNamed("AZ toggle"), seqNamed("AZ status")
+  T.truthy(toggle, "toggle sequence"); T.truthy(status, "status sequence")
+  local el = pool.Layouts._kids[1]._kids[1]
+  T.eq(el.Object, toggle, "element bound to the sequence"); T.eq(el.Appearance, nil, "element appearance left empty")
+  local cue = toggle._kids[#toggle._kids]
+  T.eq(cue._kids[1].Command, [[Lua "if AZ then AZ:Toggle() end"]], "cue command")
+  T.eq(#pool.Macros._kids, 1, "only AZ Start remains as a macro")
+  desk:refreshLayout({ toggle = { text = "Stop", border = "3ECF6EFF", textColor = "E6E8EBFF", appearance = "button" } })
+  T.eq(toggle.Appearance.name, "AZ Button", "sequence coloured"); T.eq(el.CustomTextText, "Stop", "text on element")
+  desk:refreshLayout({ toggle = { text = "Stop", border = "3ECF6EFF", textColor = "E6E8EBFF", appearance = "error" } })
+  T.eq(toggle.Appearance.name, "AZ Error", "switched")
+end)
+
+T.test("deleted cell sequence is skipped", function()
+  M.reset()
+  local desk = az().madesk.createMaDesk()
+  desk:install({ fixtures = {}, markers = {}, problems = {} })
+  desk:buildLayout({ { key = "toggle", x = 0, y = 0, w = 100, h = 60, command = "Toggle()" } })
+  local pool = M.dataPools._kids[1]
+  for i, s in ipairs(pool.Sequences._kids) do if s.name == "AZ toggle" then s._deleted = true; table.remove(pool.Sequences._kids, i) break end end
+  desk:refreshLayout({ toggle = { text = "Stop", border = "3ECF6EFF", textColor = "E6E8EBFF", appearance = "button" } })
 end)
