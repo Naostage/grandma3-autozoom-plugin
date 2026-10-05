@@ -50,11 +50,11 @@ T.test("serialize writes disarmed and no armed", function()
   T.truthy(text:find('"disarmed"', 1, true), "disarmed written"); T.eq(text:find('"armed"', 1, true), nil, "no armed")
 end)
 
-T.test("prune drops fixtures that left the patch", function()
+T.test("prune drops sizes of fixtures that left the patch but keeps disarmed", function()
   local c = az().config
   local cfg = c.defaultConfig(); cfg.disarmed = { 101, 999 }; cfg.size["999"] = 2; cfg.size["101"] = 1
   local p = c.pruneConfig(cfg, { 101, 102 })
-  T.eq(p.disarmed, { 101 }, "disarmed"); T.eq(p.size, { ["101"] = 1 }, "size")
+  T.eq(p.disarmed, { 101, 999 }, "disarmed kept"); T.eq(p.size, { ["101"] = 1 }, "size")
 end)
 
 T.test("applySetup validates answers", function()

@@ -148,7 +148,7 @@ export class AutoZoom {
 
     Status(): void {
         if (!this.ensureCurrent()) return;
-        this.desk.log(`AutoZoom ${this.running ? "running" : "stopped"}, ${fmtInt(this.scanned.fixtures.length - this.config.disarmed.length)} armed`);
+        this.desk.log(`AutoZoom ${this.running ? "running" : "stopped"}, ${fmtInt(this.scanned.fixtures.filter(f => this.isArmed(f.fid)).length)} armed`);
         for (const f of this.scanned.fixtures) {
             const r = this.results[fidKey(f.fid)];
             this.desk.log(`  ${fmtInt(f.fid)} ${f.name}: ${r === undefined ? "-" : stateLabel(r.state)}`);

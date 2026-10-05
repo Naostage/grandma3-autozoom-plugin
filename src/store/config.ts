@@ -68,11 +68,11 @@ export function serializeConfig(c: Config): string {
 export function pruneConfig(config: Config, fids: number[]): Config {
     const keep: { [fid: string]: boolean } = {};
     for (const fid of fids) keep[fidKey(fid)] = true;
-    const disarmed: number[] = [];
-    for (const fid of config.disarmed) if (keep[fidKey(fid)]) disarmed.push(fid);
     const size: { [fid: string]: number } = {};
     for (const key in config.size) if (keep[key]) size[key] = config.size[key];
-    return { ...config, disarmed, size };
+    // `disarmed` is deliberately not pruned: a fixture missing from one scan must stay disarmed when it comes
+    // back (armed is the default). Stale numbers are harmless: isArmed only tests membership.
+    return { ...config, size };
 }
 
 // pick = "Pick preset…" was chosen: start the offset preset pick instead of applying the other answers.

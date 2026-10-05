@@ -56,14 +56,32 @@ T.test("Arm('') disarms all", function()
   T.eq(d.views["arm 101"].border, az().view.COLORS.idle, "101 disarmed")
 end)
 
-T.test("disarmed fixture removed from patch is dropped", function()
+T.test("disarmed fixture removed from the patch is kept; unpatched sizes are dropped", function()
   local d, a = setup()
-  d.saved["AutoZoom.config"] = '{"disarmed":[102,555]}'
+  d.saved["AutoZoom.config"] = '{"disarmed":[102,555],"size":{"101":2,"555":3}}'
   a:Install(); a:Stop()
-  T.eq(az().config.parseConfig(d.saved["AutoZoom.config"]).config.disarmed, { 102 }, "pruned and saved on stop")
+  local c = az().config.parseConfig(d.saved["AutoZoom.config"]).config
+  T.eq(c.disarmed, { 102, 555 }, "disarmed kept"); T.eq(c.size, { ["101"] = 2 }, "size pruned")
+end)
+
+T.test("a disarmed fixture missing from one rescan stays disarmed", function()
+  local d, a = setup()
+  a:Install(); a:ArmToggle(102)
+  local both = d.scanResult
+  d.scanResult = { fixtures = { F.fixture(101) }, markers = both.markers, problems = {} }
+  a:Rescan()
+  d.scanResult = both
+  a:Rescan()
+  T.eq(a.config.disarmed, { 102 }, "still disarmed")
+  T.eq(d.views["arm 102"].appearance, "idle", "102 idle")
+  T.eq(d.views["arm 101"].appearance, "tracking", "101 armed")
+end)
+
+T.test("Status counts armed scanned fixtures, ignoring stale disarmed numbers", function()
+  local d, a = setup()
   d.saved["AutoZoom.config"] = '{"disarmed":[555]}'
-  local b = az().runtime.createAutoZoom(d, "id-1"); b:Install(); b:Stop()
-  T.eq(az().config.parseConfig(d.saved["AutoZoom.config"]).config.disarmed, {}, "only unpatched fixture pruned to empty")
+  a:Install(); a:Status()
+  T.eq(d.logs[#d.logs - 2], "AutoZoom stopped, 2 armed", "armed count")
 end)
 
 T.test("fixtures are armed by default", function()
