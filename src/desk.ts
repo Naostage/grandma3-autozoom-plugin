@@ -11,7 +11,7 @@ export interface Desk {
     loadText(key: string): string | undefined;             // GlobalVars
     saveText(key: string, value: string): void;
     scan(): PatchScan;
-    install(scan: PatchScan): void;                        // DataPool, AZ_ZOOM/AZ_IRIS/AZ_SIZE sequences
+    install(scan: PatchScan): void;                        // DataPool, AZ_BASE/AZ_ZOOM/AZ_IRIS/AZ_SIZE sequences
     readMarkerCid(f: PatchFixture): number;                // live XYZ_MArker output, 0 = none
     readOffset(f: PatchFixture): Vec3;                     // live XYZ_X/Y/Z output in metres
     readProgrammerCid(f: PatchFixture): number;            // XYZ_MArker when it comes from the programmer, else 0

@@ -11,23 +11,18 @@ T.test("empty arm list", function()
 end)
 
 T.test("program commands with values offset", function()
-  local optics = { zoomMin = 5.5, zoomMax = 49, irisMin = 0.109, irisMax = 1 }
-  local cmds = az().program.programCommands(101, 1, optics, { source = "values", preset = "", values = { 0, -1, 0.3 } })
+  local cmds = az().program.programCommands(101, 1, { source = "values", preset = "", values = { 0, -1, 0.3 } })
   T.eq(cmds, {
     "Fixture 101",
     'Attribute "XYZ_MArker" At 1',
     'Attribute "XYZ_X" At 0',
     'Attribute "XYZ_Y" At -1',
     'Attribute "XYZ_Z" At 0.3',
-    'Attribute "Zoom" At Absolute Physical 5.5',
-    'Attribute "Iris" At Absolute Physical 0.109',
   }, "commands")
 end)
 
 T.test("program commands with preset offset and no iris", function()
-  local optics = { zoomMin = 10, zoomMax = 40, irisMin = 0, irisMax = 0 }
-  local cmds = az().program.programCommands(102, 4, optics, { source = "preset", preset = "2.12", values = { 0, 0, 0 } })
-  T.eq(cmds, { "Fixture 102", 'Attribute "XYZ_MArker" At 4', 'Attribute "XYZ_X" Thru "XYZ_Z" At Preset 2.12',
-    'Attribute "Zoom" At Absolute Physical 10' }, "commands")
+  local cmds = az().program.programCommands(102, 4, { source = "preset", preset = "2.12", values = { 0, 0, 0 } })
+  T.eq(cmds, { "Fixture 102", 'Attribute "XYZ_MArker" At 4', 'Attribute "XYZ_X" Thru "XYZ_Z" At Preset 2.12' }, "commands")
   T.eq(az().program.releaseCommands(102), { "Off Fixture 102" }, "release")
 end)

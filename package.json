@@ -1,6 +1,6 @@
 {
   "name": "gma3_autozoom",
-  "version": "2.0.0.2",
+  "version": "2.0.0.3",
   "description": "Autozoom plugin for grandma3",
   "private": true,
   "scripts": {

@@ -28,6 +28,7 @@ function M.reset()
   end
   if M.appearances then for _, a in ipairs(M.appearances._kids) do a._deleted = true end end
   M.printed, M.cmds, M.vars, M.rt, M.timers = {}, {}, {}, {}, {}
+  M.events = {}   -- Cmd lines and fader writes, in order
   M.subfixtures, M.subIndexOf, M.nextSub = {}, {}, 0
   M.attrs = { XYZ_MArker = 13, XYZ_X = 9, XYZ_Y = 10, XYZ_Z = 11 }
   M.stages = handle({}, {})
@@ -64,7 +65,7 @@ end
 function Printf(s) M.printed[#M.printed + 1] = s end
 function CmdObj() return M.cmdObj end
 function CurrentProfile() return M.profile end
-function Cmd(s) M.cmds[#M.cmds + 1] = s; if s == "Oops /nc" then M.oopsProgrammerDuringOops = M.profile and M.profile.OopsProgrammer end; if M.onCmd then M.onCmd(s) end; return "Ok" end
+function Cmd(s) M.cmds[#M.cmds + 1] = s; M.events[#M.events + 1] = s; if s == "Oops /nc" then M.oopsProgrammerDuringOops = M.profile and M.profile.OopsProgrammer end; if M.onCmd then M.onCmd(s) end; return "Ok" end
 CmdIndirect = Cmd
 CmdIndirectWait = Cmd
 function Patch() return { Stages = M.stages, FixtureTypes = M.fixtureTypes } end
@@ -161,7 +162,7 @@ end
 -- Probe P6/P7: children are OffCue (no nil), CueZero (no 0); cues are stored as cue number x 1000.
 function M.sequence(pool, name)
   local s = handle({ name = name, no = #pool.Sequences._kids + 1, faders = {}, master = nil }, {})
-  function s:SetFader(o) self.faders[o.token] = o.value end
+  function s:SetFader(o) self.faders[o.token] = o.value; M.events[#M.events + 1] = o.token .. " " .. self.name .. "=" .. tostring(o.value) end
   function s:GetFader(o) return self.master end
   -- New cue appended after the existing ones; Create(i) adds part i (Command empty).
   function s:Append()

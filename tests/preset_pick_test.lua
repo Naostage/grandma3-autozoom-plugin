@@ -153,8 +153,7 @@ T.test("pick times out, cancels and is refused when stopped or not current", fun
 end)
 
 T.test("program commands accept a data pool preset address", function()
-  local optics = { zoomMin = 10, zoomMax = 40, irisMin = 0, irisMax = 0 }
-  local cmds = az().program.programCommands(102, 4, optics, { source = "preset", preset = "DataPool 4 Preset 2.30", values = { 0, 0, 0 } })
+  local cmds = az().program.programCommands(102, 4, { source = "preset", preset = "DataPool 4 Preset 2.30", values = { 0, 0, 0 } })
   T.eq(cmds[3], 'Attribute "XYZ_X" Thru "XYZ_Z" At DataPool 4 Preset 2.30', "data pool address")
 end)
 

@@ -92,8 +92,9 @@ Capture, tap-to-program, Setup and Size are runtime commands built on `Desk` and
 | Object | Name | Purpose |
 |---|---|---|
 | Layout | `AutoZoom` | The UI |
-| Sequence per fixture | `AZ_ZOOM_<fid>` | One cue: Zoom at maximum (`At Absolute Physical <zoom max>`); driven by its Temp fader |
-| Sequence per fixture (if iris) | `AZ_IRIS_<fid>` | One cue: Iris at maximum; driven by its Temp fader |
+| Sequence per fixture | `AZ_BASE_<fid>` | One cue: Zoom (and Iris, if any) at physical minimum; priority High; On while AutoZoom drives the fixture (§15.4) |
+| Sequence per fixture | `AZ_ZOOM_<fid>` | One cue: Zoom at maximum (`At Absolute Physical <zoom max>`); priority Super; driven by its Temp fader |
+| Sequence per fixture (if iris) | `AZ_IRIS_<fid>` | One cue: Iris at maximum; priority Super; driven by its Temp fader |
 | Sequence | `AZ_SIZE` | Global size fader (Master fader read by the plugin) |
 | Sequences | `AZ <cell key>` (one per layout cell, see §15.1) | Layout cells: cue 1 runs `Lua "if AZ then AZ:<Command>(...) end"` (no error when AutoZoom is not running); display-only cells have no command. Live text and colours are written to the layout element (`CUSTOMTEXTTEXT`, `CUSTOMTEXTCOLOR`, `BORDERCOLOR`), the route verified in probe 1 |
 | Macro | `AZ Start` | One line `Call Plugin "GMA3 Autozoom"`: starts AutoZoom after a show load or reboot; created once, the operator assigns it where they want. Renaming the plugin breaks it |
@@ -160,7 +161,7 @@ Tapping a marker cell (fixture × marker) **merges** into the programmer (no Cle
 
 - `XYZ_MArker` = marker CID
 - `XYZ_X/Y/Z` = offset from Setup
-- Zoom and Iris at their physical minimum (the base AutoZoom crossfades from)
+- (from 2.0.0.3, §15.4) no Zoom/Iris values: the minimum lives in `AZ_BASE_<fid>`
 
 Tapping the same cell again releases those values from the programmer. The user then stores cues the normal way.
 
@@ -260,3 +261,14 @@ AutoZoom already follows the marker that the cues set, so the arm state no longe
 - **Header**: Status · Start/Stop · Setup · Rescan · AZ_SIZE · message. Arm all / Disarm all / Capture / Offset cells are removed (`ArmAll()` / `DisarmAll()` stay as commands).
 - **Offset preset pick moves into Setup**: the Setup dialog has a third command, **Pick preset…**, which closes the dialog and starts the pick (§15.2 rules unchanged); the countdown and result appear in the header message cell. `PickOffset()` stays as a command.
 - Version 2.0.0.2.
+
+### 15.4 AutoZoom-owned zoom/iris base (2026-10-05, version 2.0.0.3)
+
+Until 2.0.0.2 the zoom/iris minimum lived in the operator's cues (tap-to-program wrote it), so a released fixture stayed at minimum. The minimum is now owned by AutoZoom:
+
+- **`AZ_BASE_<fid>`** per fixture in DataPool `AutoZoom`: one cue with Zoom at its physical minimum, plus Iris at its physical minimum when the fixture has an iris (iris max > iris min). Created at install like the fader sequences (ClearAll, `Fixture <fid>`, `Attribute "Zoom" At Absolute Physical <min>` [, Iris], Store, ClearAll), only when missing.
+- **Priorities**, set on every install (also on sequences from earlier builds): `AZ_BASE_<fid>` **High**, `AZ_ZOOM_<fid>` / `AZ_IRIS_<fid>` **Super** (`Set DataPool 'AutoZoom' Sequence '<name>' Property 'Priority' '<prio>'`). Probe 4 (2.5.1.0) showed a High sequence beats a normal cue fired later, two High sequences resolve last-activated-wins, and a Super Temp-fader sequence stays on top of a High base even when the base is re-activated.
+- **Engage / release** (console layer, `MaDesk`, keyed by fixture id): the first `setFaders` after a release (or since the plugin started) issues `On DataPool 'AutoZoom' Sequence 'AZ_BASE_<fid>'` **before** writing the Temp faders; later `setFaders` while engaged do not repeat it. `releaseFaders` sets the Temp faders to 0, then `Off … 'AZ_BASE_<fid>'`, and marks the fixture disengaged. Hold (no PSN) touches neither. After a plugin restart the engaged map is empty, so the first `setFaders` issues On again (harmless).
+- **Effect**: while AutoZoom drives a fixture, its zoom/iris cannot be overridden from the programmer or from other cues; once released, the cue's own zoom/iris apply.
+- **Tap-to-program** writes only `XYZ_MArker` and the XYZ offset; no Zoom/Iris values (§8).
+- Rescan's stale cell-sequence cleanup only deletes `AZ <key>` sequences (prefix `AZ ` with a space), so `AZ_BASE_` / `AZ_ZOOM_` / `AZ_IRIS_` are kept. Sequences of fixtures no longer patched are not deleted.

@@ -2,10 +2,10 @@
 
 Tick each line on a copy of a real show. Note the System Monitor output for any failure.
 
-1. [ ] Import and run the plugin: "AutoZoom 2.0.0.2", "Found N fixtures and M markers"; data pool AutoZoom exists with layout, AZ_ZOOM/AZ_IRIS per fixture, AZ_SIZE.
+1. [ ] Import and run the plugin: "AutoZoom 2.0.0.3", "Found N fixtures and M markers"; data pool AutoZoom exists with layout, AZ_BASE/AZ_ZOOM/AZ_IRIS per fixture (AZ_BASE priority High, AZ_ZOOM/AZ_IRIS Super), AZ_SIZE.
 2. [ ] Layout opens in a view; header shows Running and PSN x/y; one row per XYZ fixture; marker columns by name/CID.
 3. [ ] Tap an Arm cell: border turns grey (disarmed); tap again: green.
-4. [ ] Tap a marker cell: programmer gets XYZ_MArker, XYZ offset from Setup, zoom/iris minimum; cell shows red P; tap again releases.
+4. [ ] Tap a marker cell: programmer gets XYZ_MArker, XYZ offset from Setup (no Zoom/Iris values); cell shows red P; tap again releases.
 5. [ ] Store a cue with that programmer, clear, play the cue: matrix cell lit green, state Tracking, zoom % changes as the performer moves.
 6. [ ] Move AZ_SIZE: beam size follows; set a fixed size on one fixture: it ignores the fader.
 7. [ ] Stop the PSN source: state "No PSN data", zoom holds.
@@ -32,3 +32,6 @@ Tick each line on a copy of a real show. Note the System Monitor output for any 
 27. [ ] New fixtures are armed by default: patch a new XYZ fixture, tap Rescan: its Arm cell is green.
 28. [ ] Setup → Pick preset… while stopped: refused with "Start AutoZoom to pick a preset".
 29. [ ] Rescan and plugin re-run keep the AutoZoom layout object: a view showing it stays intact; elements you added to the layout yourself are kept.
+30. [ ] With AutoZoom off/released, the fixture's zoom and iris are the cue's own values (no forced minimum).
+31. [ ] While tracking, firing another cue with zoom/iris values doesn't override AutoZoom.
+32. [ ] Disarm a tracking fixture: zoom/iris return to the cue values.

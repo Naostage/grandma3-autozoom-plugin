@@ -1,5 +1,6 @@
 /** @noSelfInFile */
 import { Desk } from "../desk";
+import { fidKey } from "../format";
 import { Vec3 } from "../engine/vec";
 import { CellSpec, MarkerReadings, PatchFixture, PatchScan, Views } from "../model";
 import { Config, SetupAnswers } from "../store/config";
@@ -15,6 +16,7 @@ import * as vars from "./vars";
 
 export class MaDesk implements Desk {
     private lastScan: PatchScan = { fixtures: [], markers: [], problems: [] };
+    private engaged: { [fid: string]: boolean } = {};    // AZ_BASE turned On; empty after a plugin restart (On again is harmless)
 
     now(): number { return Time(); }
     log(message: string): void { info(message); }
@@ -39,8 +41,17 @@ export class MaDesk implements Desk {
             warnOnce("cell-macros", "Could not remove the old layout macros: " + tostring(e));
         }
         for (const f of scan.fixtures) {
+            const hasIris = f.optics.irisMax > f.optics.irisMin;
+            const base: [string, number][] = [["Zoom", f.optics.zoomMin]];
+            if (hasIris) base.push(["Iris", f.optics.irisMin]);
+            pool.ensureCueSequence(pool.baseSeqName(f.fid), f.fid, base);
+            pool.setPriority(pool.baseSeqName(f.fid), "High");
             pool.ensureFaderSequence(pool.zoomSeqName(f.fid), f.fid, "Zoom", f.optics.zoomMax);
-            if (f.optics.irisMax > f.optics.irisMin) pool.ensureFaderSequence(pool.irisSeqName(f.fid), f.fid, "Iris", f.optics.irisMax);
+            pool.setPriority(pool.zoomSeqName(f.fid), "Super");
+            if (hasIris) {
+                pool.ensureFaderSequence(pool.irisSeqName(f.fid), f.fid, "Iris", f.optics.irisMax);
+                pool.setPriority(pool.irisSeqName(f.fid), "Super");
+            }
         }
     }
     readMarkerCid(f: PatchFixture): number { return live.readMarkerCid(f); }
@@ -48,13 +59,21 @@ export class MaDesk implements Desk {
     readProgrammerCid(f: PatchFixture): number { return live.readProgrammerCid(f); }
     readMarkers(): MarkerReadings { return live.readMarkers(); }
     readSizeFader(): number | undefined { return pool.readMaster(pool.SIZE_SEQ); }
+    // AZ_BASE (High) holds zoom/iris at minimum while driven; it goes On once per engagement, before the Temp faders.
     setFaders(f: PatchFixture, zoom: number, iris: number | undefined): void {
+        const key = fidKey(f.fid);
+        if (!this.engaged[key]) {
+            pool.sequenceOn(pool.baseSeqName(f.fid));
+            this.engaged[key] = true;
+        }
         pool.setTemp(pool.zoomSeqName(f.fid), zoom);
         if (iris !== undefined && f.optics.irisMax > f.optics.irisMin) pool.setTemp(pool.irisSeqName(f.fid), iris);
     }
     releaseFaders(f: PatchFixture): void {
         pool.setTemp(pool.zoomSeqName(f.fid), 0);
         if (f.optics.irisMax > f.optics.irisMin) pool.setTemp(pool.irisSeqName(f.fid), 0);
+        pool.sequenceOff(pool.baseSeqName(f.fid));
+        this.engaged[fidKey(f.fid)] = false;
     }
     buildLayout(cells: CellSpec[]): void { layout.buildLayout(cells); }
     refreshLayout(views: Views): void { layout.refreshLayout(views); }

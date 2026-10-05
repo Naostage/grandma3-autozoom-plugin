@@ -18,9 +18,70 @@ T.test("install creates pool, fader sequences and size sequence once", function(
   T.truthy(joined:find("Store DataPool 'AutoZoom' Sequence 'AZ_ZOOM_101' /o /nc", 1, true), "zoom seq")
   T.truthy(joined:find("Store DataPool 'AutoZoom' Sequence 'AZ_SIZE' /o /nc", 1, true), "size seq")
   T.truthy(joined:find([[Set DataPool 'AutoZoom' Macro 'AZ Start'.1 Property 'Command' 'Call Plugin "GMA3 Autozoom"']], 1, true), "AZ Start macro")
-  local n = #M.cmds
+  M.cmds = {}
   desk:install({ fixtures = { fixture101() }, markers = {}, problems = {} })
-  T.eq(#M.cmds, n, "second install changes nothing")
+  for _, c in ipairs(M.cmds) do T.truthy(c:find(" Property 'Priority' ", 1, true), "second install only sets priorities: " .. c) end
+end)
+
+local function hasCmd(c) for _, x in ipairs(M.cmds) do if x == c then return true end end return false end
+local function indexOf(list, c) for i, x in ipairs(list) do if x == c then return i end end return nil end
+
+T.test("install creates the AZ_BASE sequence at zoom/iris minimum with High priority, zoom/iris Super", function()
+  M.reset()
+  local desk = az().madesk.createMaDesk()
+  desk:install({ fixtures = { fixture101() }, markers = {}, problems = {} })
+  local store = indexOf(M.cmds, "Store DataPool 'AutoZoom' Sequence 'AZ_BASE_101' /o /nc")
+  T.truthy(store, "base stored")
+  T.eq(M.cmds[store - 4], "ClearAll", "clear first"); T.eq(M.cmds[store - 3], "Fixture 101", "fixture")
+  T.eq(M.cmds[store - 2], 'Attribute "Zoom" At Absolute Physical 5.5', "zoom min")
+  T.eq(M.cmds[store - 1], 'Attribute "Iris" At Absolute Physical 0.109', "iris min")
+  T.eq(M.cmds[store + 1], "ClearAll", "clear after")
+  local hi = indexOf(M.cmds, "Set DataPool 'AutoZoom' Sequence 'AZ_BASE_101' Property 'Priority' 'High'")
+  T.truthy(hi and hi > store, "base High after store")
+  T.truthy(hasCmd("Set DataPool 'AutoZoom' Sequence 'AZ_ZOOM_101' Property 'Priority' 'Super'"), "zoom Super")
+  T.truthy(hasCmd("Set DataPool 'AutoZoom' Sequence 'AZ_IRIS_101' Property 'Priority' 'Super'"), "iris Super")
+end)
+
+T.test("a fixture without iris gets a base with only Zoom and no iris sequence", function()
+  M.reset()
+  local f = fixture101(); f.optics.irisMin = 0; f.optics.irisMax = 0
+  local desk = az().madesk.createMaDesk()
+  desk:install({ fixtures = { f }, markers = {}, problems = {} })
+  local store = indexOf(M.cmds, "Store DataPool 'AutoZoom' Sequence 'AZ_BASE_101' /o /nc")
+  T.truthy(store, "base stored")
+  T.eq(M.cmds[store - 1], 'Attribute "Zoom" At Absolute Physical 5.5', "zoom min right before store")
+  for _, c in ipairs(M.cmds) do T.truthy(not c:find("Iris", 1, true) and not c:find("AZ_IRIS_101", 1, true), "no iris: " .. c) end
+  T.truthy(hasCmd("Set DataPool 'AutoZoom' Sequence 'AZ_BASE_101' Property 'Priority' 'High'"), "base High")
+end)
+
+T.test("priorities are set on sequences that already existed", function()
+  M.reset()
+  local pool = M.pool("AutoZoom")
+  for _, n in ipairs({ "AZ_ZOOM_101", "AZ_IRIS_101", "AZ_BASE_101", "AZ_SIZE" }) do M.sequence(pool, n) end
+  local desk = az().madesk.createMaDesk()
+  desk:install({ fixtures = { fixture101() }, markers = {}, problems = {} })
+  T.eq(indexOf(M.cmds, "Store DataPool 'AutoZoom' Sequence 'AZ_BASE_101' /o /nc"), nil, "existing base not re-stored")
+  T.truthy(hasCmd("Set DataPool 'AutoZoom' Sequence 'AZ_ZOOM_101' Property 'Priority' 'Super'"), "zoom Super")
+  T.truthy(hasCmd("Set DataPool 'AutoZoom' Sequence 'AZ_IRIS_101' Property 'Priority' 'Super'"), "iris Super")
+  T.truthy(hasCmd("Set DataPool 'AutoZoom' Sequence 'AZ_BASE_101' Property 'Priority' 'High'"), "base High")
+end)
+
+T.test("engaging turns the base On before the Temp faders, once; release turns it Off", function()
+  M.reset()
+  local desk = az().madesk.createMaDesk()
+  desk:install({ fixtures = { fixture101() }, markers = {}, problems = {} })
+  M.events = {}
+  desk:setFaders(fixture101(), 13.6, 100)
+  T.eq(M.events, { "On DataPool 'AutoZoom' Sequence 'AZ_BASE_101'", "FaderTemp AZ_ZOOM_101=13.6", "FaderTemp AZ_IRIS_101=100" }, "On first")
+  M.events = {}
+  desk:setFaders(fixture101(), 20, 50)
+  T.eq(M.events, { "FaderTemp AZ_ZOOM_101=20", "FaderTemp AZ_IRIS_101=50" }, "no second On")
+  M.events = {}
+  desk:releaseFaders(fixture101())
+  T.eq(M.events, { "FaderTemp AZ_ZOOM_101=0", "FaderTemp AZ_IRIS_101=0", "Off DataPool 'AutoZoom' Sequence 'AZ_BASE_101'" }, "temps 0, base Off")
+  M.events = {}
+  desk:setFaders(fixture101(), 10, 0)
+  T.eq(M.events[1], "On DataPool 'AutoZoom' Sequence 'AZ_BASE_101'", "On again after release")
 end)
 
 T.test("faders write Temp and read Master", function()
@@ -497,6 +558,7 @@ T.test("layout build deletes stale cell sequences and keeps fader sequences", fu
   local names = {}
   for _, sq in ipairs(pool.Sequences._kids) do names[sq.name] = true end
   T.eq(names["AZ arm 999"], nil, "stale deleted"); T.truthy(names["AZ_ZOOM_101"], "fader kept")
+  T.truthy(names["AZ_BASE_101"], "base kept"); T.truthy(names["AZ_IRIS_101"], "iris kept")
   T.truthy(names["AZ_SIZE"], "size kept"); T.truthy(names["AZ toggle"], "current cell kept")
 end)
 

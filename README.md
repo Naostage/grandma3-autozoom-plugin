@@ -7,7 +7,7 @@ Requires grandMA3 2.5 or later.
 
 ## Installation
 1. Copy `out/autozoom-grandma3.lua` and `out/autozoom-grandma3.xml` to `gma3_library/datapools/plugins` (USB stick) or `C:\ProgramData\MALightingTechnology\gma3_library\datapools\plugins` (onPC).
-2. Import the plugin and run it. It creates the **AutoZoom** data pool with the **AutoZoom** layout, one `AZ_ZOOM_<fid>` / `AZ_IRIS_<fid>` sequence per fixture and the `AZ_SIZE` sequence. Creating missing sequences clears the programmer.
+2. Import the plugin and run it. It creates the **AutoZoom** data pool with the **AutoZoom** layout, one `AZ_BASE_<fid>` / `AZ_ZOOM_<fid>` / `AZ_IRIS_<fid>` sequence per fixture and the `AZ_SIZE` sequence. Every run (and Rescan) sets `AZ_BASE_<fid>` to priority High and `AZ_ZOOM_<fid>` / `AZ_IRIS_<fid>` to Super. Creating missing sequences clears the programmer.
 3. Open the AutoZoom layout in a view.
 
 After loading a show (or a reboot), run the plugin again, or the **AZ Start** macro it creates in the AutoZoom data pool (assign it where you like). The layout texts are only live while AutoZoom runs; until then they show the last values and the buttons do nothing. The AZ Start macro calls the plugin by its name (`Call Plugin "GMA3 Autozoom"`): renaming the plugin breaks it.
@@ -19,11 +19,12 @@ Fixtures appear when their fixture type mode has XYZ enabled and a Zoom channel.
 - After upgrading, every XYZ fixture is armed; tap Arm to exclude one.
 - Cues stored with the old Capture still contain `Arm('...')` and set the arms when they run. Remove that command from the cue to rely on armed-by-default.
 - `Capture()` was removed; calling it only logs a message.
+- From 2.0.0.3 the zoom/iris minimum lives in `AZ_BASE_<fid>`, not in your cues. Cues stored with an earlier tap-to-program still hold zoom/iris at minimum: when AutoZoom releases such a fixture it stays at that minimum. Remove those values from the cue if you want the fixture's own zoom/iris there.
 
 ## Using the layout
 - **Header**: Status · Start/Stop · Setup · Rescan · AZ_SIZE · message.
 - **Arm column**: fixtures are armed by default, including newly patched ones; tap to disarm (exclude) a fixture, tap again to re-arm it. Only armed fixtures are driven.
-- **Marker cells**: a lit cell shows the marker the fixture currently follows (green tracking, amber no PSN data, grey disarmed). Tap a cell to put that fixture in the programmer on that marker, with the Setup XYZ offset and zoom/iris at minimum (red **P**); tap it again to send `Off Fixture <fid>`, which removes all of that fixture's values from the programmer.
+- **Marker cells**: a lit cell shows the marker the fixture currently follows (green tracking, amber no PSN data, grey disarmed). Tap a cell to put that fixture in the programmer on that marker, with the Setup XYZ offset (red **P**; zoom and iris are not touched); tap it again to send `Off Fixture <fid>`, which removes all of that fixture's values from the programmer.
 - **State, Distance, Zoom, Iris**: live values. "Too wide"/"Too small" mean the beam size is outside the fixture's optics.
 - **Size**: "Global" follows the `AZ_SIZE` fader (range set in Setup); tap to type a fixed size in metres.
 - **Setup**: XYZ offset source (preset number or X/Y/Z values), size fader range, refresh rate. XYZ offsets are read relative to the followed marker's Target space (from the show), so they are correct whatever the space size. Marker positions come from PSN trackers (each tracker's MArker ID must be set).
@@ -37,7 +38,11 @@ Fixtures appear when their fixture type mode has XYZ enabled and a Zoom channel.
 Run `Rescan()` (or tap the Rescan cell) after changing the patch (fixtures, positions, optics, markers). `Arm('101,102')` arms exactly the listed fixtures and disarms the others; cues that contain `Lua "if AZ then AZ:Arm('…') end"` keep working.
 
 ## How it works
-Each `AZ_ZOOM_<fid>` sequence holds zoom at maximum; its Temp fader crossfades from the cue's zoom (minimum) to it. Iris works the same way when the beam must be smaller than the minimum zoom allows.
+AutoZoom owns the zoom/iris range of each fixture it drives:
+- `AZ_BASE_<fid>` (priority High) holds zoom, and iris if the fixture has one, at their physical minimum. AutoZoom turns it On when it starts driving the fixture and Off when it releases it (Stop, disarm, no marker).
+- `AZ_ZOOM_<fid>` (priority Super) holds zoom at maximum; its Temp fader crossfades from the base minimum to it. `AZ_IRIS_<fid>` works the same way for iris when the beam must be smaller than the minimum zoom allows.
+
+While AutoZoom drives a fixture, its zoom and iris can't be overridden from the programmer or another cue. When it releases the fixture, the cue's own zoom/iris values apply again. Tap-to-program sets only the marker and the XYZ offset; your cues need no zoom/iris minimum.
 
 ## Developing
 `npm install`, then `npm run build`. Tests: `npm test` (needs `lua` 5.3+ on the PATH; on NixOS `nix shell nixpkgs#nodejs_22 nixpkgs#lua5_4`). Design: `docs/superpowers/specs/2026-10-03-autozoom-layout-ux-design.md`. Prototype: `docs/prototype/autozoom-layout-prototype.html`.

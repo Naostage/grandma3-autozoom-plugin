@@ -9,11 +9,12 @@ local function setup()
   return d, a
 end
 
-T.test("Program loads marker, offset and zoom/iris minimum", function()
+T.test("Program loads marker and offset only", function()
   local d, a = setup()
   a:Program(101, 2)
   T.eq(d.cmds[1], "Fixture 101", "select"); T.eq(d.cmds[2], 'Attribute "XYZ_MArker" At 2', "marker")
-  T.eq(#d.cmds, 7, "marker + 3 offsets + zoom + iris + select")
+  T.eq(#d.cmds, 5, "select + marker + 3 offsets")
+  for _, c in ipairs(d.cmds) do T.truthy(not c:find("Zoom", 1, true) and not c:find("Iris", 1, true), "no zoom/iris: " .. c) end
 end)
 
 T.test("Program on the cell already in the programmer releases the fixture", function()

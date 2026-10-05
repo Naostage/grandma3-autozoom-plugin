@@ -11,6 +11,7 @@ export const START_MACRO = "AZ Start";
 
 export function zoomSeqName(fid: number): string { return "AZ_ZOOM_" + fmtInt(fid); }
 export function irisSeqName(fid: number): string { return "AZ_IRIS_" + fmtInt(fid); }
+export function baseSeqName(fid: number): string { return "AZ_BASE_" + fmtInt(fid); }
 
 export function findPool(): any {
     return findChild(ShowData().DataPools, POOL);
@@ -37,17 +38,30 @@ export function findSequence(name: string): any {
     return seq;
 }
 
-// One cue with the attribute at `physical` (its maximum); the Temp fader crossfades the cue's base value to it.
+// One cue with the attribute at `physical` (its maximum); the Temp fader crossfades from the AZ_BASE value to it.
 // Clears the programmer: only runs when the sequence is missing.
 export function ensureFaderSequence(name: string, fid: number, attribute: string, physical: number): void {
+    ensureCueSequence(name, fid, [[attribute, physical]]);
+}
+
+// One cue holding each [attribute, physical value] for the fixture. Only runs when the sequence is missing.
+export function ensureCueSequence(name: string, fid: number, values: [string, number][]): void {
     ensurePool();
     if (findSequence(name) !== undefined) return;
     Cmd("ClearAll");
     Cmd(`Fixture ${fmtInt(fid)}`);
-    Cmd(`Attribute "${attribute}" At Absolute Physical ${fmtNum(physical)}`);
+    for (const [attribute, physical] of values) Cmd(`Attribute "${attribute}" At Absolute Physical ${fmtNum(physical)}`);
     Cmd(`Store ${POOL_ADDR} Sequence '${name}' /o /nc`);
     Cmd("ClearAll");
 }
+
+// Probe 4 (2.5.1.0): a High sequence beats normal cues; a Super Temp-fader sequence stays above a re-activated High base.
+export function setPriority(name: string, priority: "High" | "Super"): void {
+    Cmd(`Set ${POOL_ADDR} Sequence '${name}' Property 'Priority' '${priority}'`);
+}
+
+export function sequenceOn(name: string): void { Cmd(`On ${POOL_ADDR} Sequence '${name}'`); }
+export function sequenceOff(name: string): void { Cmd(`Off ${POOL_ADDR} Sequence '${name}'`); }
 
 export function ensureSizeSequence(): void {
     ensurePool();
