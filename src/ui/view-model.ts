@@ -46,7 +46,7 @@ export function layoutCells(fixtures: PatchFixture[], markers: PatchMarker[]): C
     const step = GRID.h + GRID.gap;
     let x = 0;
     const header: [string, string][] = [
-        ["status", ""], ["toggle", "Toggle()"], ["setup", "Setup()"], ["rescan", "Rescan()"], ["size", ""], ["message", ""],
+        ["status", ""], ["toggle", "Toggle()"], ["setup", "Setup()"], ["rescan", "RescanLater()"], ["size", ""], ["message", ""],
     ];
     for (const [key, command] of header) {
         const w = key === "message" ? GRID.w * 3 : GRID.w;

@@ -227,3 +227,19 @@ T.test("Rescan from the layout while running rebuilds the layout and keeps the l
   d:tick()
   T.eq(d.views["status"].text:sub(1, 7), "Running", "still running")
 end)
+
+T.test("RescanLater queues the rescan and runLaters performs it", function()
+  local d, a = setup()
+  a:Install()
+  local before = d.cells
+  a:RescanLater()
+  T.eq(d.cells, before, "nothing rebuilt yet"); T.eq(#d.laters, 1, "queued")
+  d:runLaters()
+  T.truthy(d.cells ~= before, "layout rebuilt later")
+end)
+
+T.test("Capture logs that it was removed", function()
+  local d, a = setup()
+  a:Install(); a:Capture()
+  T.eq(d.logs[#d.logs], "Capture was removed in 2.0.0.2", "logged")
+end)

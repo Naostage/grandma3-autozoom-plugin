@@ -65,6 +65,12 @@ export class AutoZoom {
         this.update();
     }
 
+    // The Rescan layout cell uses this: rebuilding the layout inside the tap of one of its own elements is unsafe.
+    RescanLater(): void {
+        if (!this.ensureCurrent()) return;
+        this.desk.later(() => this.Rescan());
+    }
+
     Start(): void {
         if (!this.ensureCurrent()) return;
         if (this.running) return;

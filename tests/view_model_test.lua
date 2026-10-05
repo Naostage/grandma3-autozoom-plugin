@@ -9,7 +9,7 @@ T.test("layout cells cover header, marker heads and every row cell", function()
   local cells = az().view.layoutCells({ fx(101), fx(102) }, MARKERS)
   local keys = {}
   for _, c in ipairs(cells) do keys[c.key] = c.command end
-  T.eq(keys["toggle"], "Toggle()", "toggle"); T.eq(keys["setup"], "Setup()", "setup"); T.eq(keys["rescan"], "Rescan()", "rescan")
+  T.eq(keys["toggle"], "Toggle()", "toggle"); T.eq(keys["setup"], "Setup()", "setup"); T.eq(keys["rescan"], "RescanLater()", "rescan")
   for _, gone in ipairs({ "capture", "offset", "armall", "disarmall" }) do T.eq(keys[gone], nil, "no " .. gone .. " cell") end
   T.eq(keys["arm 101"], "ArmToggle(101)", "arm"); T.eq(keys["mx 102 2"], "Program(102,2)", "matrix")
   T.eq(keys["sz 101"], "Size(101)", "size"); T.eq(keys["st 101"], "", "state is display only")
