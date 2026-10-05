@@ -1,7 +1,7 @@
 /** @noSelfInFile */
 import { CellSpec, Views } from "../model";
 import { children, findChild } from "./handles";
-import { ensureMacro, ensurePool, POOL_ADDR } from "./pool";
+import { ensureMacro, ensurePool, findPool, POOL_ADDR } from "./pool";
 
 export const LAYOUT = "AutoZoom";
 const TAG = "AZ:";
@@ -38,22 +38,29 @@ export function buildLayout(cells: CellSpec[]): void {
     }
 }
 
+// Never creates anything: if the pool or layout is gone, elements stays empty.
 function findElements(): void {
-    const pool = ensurePool();
     elements = {};
-    for (const el of children(findChild(pool.Layouts, LAYOUT))) {
+    const pool = findPool();
+    if (pool === undefined) return;
+    const layout = findChild(pool.Layouts, LAYOUT);
+    if (layout === undefined) return;
+    for (const el of children(layout)) {
         const note = tostring(el.Note ?? "");
         if (note.startsWith(TAG)) elements[note.substring(TAG.length)] = el;
     }
 }
 
 export function refreshLayout(views: Views): void {
+    let rescanned = false;
     for (const key in views) {
         const view = views[key];
         const signature = `${view.text}|${view.border}|${view.textColor}`;
         if (written[key] === signature) continue;
         let el = elements[key];
         if (el === undefined || !IsObjectValid(el)) {
+            if (rescanned) continue;
+            rescanned = true;
             findElements();
             el = elements[key];
             if (el === undefined) continue;     // user deleted it; Rescan recreates it

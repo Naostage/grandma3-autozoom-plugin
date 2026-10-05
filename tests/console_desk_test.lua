@@ -103,3 +103,31 @@ T.test("loop runs ticks and ignores stale timers after stop", function()
   desk:stopLoop(); M.runTimers(3)
   T.eq(ticks, 3, "no ticks after stop"); T.eq(cleaned, 1, "cleanup once")
 end)
+
+local function builtLayout()
+  M.reset()
+  local desk = az().madesk.createMaDesk()
+  desk:install({ fixtures = {}, markers = {}, problems = {} })
+  desk:buildLayout({ { key = "a", x = 0, y = 0, w = 1, h = 1, command = "" }, { key = "b", x = 1, y = 0, w = 1, h = 1, command = "" } })
+  return desk
+end
+local VIEWS = { a = { text = "A", border = "1", textColor = "2" }, b = { text = "B", border = "1", textColor = "2" } }
+
+T.test("refresh with the layout deleted creates nothing", function()
+  local desk = builtLayout()
+  M.cmds = {}
+  for _, e in ipairs(M.dataPools._kids[1].Layouts._kids[1]._kids) do e._deleted = true end
+  M.onCmd("Delete DataPool 'AutoZoom' Layout 'AutoZoom' /nc")
+  desk:refreshLayout(VIEWS); desk:refreshLayout(VIEWS)
+  T.eq(#M.cmds, 0, "no commands")
+end)
+
+T.test("refresh with the data pool deleted issues no command", function()
+  local desk = builtLayout()
+  M.cmds = {}
+  local pool = M.dataPools._kids[1]
+  for _, e in ipairs(pool.Layouts._kids[1]._kids) do e._deleted = true end
+  pool._deleted = true; table.remove(M.dataPools._kids, 1)
+  desk:refreshLayout(VIEWS); desk:refreshLayout(VIEWS)
+  T.eq(#M.cmds, 0, "no commands")
+end)
