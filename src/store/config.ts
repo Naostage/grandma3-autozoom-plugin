@@ -1,4 +1,5 @@
 /** @noSelfInFile */
+import { parsePresetCommand } from "../engine/preset-ref";
 import { fidKey, fmtNum } from "../format";
 import { decode, encode } from "./json";
 
@@ -88,7 +89,8 @@ export function applySetup(current: Config, a: SetupAnswers): { config: Config; 
     if (x !== undefined && y !== undefined && z !== undefined) config.offset.values = [x, y, z];
     if (a.source === "preset" && a.preset.trim() === "") errors.push("Offset source is Preset but no preset number was given");
     else config.offset.source = a.source;
-    config.offset.preset = a.preset.trim();
+    // "datapool 4 preset 2.30" -> "DataPool 4 Preset 2.30", "Preset 2.30" -> "2.30"; anything else as typed.
+    config.offset.preset = parsePresetCommand(a.preset) ?? a.preset.trim();
     const lo = read("Size min", a.min), hi = read("Size max", a.max);
     if (lo !== undefined && hi !== undefined) {
         if (lo > 0 && hi > lo) config.range = [lo, hi];
@@ -103,6 +105,9 @@ export function applySetup(current: Config, a: SetupAnswers): { config: Config; 
 }
 
 export function offsetLabel(c: Config): string {
-    if (c.offset.source === "preset") return "Preset " + c.offset.preset;
+    if (c.offset.source === "preset") {
+        const [dp, p] = string.match(c.offset.preset, "^DataPool%s+(%d+)%s+Preset%s+(.+)$");
+        return dp !== undefined ? `DP${dp} ${p}` : "Preset " + c.offset.preset;
+    }
     return c.offset.values.map(v => fmtNum(v)).join("/") + " m";
 }

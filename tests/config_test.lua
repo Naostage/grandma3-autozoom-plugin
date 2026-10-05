@@ -49,3 +49,21 @@ T.test("applySetup validates answers", function()
   T.eq(#bad.errors, 4, "errors: preset empty, x, range, rate"); T.eq(bad.config.offset.source, "values", "source kept")
   T.eq(c.offsetLabel(r.config), "0/-1/0.3 m", "label values")
 end)
+
+T.test("offset label shows plain and data pool presets", function()
+  local c = az().config
+  local cfg = c.defaultConfig(); cfg.offset.source = "preset"
+  cfg.offset.preset = "2.30"; T.eq(c.offsetLabel(cfg), "Preset 2.30", "plain")
+  cfg.offset.preset = "DataPool 4 Preset 2.30"; T.eq(c.offsetLabel(cfg), "DP4 2.30", "data pool")
+end)
+
+T.test("applySetup normalizes a typed data pool preset", function()
+  local c = az().config
+  local function preset(text)
+    return c.applySetup(c.defaultConfig(), { source = "preset", preset = text, x = "0", y = "0", z = "0", min = "1", max = "4", rate = "30" }).config.offset.preset
+  end
+  T.eq(preset(" datapool 4 preset 2.30 "), "DataPool 4 Preset 2.30", "data pool, any case")
+  T.eq(preset("DATAPOOL 4 PRESET 2.30"), "DataPool 4 Preset 2.30", "upper case")
+  T.eq(preset("2.30"), "2.30", "plain number kept")
+  T.eq(preset("Preset 2.30"), "2.30", "preset word dropped")
+end)

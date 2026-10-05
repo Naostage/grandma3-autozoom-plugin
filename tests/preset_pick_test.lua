@@ -122,6 +122,17 @@ T.test("Program during a pick re-takes the baseline so the plugin's own commands
   T.truthy(d.views["offset"].text:find("Tap a preset"), "still waiting")
 end)
 
+T.test("a failing Oops does not lose the picked preset", function()
+  local d, a = setup()
+  a:PickOffset(); d:tick()
+  function d:undoProgrammer() error("oops denied") end
+  d.lastCmd = "OK: Preset 2.30"; d.undoName = "Preset 2.30"; d.undoCount = 1
+  d:tick()
+  d.t = 2; d:tick()
+  local cfg = az().config.parseConfig(d.saved["AutoZoom.config"]).config
+  T.eq(cfg.offset.source, "preset", "source saved"); T.eq(cfg.offset.preset, "2.30", "preset saved")
+end)
+
 T.test("pick times out, cancels and is refused when stopped or not current", function()
   local d, a = setup()
   a:PickOffset(); d.t = 11; d:tick()

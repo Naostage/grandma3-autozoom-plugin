@@ -297,10 +297,11 @@ export class AutoZoom {
         }
         const undoName = this.desk.topUndoName();
         this.desk.log(`Preset pick saw "${cmd}", undo entry "${undoName ?? ""}"`);
-        // Oops only a new undo entry that is the tap itself: an older entry (e.g. "Store Preset 2.30") is never touched.
-        if (this.desk.undoMark() !== this.pickUndoMark && undoMatches(undoName, cmd)) this.desk.undoProgrammer();
+        // Saved first: a failing Oops must not lose the pick.
         this.config.offset = { ...this.config.offset, source: "preset", preset };
         this.markDirty();
+        // Oops only a new undo entry that is the tap itself: an older entry (e.g. "Store Preset 2.30") is never touched.
+        if (this.desk.undoMark() !== this.pickUndoMark && undoMatches(undoName, cmd)) this.desk.undoProgrammer();
         this.endPick(`Offset preset ${preset}`);
     }
 

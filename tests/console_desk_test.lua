@@ -272,3 +272,20 @@ T.test("layout is built although an element rejects a visibility property", func
   for _, p in ipairs(M.printed) do if p:find("[AZ warning]", 1, true) and p:find("unknown property", 1, true) then warned = true end end
   T.truthy(warned, "warning printed")
 end)
+
+T.test("a missing appearance is looked up once until the next install", function()
+  M.reset()
+  local desk = az().madesk.createMaDesk()
+  desk:install({ fixtures = {}, markers = {}, problems = {} })
+  desk:buildLayout({ { key = "toggle", x = 0, y = 0, w = 100, h = 60, command = "Toggle()" } })
+  for i, a in ipairs(M.appearances._kids) do if a.name == "AZ Button" then a._deleted = true; table.remove(M.appearances._kids, i) break end end
+  local scans, orig = 0, M.appearances.Children
+  M.appearances.Children = function(self) scans = scans + 1; return orig(self) end
+  for i = 1, 5 do
+    desk:refreshLayout({ toggle = { text = "Stop " .. i, border = "3ECF6EFF", textColor = "E6E8EBFF", appearance = "button" } })
+  end
+  T.eq(scans, 1, "one pool scan for five changed refreshes")
+  desk:install({ fixtures = {}, markers = {}, problems = {} })
+  desk:refreshLayout({ toggle = { text = "Stop again", border = "3ECF6EFF", textColor = "E6E8EBFF", appearance = "button" } })
+  T.eq(M.dataPools._kids[1].Layouts._kids[1]._kids[1].Appearance.name, "AZ Button", "recreated appearance used after install")
+end)
