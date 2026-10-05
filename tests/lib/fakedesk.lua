@@ -11,7 +11,7 @@ function F.marker(cid, name) return { cid = cid, name = name or ("Marker " .. ci
 
 function F.new(scan)
   local d = { logs = {}, saved = {}, faders = {}, releases = {}, laters = {}, cmds = {}, t = 0,
-    undos = 0, cids = {}, offsets = {}, progCids = {}, markers = {}, answers = {}, runningCues = {}, selectedCues = {}, cues = {},
+    undos = 0, cids = {}, offsets = {}, progCids = {}, markers = {}, answers = {},
     scanResult = scan or { fixtures = {}, markers = {}, problems = {} } }
   function d:lastCommand() return self.lastCmd end
   function d:topUndoName() return self.undoName end
@@ -39,14 +39,6 @@ function F.new(scan)
   function d:startLoop(rate, tick, cleanup) self.loop = { rate = rate, tick = tick, cleanup = cleanup } end
   function d:stopLoop() local l = self.loop; self.loop = nil; if l then l.cleanup() end end
   function d:later(fn) self.laters[#self.laters + 1] = fn end
-  function d:selectedSequence() return self.selected end
-  function d:runningCue(seq) return self.runningCues[seq.id] end
-  function d:selectedCue(seq) return self.selectedCues[seq.id] end
-  function d:readCueCommand(seq, cue) local s = self.cues[seq.id]; return s and s[cue] end
-  function d:writeCueCommand(seq, cue, text)
-    local s = self.cues[seq.id]; if not (s and s[cue]) then return false end
-    s[cue] = text; return true
-  end
   function d:prompt(title, value) self.lastPrompt = { title = title, value = value }; return table.remove(self.answers, 1) end
   function d:setupDialog(current) self.setupShown = current; return self.setupAnswer end
   function d:runCommands(c) for _, x in ipairs(c) do self.cmds[#self.cmds + 1] = x end end

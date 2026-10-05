@@ -22,7 +22,7 @@ export const APPEARANCES: { [kind: string]: { name: string; rgba: string } } = {
 export const GRID = { w: 130, markerW: 70, h: 64, gap: 6 };
 export const Y_DIR = -1; // layout "down" direction (probe P10)
 
-export interface HeaderState { running: boolean; captureSecondsLeft?: number; pickSecondsLeft?: number; liveMarkers: number; globalSize: number; offsetLabel: string; message: string }
+export interface HeaderState { running: boolean; pickSecondsLeft?: number; liveMarkers: number; globalSize: number; offsetLabel: string; message: string }
 export interface RowState {
     fixture: PatchFixture; armed: boolean; markerCid: number; programmerCid: number; offset: Vec3;
     result: FixtureResult; size: number; sizeFixed: boolean;
@@ -46,8 +46,7 @@ export function layoutCells(fixtures: PatchFixture[], markers: PatchMarker[]): C
     const step = GRID.h + GRID.gap;
     let x = 0;
     const header: [string, string][] = [
-        ["status", ""], ["toggle", "Toggle()"], ["capture", "Capture()"], ["setup", "Setup()"], ["offset", "PickOffset()"],
-        ["armall", "ArmAll()"], ["disarmall", "DisarmAll()"], ["size", ""], ["message", ""],
+        ["status", ""], ["toggle", "Toggle()"], ["setup", "Setup()"], ["rescan", "Rescan()"], ["size", ""], ["message", ""],
     ];
     for (const [key, command] of header) {
         const w = key === "message" ? GRID.w * 3 : GRID.w;
@@ -92,15 +91,11 @@ export function buildViews(header: HeaderState, rows: RowState[], markers: Patch
     const cell = (key: string, text: string, appearance: AppearanceKind, border: string = COLORS.idle, textColor: string = COLORS.text) => { v[key] = { text, border, textColor, appearance }; };
     cell("status", `${header.running ? "Running" : "Offline"}\nPSN ${fmtInt(header.liveMarkers)}/${fmtInt(markers.length)}`, header.running ? "tracking" : "error", header.running ? COLORS.on : COLORS.bad);
     cell("toggle", header.running ? "Stop" : "Start", "button");
-    if (header.captureSecondsLeft !== undefined) cell("capture", `Select a sequence…\n${fmtInt(header.captureSecondsLeft)} s · tap to cancel`, "capture", COLORS.accent, COLORS.accent);
-    else cell("capture", "Capture\narms → cue", "button");
     cell("setup", `Setup\nXYZ ${header.offsetLabel}`, "button");
-    if (header.pickSecondsLeft !== undefined) cell("offset", `Tap a preset…\n${fmtInt(header.pickSecondsLeft)} s · tap to cancel`, "capture", COLORS.accent, COLORS.accent);
-    else cell("offset", `Offset\n${header.offsetLabel}`, "button");
-    cell("armall", "Arm all", "button");
-    cell("disarmall", "Disarm all", "button");
+    cell("rescan", "Rescan\npatch", "button");
     cell("size", `AZ_SIZE\n${fmtNum(header.globalSize)} m`, "header");
-    cell("message", header.message, "header", COLORS.idle, COLORS.muted);
+    if (header.pickSecondsLeft !== undefined) cell("message", `Tap a preset…  ${fmtInt(header.pickSecondsLeft)} s`, "capture", COLORS.accent, COLORS.accent);
+    else cell("message", header.message, "header", COLORS.idle, COLORS.muted);
     for (const m of markers) {
         const live = readings[fidKey(m.cid)] !== undefined;
         cell(`mh ${fmtInt(m.cid)}`, `${m.name}\nCID ${fmtInt(m.cid)}`, live ? "tracking" : "nopsn", live ? COLORS.on : COLORS.bad, live ? COLORS.text : COLORS.bad);

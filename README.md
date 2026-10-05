@@ -15,19 +15,20 @@ After loading a show (or a reboot), run the plugin again, or the **AZ Start** ma
 Fixtures appear when their fixture type mode has XYZ enabled and a Zoom channel. Set the zoom and iris physical ranges of the fixture type to the manufacturer's optical data.
 
 ## Using the layout
-- **Arm column**: tap to arm/disarm a fixture. Only armed fixtures are driven.
+- **Header**: Status · Start/Stop · Setup · Rescan · AZ_SIZE · message.
+- **Arm column**: fixtures are armed by default, including newly patched ones; tap to disarm (exclude) a fixture, tap again to re-arm it. Only armed fixtures are driven.
 - **Marker cells**: a lit cell shows the marker the fixture currently follows (green tracking, amber no PSN data, grey disarmed). Tap a cell to put that fixture in the programmer on that marker, with the Setup XYZ offset and zoom/iris at minimum (red **P**); tap it again to send `Off Fixture <fid>`, which removes all of that fixture's values from the programmer.
 - **State, Distance, Zoom, Iris**: live values. "Too wide"/"Too small" mean the beam size is outside the fixture's optics.
 - **Size**: "Global" follows the `AZ_SIZE` fader (range set in Setup); tap to type a fixed size in metres.
-- **Capture**: tap, then select a sequence (pool tile or executor Select key). Confirm the cue number (pre-filled with the running cue). Type another cue number to store elsewhere. The current arms are written into that cue as `Lua "if AZ then AZ:Arm('101,102') end"`; replaying the cue restores them (and does nothing while AutoZoom is not running). If the target sequence is already selected, select another sequence first. Capture works only while AutoZoom is running; it is refused when stopped, and Stop cancels a capture in progress.
 - **Setup**: XYZ offset source (preset number or X/Y/Z values), size fader range, refresh rate. XYZ offsets are read relative to the followed marker's Target space (from the show), so they are correct whatever the space size. Marker positions come from PSN trackers (each tracker's MArker ID must be set).
-- **Offset**: tap to wait for a preset pick (cell shows "Tap a preset…" with a countdown). Tap a preset within 10 s; any preset is accepted (the pool is not checked, so pick one that holds XYZ values). The cell shows it (e.g. "Preset 2.30", or "DP4 2.30" for a preset of another data pool) and becomes the offset source. Only a plain tap counts: Store, Delete, Label and other commands on a preset are ignored (System Monitor: `Preset pick ignored …`). Oops undoes the tap only when the tap created a new undo entry that is exactly that preset command (e.g. it loaded the preset into the programmer of selected fixtures); otherwise nothing is undone. Tap Offset again to cancel. Works only while AutoZoom runs; Stop also cancels.
+  **Pick preset…** closes the dialog without applying it and waits for a preset tap (the message cell shows "Tap a preset…" with a countdown). Tap a preset within 10 s; any preset is accepted (the pool is not checked, so pick one that holds XYZ values). It becomes the offset source, shown on the Setup cell (e.g. "Preset 2.30", or "DP4 2.30" for a preset of another data pool). Only a plain tap counts: Store, Delete, Label and other commands on a preset are ignored (System Monitor: `Preset pick ignored …`). Oops undoes the tap only when the tap created a new undo entry that is exactly that preset command (e.g. it loaded the preset into the programmer of selected fixtures); otherwise nothing is undone. Works only while AutoZoom runs; Stop cancels a pick in progress (`PickOffset()` again also cancels).
+- **Rescan**: re-reads the patch and rebuilds the layout (also while running).
 - **Colours**: each cell is an `AZ …` sequence in the AutoZoom data pool (tapping a cell runs it, so tapped ones show as running), coloured by the AutoZoom appearances (`AZ Tracking`, `AZ Warn`, `AZ No PSN`, `AZ Error`, `AZ Programmer`, `AZ Capture`, `AZ Button`, `AZ Header`, `AZ Idle`) stored in the Appearances pool from number 9001 up; run Rescan to recreate a deleted one or reset their colours.
 - **Start/Stop**: stopping releases every AutoZoom fader.
 
 ## Commands
-`Lua "AZ:Start()"`, `Stop()`, `Toggle()`, `Arm('101,102')`, `ArmToggle(101)`, `ArmAll()`, `DisarmAll()`, `Capture()`, `Program(101, 1)`, `Setup()`, `Size(101)`, `Rescan()`, `Status()`.
-Run `Rescan()` after changing the patch (fixtures, positions, optics, markers).
+`Lua "AZ:Start()"`, `Stop()`, `Toggle()`, `Arm('101,102')`, `ArmToggle(101)`, `ArmAll()`, `DisarmAll()`, `PickOffset()`, `Program(101, 1)`, `Setup()`, `Size(101)`, `Rescan()`, `Status()`.
+Run `Rescan()` (or tap the Rescan cell) after changing the patch (fixtures, positions, optics, markers). `Arm('101,102')` arms exactly the listed fixtures and disarms the others; cues that contain `Lua "if AZ then AZ:Arm('…') end"` keep working.
 
 ## How it works
 Each `AZ_ZOOM_<fid>` sequence holds zoom at maximum; its Temp fader crossfades from the cue's zoom (minimum) to it. Iris works the same way when the beam must be smaller than the minimum zoom allows.

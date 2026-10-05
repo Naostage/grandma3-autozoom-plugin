@@ -1,10 +1,9 @@
 /** @noSelfInFile */
 import { Desk } from "../desk";
 import { Vec3 } from "../engine/vec";
-import { CellSpec, MarkerReadings, PatchFixture, PatchScan, SeqRef, Views } from "../model";
+import { CellSpec, MarkerReadings, PatchFixture, PatchScan, Views } from "../model";
 import { Config, SetupAnswers } from "../store/config";
 import { ensureAppearances } from "./appearances";
-import * as cues from "./cues";
 import * as layout from "./layout";
 import * as live from "./live";
 import { info, warnOnce } from "./log";
@@ -62,11 +61,6 @@ export class MaDesk implements Desk {
     startLoop(rate: number, tick: () => void, cleanup: () => void): void { ui.startLoop(rate, tick, cleanup); }
     stopLoop(): void { ui.stopLoop(); }
     later(fn: () => void): void { ui.later(fn); }
-    selectedSequence(): SeqRef | undefined { return cues.selectedSequence(); }
-    runningCue(seq: SeqRef): number | undefined { return cues.runningCue(seq); }
-    selectedCue(seq: SeqRef): number | undefined { return cues.selectedCue(seq); }
-    readCueCommand(seq: SeqRef, cue: number): string | undefined { return cues.readCueCommand(seq, cue); }
-    writeCueCommand(seq: SeqRef, cue: number, text: string): boolean { return cues.writeCueCommand(seq, cue, text); }
     prompt(title: string, value: string): string | undefined { return ui.prompt(title, value); }
     setupDialog(current: Config): SetupAnswers | undefined { return ui.setupDialog(current); }
     runCommands(commands: string[]): void { ui.runCommands(commands); }

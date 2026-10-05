@@ -43,8 +43,8 @@ end
 T.test("pick stores the tapped preset and undoes its programmer effect", function()
   local d, a = setup()
   a:PickOffset(); d:tick()
-  T.eq(d.views["offset"].text, "Tap a preset…\n10 s · tap to cancel", "waiting")
-  T.eq(d.views["offset"].appearance, "capture", "capture look")
+  T.eq(d.views["message"].text, "Tap a preset…  10 s", "waiting")
+  T.eq(d.views["message"].appearance, "capture", "capture look")
   d.lastCmd = "OK: Preset 2.30"; d.undoName = "Preset 2.30"; d.undoCount = 1
   d:tick()
   T.eq(d.undos, 1, "oops once")
@@ -52,14 +52,15 @@ T.test("pick stores the tapped preset and undoes its programmer effect", functio
   d.t = 2; d:tick()
   local cfg = az().config.parseConfig(d.saved["AutoZoom.config"]).config
   T.eq(cfg.offset.source, "preset", "source"); T.eq(cfg.offset.preset, "2.30", "preset")
-  T.eq(d.views["offset"].text, "Offset\nPreset 2.30", "cell shows preset")
+  T.eq(d.views["setup"].text, "Setup\nXYZ Preset 2.30", "setup cell shows preset")
+  T.eq(d.views["message"].text, "Offset preset 2.30", "result in message"); T.eq(d.views["message"].appearance, "header", "message look")
 end)
 
 T.test("unrelated command keeps the pick waiting", function()
   local d, a = setup()
   a:PickOffset(); d:tick()
   d.lastCmd = "OK: Go+ Sequence 3"; d:tick()
-  T.eq(d.undos, 0, "nothing undone"); T.truthy(d.views["offset"].text:find("Tap a preset"), "still waiting")
+  T.eq(d.undos, 0, "nothing undone"); T.truthy(d.views["message"].text:find("Tap a preset"), "still waiting")
 end)
 
 T.test("no Oops when the undo entry is something else", function()
@@ -67,7 +68,7 @@ T.test("no Oops when the undo entry is something else", function()
   a:PickOffset(); d:tick()
   d.lastCmd = "OK: Preset 2.30"; d.undoName = "Store Sequence 3"; d.undoCount = 1
   d:tick()
-  T.eq(d.undos, 0, "nothing undone"); T.eq(d.views["offset"].text, "Offset\nPreset 2.30", "picked anyway")
+  T.eq(d.undos, 0, "nothing undone"); T.eq(d.views["message"].text, "Offset preset 2.30", "picked anyway")
 end)
 
 T.test("a stale undo entry from before the pick is never undone", function()
@@ -77,7 +78,7 @@ T.test("a stale undo entry from before the pick is never undone", function()
     a:PickOffset(); d:tick()
     d.lastCmd = "OK: Preset 2.30"; d:tick()
     T.eq(d.undos, 0, "nothing undone (" .. stale .. ")")
-    T.eq(d.views["offset"].text, "Offset\nPreset 2.30", "picked anyway (" .. stale .. ")")
+    T.eq(d.views["message"].text, "Offset preset 2.30", "picked anyway (" .. stale .. ")")
   end
 end)
 
@@ -104,7 +105,7 @@ T.test("storing a preset during a pick is ignored, logged once and never undone"
   d.lastCmd = "OK: Store Preset 2.30"; d.undoName = "Store Preset 2.30"; d.undoCount = 1
   d:tick(); d:tick()
   T.eq(d.undos, 0, "nothing undone")
-  T.truthy(d.views["offset"].text:find("Tap a preset"), "still waiting")
+  T.truthy(d.views["message"].text:find("Tap a preset"), "still waiting")
   local n = 0; for _, l in ipairs(d.logs) do if l == 'Preset pick ignored "OK: Store Preset 2.30"' then n = n + 1 end end
   T.eq(n, 1, "ignored logged once")
 end)
@@ -119,7 +120,7 @@ T.test("Program during a pick re-takes the baseline so the plugin's own commands
   T.eq(a.pickBaseline, d.lastCmd, "baseline re-taken"); T.eq(a.pickUndoMark, d:undoMark(), "undo mark re-taken")
   d:tick()
   for _, l in ipairs(d.logs) do T.truthy(not l:find("Preset pick ignored", 1, true), "own command not considered: " .. l) end
-  T.truthy(d.views["offset"].text:find("Tap a preset"), "still waiting")
+  T.truthy(d.views["message"].text:find("Tap a preset"), "still waiting")
 end)
 
 T.test("a failing Oops does not lose the picked preset", function()
@@ -143,7 +144,7 @@ T.test("pick times out, cancels and is refused when stopped or not current", fun
   a:PickOffset(); a:Stop()
   local cancelled = false; for _, l in ipairs(d.logs) do if l == "Preset pick cancelled" then cancelled = true end end
   T.truthy(cancelled, "stop cancels")
-  T.truthy(d.views["offset"].text:sub(1, 7) == "Offset\n", "offset cell idle after stop")
+  T.eq(d.views["message"].appearance, "header", "message cell idle after stop")
   a:PickOffset()
   T.eq(d.logs[#d.logs], "Start AutoZoom to pick a preset", "refused when stopped")
   d.saved["AutoZoom.instance"] = "other"
@@ -168,5 +169,34 @@ T.test("a failing pick poll ends the pick and does not stop the fixtures being d
   local failed = false; for _, l in ipairs(d.logs) do if l:find("Preset pick failed", 1, true) then failed = true end end
   T.truthy(failed, "failure logged")
   T.truthy(#d.faders >= 1, "fixture still driven")
-  T.truthy(d.views["offset"].text:sub(1, 7) == "Offset\n", "pick ended")
+  T.eq(d.views["message"].appearance, "header", "pick ended")
+end)
+
+T.test("Setup with Pick preset starts the pick and ignores the other answers", function()
+  local d, a = setup()
+  local before = az().config.serializeConfig(a.config)
+  d.setupAnswer = { pick = true, source = "values", preset = "", x = "9", y = "9", z = "9", min = "2", max = "3", rate = "60" }
+  a:Setup(); d:runLaters()
+  T.eq(az().config.serializeConfig(a.config), before, "answers not applied")
+  T.truthy(a.pickUntil ~= nil, "pick active")
+  T.eq(a.message, "Tap the preset that holds the XYZ offset", "pick message")
+  T.eq(d.views["message"].text, "Tap a preset…  10 s", "countdown in message cell")
+  for _, l in ipairs(d.logs) do T.truthy(l ~= "Setup saved", "not saved") end
+end)
+
+T.test("Setup with Pick preset while stopped is refused", function()
+  local d, a = setup()
+  a:Stop()
+  d.setupAnswer = { pick = true, source = "values", preset = "", x = "9", y = "9", z = "9", min = "2", max = "3", rate = "60" }
+  a:Setup(); d:runLaters()
+  T.eq(d.logs[#d.logs], "Start AutoZoom to pick a preset", "refused")
+  T.eq(a.pickUntil, nil, "no pick"); T.eq(a.config.rate, 30, "answers not applied")
+end)
+
+T.test("Setup with Save applies the answers", function()
+  local d, a = setup()
+  d.setupAnswer = { pick = false, source = "values", preset = "", x = "1", y = "2", z = "3", min = "1", max = "4", rate = "30" }
+  a:Setup(); d:runLaters()
+  T.eq(a.config.offset.values, { 1, 2, 3 }, "applied"); T.eq(a.pickUntil, nil, "no pick")
+  T.eq(a.message, "Setup saved", "saved")
 end)

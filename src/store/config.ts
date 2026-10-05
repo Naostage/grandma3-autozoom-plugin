@@ -75,7 +75,8 @@ export function pruneConfig(config: Config, fids: number[]): Config {
     return { ...config, disarmed, size };
 }
 
-export interface SetupAnswers { source: OffsetSource; preset: string; x: string; y: string; z: string; min: string; max: string; rate: string }
+// pick = "Pick preset…" was chosen: start the offset preset pick instead of applying the other answers.
+export interface SetupAnswers { pick: boolean; source: OffsetSource; preset: string; x: string; y: string; z: string; min: string; max: string; rate: string }
 
 export function applySetup(current: Config, a: SetupAnswers): { config: Config; errors: string[] } {
     const errors: string[] = [];

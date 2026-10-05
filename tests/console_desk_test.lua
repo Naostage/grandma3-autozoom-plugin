@@ -51,26 +51,6 @@ T.test("layout build tags elements and refresh writes only changes", function()
   T.eq(layout._kids[1].CustomTextText, "tampered", "unchanged view not rewritten")
 end)
 
-T.test("selected sequence, running cue and cue command (cues stored x1000)", function()
-  M.reset()
-  local pool = M.pool("Default")
-  local s = M.sequence(pool, "Main", { { no = 1 }, { no = 2, cmd = "Go+ Sequence 3" }, { no = 2.5, cmd = "Go- Sequence 4" } })
-  local function cue(no) for _, c in ipairs(s._kids) do if c.no == no then return c end end end
-  s.current = cue(2000); M.selected = s
-  local desk = az().madesk.createMaDesk()
-  local ref = desk:selectedSequence()
-  T.eq(ref.name, "Main", "name"); T.eq(desk:runningCue(ref), 2, "running cue")
-  T.eq(desk:readCueCommand(ref, 2), "Go+ Sequence 3", "read"); T.eq(desk:readCueCommand(ref, 9), nil, "missing cue")
-  T.eq(desk:readCueCommand(ref, 2.5), "Go- Sequence 4", "fractional cue")
-  T.eq(desk:readCueCommand(ref, 0), nil, "cue zero is not addressable")
-  T.eq(desk:writeCueCommand(ref, 2, "X"), true, "write ok"); T.eq(cue(2000)._kids[1].Command, "X", "written")
-  T.eq(desk:writeCueCommand(ref, 9, "X"), false, "write missing")
-  s.current = cue(0); T.eq(desk:runningCue(ref), nil, "CueZero is not a running cue")
-  s.current = s._kids[1]; T.eq(desk:runningCue(ref), nil, "OffCue is not a running cue")
-  s.current = nil; T.eq(desk:runningCue(ref), nil, "nothing running")
-  T.eq(desk:selectedCue(ref), nil, "no selected-cue accessor")
-end)
-
 T.test("readOffset uses the followed marker's target space from the last scan", function()
   M.reset()
   M.fixtureType("Robin Esprite", { M.mode("Mode 2", true, { M.channel("Zoom", 49, 5.5) }) })
@@ -91,7 +71,11 @@ T.test("prompt and setup dialog", function()
   M.boxAnswer = { result = 1, inputs = { ["Offset preset"] = "2.12", ["Offset X (m)"] = "0", ["Offset Y (m)"] = "-1", ["Offset Z (m)"] = "0",
     ["Size min (m)"] = "0.5", ["Size max (m)"] = "5", ["Refresh rate (Hz)"] = "30" }, selectors = { ["Offset source"] = 1 } }
   local a = desk:setupDialog(az().config.defaultConfig())
-  T.eq(a.source, "preset", "source"); T.eq(a.preset, "2.12", "preset"); T.eq(a.y, "-1", "y")
+  T.eq(a.source, "preset", "source"); T.eq(a.preset, "2.12", "preset"); T.eq(a.y, "-1", "y"); T.eq(a.pick, false, "save")
+  T.eq(M.lastBox.commands, { { value = 1, name = "Save" }, { value = 2, name = "Pick preset…" }, { value = 0, name = "Cancel" } }, "three commands")
+  M.boxAnswer.result = 2
+  local p = desk:setupDialog(az().config.defaultConfig())
+  T.eq(p.pick, true, "pick"); T.eq(p.preset, "2.12", "inputs still read")
   M.boxAnswer = { result = 0 }; T.eq(desk:setupDialog(az().config.defaultConfig()), nil, "cancel")
 end)
 

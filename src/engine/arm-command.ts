@@ -14,14 +14,6 @@ export function normalizeFids(fids: number[]): number[] {
     return out;
 }
 
-export function formatArmList(fids: number[]): string {
-    return normalizeFids(fids).map(f => fmtInt(f)).join(",");
-}
-
-export function armCommand(fids: number[]): string {
-    return `Lua "if AZ then AZ:Arm('${formatArmList(fids)}') end"`;
-}
-
 export function parseArmList(text: string): number[] {
     const out: number[] = [];
     for (const part of text.split(",")) {
@@ -29,17 +21,4 @@ export function parseArmList(text: string): number[] {
         if (part.trim() !== "" && n === n) out.push(n);
     }
     return normalizeFids(out);
-}
-
-// Cue commands are separated by ";". A ";" inside a quoted user command would be split too.
-export function rewriteCueCommand(existing: string | undefined, armLine: string): string {
-    const kept: string[] = [];
-    if (existing !== undefined) {
-        for (const raw of existing.split(";")) {
-            const part = raw.trim();
-            if (part !== "" && part.indexOf("AZ:Arm(") < 0) kept.push(part);
-        }
-    }
-    kept.push(armLine);
-    return kept.join("; ");
 }

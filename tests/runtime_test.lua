@@ -174,10 +174,10 @@ T.test("a replaced instance neither saves on Stop nor obeys commands", function(
   T.eq(#d.releases, 0, "old instance releases nothing")
   T.eq(d.loop, nil, "old loop stopped")
   d.logs = {}
-  a:Arm("101,102"); a:ArmAll(); a:DisarmAll(); a:ArmToggle(101); a:Toggle(); a:Start(); a:Capture(); a:Program(101, 1); a:Setup(); a:Size(101); a:Rescan(); a:Status()
+  a:Arm("101,102"); a:ArmAll(); a:DisarmAll(); a:ArmToggle(101); a:Toggle(); a:Start(); a:Program(101, 1); a:Setup(); a:Size(101); a:Rescan(); a:Status()
   T.eq(d.saved["AutoZoom.config"], cfg, "commands of the old instance do not save")
   T.eq(d.logs[1], "Run the AutoZoom plugin for this show", "told to run the plugin")
-  T.eq(#d.logs, 12, "every command refused")
+  T.eq(#d.logs, 11, "every command refused")
   T.eq(d.loop, nil, "old instance did not start"); T.eq(#d.laters, 0, "no dialogs"); T.eq(#d.cmds, 0, "no programmer commands")
   b:Arm("102")
   T.eq(az().config.parseConfig(d.saved["AutoZoom.config"]).config.disarmed, { 101 }, "current instance still works")
@@ -196,4 +196,16 @@ T.test("stop releases every fixture even when the refresh throws", function()
   T.truthy(got[101], "101 released"); T.truthy(got[102], "102 released")
   local n = 0; for _, l in ipairs(d.logs) do if l:find("psn gone") then n = n + 1 end end
   T.eq(n, 1, "refresh error logged once")
+end)
+
+T.test("Rescan from the layout while running rebuilds the layout and keeps the loop", function()
+  local d, a = setup()
+  a:Install(); a:Start()
+  local before = d.cells
+  local loop = d.loop
+  a:Rescan()
+  T.truthy(d.cells ~= before, "layout rebuilt"); T.eq(#d.cells, #before, "no duplicate cells")
+  T.truthy(d.loop ~= nil, "loop still running"); T.truthy(d.loop == loop, "same loop")
+  d:tick()
+  T.eq(d.views["status"].text:sub(1, 7), "Running", "still running")
 end)

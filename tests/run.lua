@@ -12,7 +12,6 @@ local FILES = {
   "commands_test",
   "view_model_test",
   "runtime_test",
-  "capture_test",
   "preset_pick_test",
   "program_test",
   "console_patch_test",

@@ -1,6 +1,6 @@
 /** @noSelfInFile */
 import { Vec3 } from "./engine/vec";
-import { CellSpec, MarkerReadings, PatchFixture, PatchScan, SeqRef, Views } from "./model";
+import { CellSpec, MarkerReadings, PatchFixture, PatchScan, Views } from "./model";
 import { Config, SetupAnswers } from "./store/config";
 
 // Everything AutoZoom needs from the console. MaDesk (src/console) implements it on grandMA3;
@@ -24,11 +24,6 @@ export interface Desk {
     startLoop(rate: number, tick: () => void, cleanup: () => void): void;
     stopLoop(): void;
     later(fn: () => void): void;                           // run in its own coroutine (prompts must not block the loop)
-    selectedSequence(): SeqRef | undefined;
-    runningCue(seq: SeqRef): number | undefined;
-    selectedCue(seq: SeqRef): number | undefined;
-    readCueCommand(seq: SeqRef, cue: number): string | undefined;   // undefined = no such cue
-    writeCueCommand(seq: SeqRef, cue: number, text: string): boolean;
     prompt(title: string, value: string): string | undefined;      // undefined = cancelled
     setupDialog(current: Config): SetupAnswers | undefined;
     runCommands(commands: string[]): void;

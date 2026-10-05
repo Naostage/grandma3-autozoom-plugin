@@ -58,7 +58,7 @@ function M.reset()
   M.cmdObj = { LastCommand = nil, Undos = { UndoIndex = 0 } }
   M.profile = { OopsProgrammer = false }
   M.oopsProgrammerDuringOops = nil
-  M.handles, M.handleIds, M.selected, M.textAnswer, M.boxAnswer = {}, {}, nil, nil, nil
+  M.textAnswer, M.boxAnswer = nil, nil
 end
 
 function Printf(s) M.printed[#M.printed + 1] = s end
@@ -158,12 +158,11 @@ function M.pool(name)
   return p
 end
 
--- Probe P6/P7: children are OffCue (no nil), CueZero (no 0), then user cues stored as cue number x 1000; command on the first part.
-function M.sequence(pool, name, cues)
-  local s = handle({ name = name, no = #pool.Sequences._kids + 1, faders = {}, master = nil, current = nil }, {})
+-- Probe P6/P7: children are OffCue (no nil), CueZero (no 0); cues are stored as cue number x 1000.
+function M.sequence(pool, name)
+  local s = handle({ name = name, no = #pool.Sequences._kids + 1, faders = {}, master = nil }, {})
   function s:SetFader(o) self.faders[o.token] = o.value end
   function s:GetFader(o) return self.master end
-  function s:CurrentChild() return self.current end
   -- New cue appended after the existing ones; Create(i) adds part i (Command empty).
   function s:Append()
     local cue = handle({ name = "" }, {})
@@ -175,9 +174,6 @@ function M.sequence(pool, name, cues)
   end
   s._kids[1] = handle({ name = "OffCue" }, { handle({ Command = "" }, {}) })
   s._kids[2] = handle({ no = 0, name = "CueZero" }, { handle({ Command = "" }, {}) })
-  for _, c in ipairs(cues or {}) do
-    s._kids[#s._kids + 1] = handle({ no = c.no * 1000, name = c.name or ("Cue " .. c.no) }, { handle({ Command = c.cmd or "" }, {}) })
-  end
   pool.Sequences._kids[#pool.Sequences._kids + 1] = s
   return s
 end
@@ -206,12 +202,6 @@ M.onCmd = function(s)
   if appNo then M.deleteAppearance(tonumber(appNo)) end
 end
 
-function HandleToStr(h)
-  if not M.handleIds[h] then M.handles[#M.handles + 1] = h; M.handleIds[h] = "H" .. #M.handles end
-  return M.handleIds[h]
-end
-function StrToHandle(s) return M.handles[tonumber(s:sub(2))] end
-function SelectedSequence() return M.selected end
 function TextInput(title, value) M.lastPrompt = { title = title, value = value }; return M.textAnswer end
 function MessageBox(o) M.lastBox = o; return M.boxAnswer end
 

@@ -16,13 +16,14 @@ export function setupDialog(c: Config): SetupAnswers | undefined {
     const r: any = MessageBox({
         title: "AutoZoom setup",
         message: "XYZ offset applied when you tap a marker cell, size fader range and refresh rate.",
-        commands: [{ value: 1, name: "Save" }, { value: 0, name: "Cancel" }],
+        commands: [{ value: 1, name: "Save" }, { value: 2, name: "Pick preset…" }, { value: 0, name: "Cancel" }],
         inputs: INPUTS.map((name, i) => ({ name, value: values[i] })),
         selectors: [{ name: "Offset source", selectedValue: c.offset.source === "preset" ? 1 : 2, values: { Preset: 1, Values: 2 } }],
     } as any);
-    if (r === undefined || r.result !== 1) return undefined;
+    if (r === undefined || (r.result !== 1 && r.result !== 2)) return undefined;
     const input = (name: string) => tostring(r.inputs?.[name] ?? "");
     return {
+        pick: r.result === 2,
         source: r.selectors?.["Offset source"] === 1 ? "preset" : "values",
         preset: input(INPUTS[0]), x: input(INPUTS[1]), y: input(INPUTS[2]), z: input(INPUTS[3]),
         min: input(INPUTS[4]), max: input(INPUTS[5]), rate: input(INPUTS[6]),

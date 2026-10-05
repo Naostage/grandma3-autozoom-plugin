@@ -18,4 +18,3 @@ export interface CellSpec { key: string; x: number; y: number; w: number; h: num
 export type AppearanceKind = "tracking" | "warn" | "nopsn" | "error" | "programmer" | "capture" | "button" | "header" | "idle";
 export interface CellView { text: string; border: string; textColor: string; appearance: AppearanceKind }
 export type Views = { [key: string]: CellView };
-export interface SeqRef { id: string; no: number; name: string }

@@ -1,16 +1,15 @@
 /** @noSelfInFile */
-import { armCommand, normalizeFids, parseArmList, rewriteCueCommand } from "../engine/arm-command";
+import { normalizeFids, parseArmList } from "../engine/arm-command";
 import { parsePresetCommand, undoMatches } from "../engine/preset-ref";
 import { programCommands, releaseCommands } from "../engine/program";
 import { evaluate, FaderOutput, FixtureResult, MarkerSample } from "../engine/fixture-state";
 import { vec, Vec3 } from "../engine/vec";
 import { Desk } from "../desk";
 import { fidKey, fmtInt, fmtNum } from "../format";
-import { MarkerReadings, PatchFixture, PatchScan, SeqRef } from "../model";
+import { MarkerReadings, PatchFixture, PatchScan } from "../model";
 import { applySetup, Config, CONFIG_KEY, defaultConfig, INSTANCE_KEY, offsetLabel, parseConfig, pruneConfig, serializeConfig } from "../store/config";
 import { buildViews, layoutCells, RowState, stateLabel } from "../ui/view-model";
 
-export const CAPTURE_SECONDS = 15;
 export const PICK_SECONDS = 10;
 
 interface Live { cid: number; programmerCid: number; offset: Vec3 }
@@ -20,8 +19,6 @@ export class AutoZoom {
     protected scanned: PatchScan = { fixtures: [], markers: [], problems: [] };
     protected running = false;
     protected message = "";
-    protected captureUntil: number | undefined;
-    protected captureStartId: string | undefined;
     protected pickUntil: number | undefined;
     protected pickBaseline: string | undefined;
     protected pickUndoMark: string | undefined;
@@ -95,7 +92,6 @@ export class AutoZoom {
         this.running = false;
         this.loopGen++;
         this.desk.stopLoop();
-        if (this.captureUntil !== undefined) this.endCapture("Capture cancelled");
         if (this.pickUntil !== undefined) this.endPick("Preset pick cancelled");
         // Release first: a failing refresh below must never leave a fader driven.
         for (const f of this.scanned.fixtures) {
@@ -185,6 +181,10 @@ export class AutoZoom {
         this.desk.later(() => {
             const answers = this.desk.setupDialog(this.config);
             if (answers === undefined) return;
+            if (answers.pick) {                                // "Pick preset…": the other answers are not applied
+                this.PickOffset();
+                return;
+            }
             const rate = this.config.rate;
             const result = applySetup(this.config, answers);
             for (const e of result.errors) this.desk.log(e);
@@ -256,25 +256,6 @@ export class AutoZoom {
         this.render(markers, globalSize);
     }
 
-    Capture(): void {
-        if (!this.ensureCurrent()) return;
-        if (this.captureUntil !== undefined) {
-            this.endCapture("Capture cancelled");
-            return;
-        }
-        if (!this.running) {
-            this.say("Start AutoZoom to use Capture");
-            return;
-        }
-        const current = this.desk.selectedSequence();
-        this.captureStartId = current?.id;
-        this.captureUntil = this.desk.now() + CAPTURE_SECONDS;
-        this.message = current === undefined
-            ? "Select the sequence to store the arms in"
-            : `Select the sequence to store the arms in (to use Seq ${fmtInt(current.no)}, select another sequence first, then it)`;
-        this.update();
-    }
-
     PickOffset(): void {
         if (!this.ensureCurrent()) return;
         if (this.pickUntil !== undefined) { this.endPick("Preset pick cancelled"); return; }
@@ -324,38 +305,6 @@ export class AutoZoom {
         } catch (e) {
             this.endPick("Preset pick failed: " + tostring(e));
         }
-        if (this.captureUntil === undefined) return;
-        if (this.desk.now() > this.captureUntil) {
-            this.endCapture("Capture timed out");
-            return;
-        }
-        const seq = this.desk.selectedSequence();
-        if (seq === undefined || seq.id === this.captureStartId) return;
-        this.captureUntil = undefined;
-        this.desk.later(() => this.storeArms(seq));
-    }
-
-    private storeArms(seq: SeqRef): void {
-        const suggested = this.desk.selectedCue(seq) ?? this.desk.runningCue(seq);
-        const answer = this.desk.prompt(`Store AutoZoom arms in Seq ${fmtInt(seq.no)} '${seq.name}': cue number`, suggested === undefined ? "" : fmtNum(suggested));
-        if (answer === undefined) {
-            this.endCapture("Capture cancelled");
-            return;
-        }
-        const cue = Number(answer.trim());
-        const existing = answer.trim() !== "" && cue === cue ? this.desk.readCueCommand(seq, cue) : undefined;
-        if (existing === undefined) {
-            this.endCapture(`Seq ${fmtInt(seq.no)} has no cue ${answer.trim()}; nothing stored`);
-            return;
-        }
-        const ok = this.desk.writeCueCommand(seq, cue, rewriteCueCommand(existing, armCommand(this.scanned.fixtures.map(f => f.fid).filter(fid => this.isArmed(fid)))));
-        this.endCapture(ok ? `Stored in Seq ${fmtInt(seq.no)} '${seq.name}' cue ${fmtNum(cue)}` : `Could not write the command of Seq ${fmtInt(seq.no)} cue ${fmtNum(cue)}`);
-    }
-
-    private endCapture(message: string): void {
-        this.captureUntil = undefined;
-        this.captureStartId = undefined;
-        this.say(message);
     }
 
     private updateFixture(f: PatchFixture, markers: MarkerReadings, globalSize: number): void {
@@ -399,10 +348,9 @@ export class AutoZoom {
         }
         let liveMarkers = 0;
         for (const m of this.scanned.markers) if (markers[fidKey(m.cid)] !== undefined) liveMarkers++;
-        const left = this.captureUntil === undefined ? undefined : Math.max(0, Math.ceil(this.captureUntil - this.desk.now()));
         const pickLeft = this.pickUntil === undefined ? undefined : Math.max(0, Math.ceil(this.pickUntil - this.desk.now()));
         this.desk.refreshLayout(buildViews(
-            { running: this.running, captureSecondsLeft: left, pickSecondsLeft: pickLeft, liveMarkers, globalSize, offsetLabel: offsetLabel(this.config), message: this.message },
+            { running: this.running, pickSecondsLeft: pickLeft, liveMarkers, globalSize, offsetLabel: offsetLabel(this.config), message: this.message },
             rows, this.scanned.markers, markers,
         ));
     }

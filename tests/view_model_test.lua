@@ -9,11 +9,11 @@ T.test("layout cells cover header, marker heads and every row cell", function()
   local cells = az().view.layoutCells({ fx(101), fx(102) }, MARKERS)
   local keys = {}
   for _, c in ipairs(cells) do keys[c.key] = c.command end
-  T.eq(keys["offset"], "PickOffset()", "offset pick")
-  T.eq(keys["toggle"], "Toggle()", "toggle"); T.eq(keys["capture"], "Capture()", "capture")
+  T.eq(keys["toggle"], "Toggle()", "toggle"); T.eq(keys["setup"], "Setup()", "setup"); T.eq(keys["rescan"], "Rescan()", "rescan")
+  for _, gone in ipairs({ "capture", "offset", "armall", "disarmall" }) do T.eq(keys[gone], nil, "no " .. gone .. " cell") end
   T.eq(keys["arm 101"], "ArmToggle(101)", "arm"); T.eq(keys["mx 102 2"], "Program(102,2)", "matrix")
   T.eq(keys["sz 101"], "Size(101)", "size"); T.eq(keys["st 101"], "", "state is display only")
-  T.eq(keys["mh 2"], "", "marker head"); T.eq(#cells, 9 + 2 + 2 * (1 + 2 + 5), "count")
+  T.eq(keys["mh 2"], "", "marker head"); T.eq(#cells, 6 + 2 + 2 * (1 + 2 + 5), "count")
 end)
 
 T.test("views for a tracking row and a programmer cell", function()
@@ -31,10 +31,22 @@ T.test("views for a tracking row and a programmer cell", function()
   T.eq(views["mh 2"].border, v.COLORS.bad, "marker without PSN")
 end)
 
-T.test("capture header shows countdown and instructions", function()
-  local views = az().view.buildViews({ running = true, captureSecondsLeft = 12, liveMarkers = 0, globalSize = 1, offsetLabel = "", message = "Select a sequence" }, {}, {}, {})
-  T.eq(views["capture"].text, "Select a sequence…\n12 s · tap to cancel", "capture")
-  T.eq(views["message"].text, "Select a sequence", "message")
+T.test("header cells are status, toggle, setup, rescan, size, message in that order", function()
+  local cells = az().view.layoutCells({}, {})
+  local order = {}
+  for _, c in ipairs(cells) do if c.y == 0 then order[#order + 1] = c.key end end
+  T.eq(order, { "status", "toggle", "setup", "rescan", "size", "message" }, "header order")
+  local views = az().view.buildViews({ running = true, liveMarkers = 0, globalSize = 1, offsetLabel = "", message = "hi" }, {}, {}, {})
+  T.eq(views["rescan"].text, "Rescan\npatch", "rescan text"); T.eq(views["rescan"].appearance, "button", "rescan look")
+  for _, gone in ipairs({ "capture", "offset", "armall", "disarmall" }) do T.eq(views[gone], nil, "no " .. gone .. " view") end
+end)
+
+T.test("message cell shows the pick countdown while picking", function()
+  local v = az().view
+  local views = v.buildViews({ running = true, pickSecondsLeft = 7, liveMarkers = 0, globalSize = 1, offsetLabel = "", message = "Tap the preset that holds the XYZ offset" }, {}, {}, {})
+  T.eq(views["message"].text, "Tap a preset…  7 s", "countdown"); T.eq(views["message"].appearance, "capture", "capture look")
+  views = v.buildViews({ running = true, liveMarkers = 0, globalSize = 1, offsetLabel = "", message = "Setup saved" }, {}, {}, {})
+  T.eq(views["message"].text, "Setup saved", "message"); T.eq(views["message"].appearance, "header", "header look")
 end)
 
 T.test("cells carry appearance kinds", function()
