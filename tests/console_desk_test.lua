@@ -454,3 +454,12 @@ T.test("an element that rejects Pause falls back to Go+", function()
   local el = M.dataPools._kids[1].Layouts._kids[1]._kids[1]
   T.eq(el.Action, "Go+", "fallback"); T.eq(el.VisibilityElement, true, "element visible")
 end)
+
+T.test("cell text is centred vertically and horizontally", function()
+  M.reset()
+  local desk = az().madesk.createMaDesk()
+  desk:install({ fixtures = {}, markers = {}, problems = {} })
+  desk:buildLayout({ { key = "toggle", x = 0, y = 0, w = 100, h = 60, command = "Toggle()" } })
+  local el = M.dataPools._kids[1].Layouts._kids[1]._kids[1]
+  T.eq(el.CustomTextAlignmentV, "Center", "vertical"); T.eq(el.CustomTextAlignmentH, "Center", "horizontal")
+end)

@@ -15,9 +15,10 @@ let written: { [key: string]: string } = {};
 // One element checked every refresh: a reloaded/replaced layout invalidates it even when no view changed.
 let sentinel: any = undefined;
 
-const HIDDEN: [string, boolean | number][] = [
+const HIDDEN: [string, boolean | number | string][] = [
     ["VisibilityElement", true], ["VisibilityObjectName", false], ["VisibilityIcon", false], ["VisibilityID", false], ["VisibilityCID", false],
     ["VisibilityValue", false], ["VisibilityBar", false], ["VisibilityBorder", false], ["BorderSize", 0],
+    ["CustomTextAlignmentV", "Center"], ["CustomTextAlignmentH", "Center"],
 ];
 
 // Cosmetic: a property this console version does not know must not abort the layout build.
