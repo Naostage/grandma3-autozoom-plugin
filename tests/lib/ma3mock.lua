@@ -180,11 +180,16 @@ end
 
 function M.layoutObj(pool, name)
   local l = handle({ name = name }, {})
-  l.nextNo = 1
-  function l:Append() local e = handle({ No = self.nextNo }, {}); self.nextNo = self.nextNo + 1; self._kids[#self._kids + 1] = e; return e end
-  -- Layout:Delete(no) removes the element with that No (BeatGrid's showOfflineLayout).
+  function l:Append() local e = handle({ No = #self._kids + 1 }, {}); self._kids[#self._kids + 1] = e; return e end
+  -- Layout:Delete(no) works by position like a console list: removes the child whose current No is `no`, renumbers the rest.
   function l:Delete(no)
-    for i, e in ipairs(self._kids) do if e.No == no then e._deleted = true; table.remove(self._kids, i); return end end
+    for i, e in ipairs(self._kids) do
+      if e.No == no then
+        e._deleted = true; table.remove(self._kids, i)
+        for j, k in ipairs(self._kids) do k.No = j end
+        return
+      end
+    end
   end
   pool.Layouts._kids[#pool.Layouts._kids + 1] = l
   return l

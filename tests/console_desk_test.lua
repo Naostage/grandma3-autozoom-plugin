@@ -175,6 +175,39 @@ T.test("rebuilding deletes stale tagged elements and keeps operator elements", f
   T.eq(#layout._kids, 3, "a + two operator elements")
 end)
 
+T.test("interleaved stale and operator elements: only the stale ones go", function()
+  M.reset()
+  local desk = az().madesk.createMaDesk()
+  desk:install({ fixtures = {}, markers = {}, problems = {} })
+  desk:buildLayout({ cellA(0), cellB(), { key = "x", x = 2, y = 0, w = 1, h = 1, command = "" }, { key = "y", x = 3, y = 0, w = 1, h = 1, command = "" } })
+  local layout = M.dataPools._kids[1].Layouts._kids[1]
+  local a, bb, x, y = layout._kids[1], layout._kids[2], layout._kids[3], layout._kids[4]
+  -- order: x, op1, y, op2, a (kept) -- rebuild the list with operator elements between the stale ones
+  local op1 = M.handle({ Note = "op1" }, {}); local op2 = M.handle({ Note = "op2" }, {})
+  layout._kids = { x, op1, y, op2, a }
+  for i, e in ipairs(layout._kids) do e.No = i end
+  bb._deleted = true
+  desk:buildLayout({ cellA(0) })
+  T.truthy(x._deleted and y._deleted, "stale gone")
+  T.truthy(not op1._deleted and not op2._deleted, "operator elements kept")
+  T.truthy(not a._deleted, "kept cell stays")
+  T.eq(#layout._kids, 3, "three left"); T.eq(layout._kids[1].Note, "op1", "order"); T.eq(layout._kids[2].Note, "op2", "order 2"); T.eq(layout._kids[3].Note, "AZ:a", "order 3")
+end)
+
+T.test("a reused element gets its Action, Object and Appearance restored", function()
+  M.reset()
+  local desk = az().madesk.createMaDesk()
+  desk:install({ fixtures = {}, markers = {}, problems = {} })
+  desk:buildLayout({ cellA(0), { key = "t", x = 1, y = 0, w = 1, h = 1, command = "Toggle()" } })
+  local layout = M.dataPools._kids[1].Layouts._kids[1]
+  local ea, et = layout._kids[1], layout._kids[2]
+  local seqA, seqT = ea.Object, et.Object
+  ea.Action = "Toggle"; ea.Object = nil; et.Action = "Toggle"; et.Appearance = "old"
+  desk:buildLayout({ cellA(0), { key = "t", x = 1, y = 0, w = 1, h = 1, command = "Toggle()" } })
+  T.eq(ea.Action, "Pause", "display cell Pause"); T.truthy(ea.Object == seqA, "sequence restored")
+  T.eq(et.Action, "Go+", "clickable Go+"); T.truthy(et.Object == seqT, "sequence kept"); T.eq(et.Appearance, nil, "own appearance cleared")
+end)
+
 T.test("texts are rewritten after a rebuild", function()
   local desk = builtLayout()
   desk:refreshLayout(VIEWS)

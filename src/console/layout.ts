@@ -32,6 +32,15 @@ function hideDetails(el: any): void {
     }
 }
 
+// 2.0.0.1 elements carried their own Appearance; the cell sequence owns the colour now (BeatGrid placeGridEl clears it).
+function clearAppearance(el: any): void {
+    try {
+        el.Appearance = undefined;
+    } catch (e) {
+        warnOnce("el-appearance", `Could not clear layout element Appearance: ${tostring(e)}`);
+    }
+}
+
 // Elements that reject Pause (unknown action on this version) fall back to Go+ on the command-less sequence.
 function setAction(el: any, clickable: boolean): void {
     if (clickable) {
@@ -85,6 +94,7 @@ export function buildLayout(cells: CellSpec[]): void {
         const seq = ensureCellSequence(cellSequenceName(cell.key), cell.command);
         const el = existing[cell.key] ?? layout.Append();
         el.Object = seq;
+        clearAppearance(el);
         setAction(el, cell.command !== "");
         el.Note = TAG + cell.key;
         el.PosX = cell.x;
@@ -99,17 +109,22 @@ export function buildLayout(cells: CellSpec[]): void {
     const doomed: any[] = [];
     for (const key in existing) if (!wanted[key]) doomed.push(existing[key]);
     for (const el of doomedDupes) doomed.push(el);
-    const nos: number[] = [];
+    const targets: { no: number; el: any }[] = [];
     for (const el of doomed) {
         const no = tonumber(el.No);
-        if (no !== undefined) nos.push(no);
+        if (no === undefined) warnOnce("layout-delete-no", "Could not delete a stale AutoZoom cell: element has no number");
+        else targets.push({ no, el });
     }
-    nos.sort((x, y) => y - x);      // highest first: deleting does not shift the numbers still to delete
-    for (const no of nos) {
+    targets.sort((x, y) => y.no - x.no);      // highest first: deleting shifts the numbers above it, not below
+    for (const t of targets) {
         try {
-            layout.Delete(no);
+            // Delete(no) addresses a slot, not a handle: only delete when the slot still holds the element we mean.
+            let slot: any = undefined;
+            for (const el of children(layout)) if (tonumber(el.No) === t.no) slot = el;
+            if (slot === t.el) layout.Delete(t.no);
+            else warnOnce("layout-delete", `Layout slot ${t.no} no longer holds the stale AutoZoom cell; kept a stale AutoZoom cell`);
         } catch (e) {
-            warnOnce("layoutdelete", `Could not delete stale layout element ${no}: ${tostring(e)}`);
+            warnOnce("layoutdelete", `Could not delete stale layout element ${t.no}: ${tostring(e)}`);
         }
     }
 }
