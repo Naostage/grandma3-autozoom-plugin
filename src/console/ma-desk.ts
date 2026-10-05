@@ -7,7 +7,7 @@ import { ensureAppearances } from "./appearances";
 import * as cues from "./cues";
 import * as layout from "./layout";
 import * as live from "./live";
-import { info } from "./log";
+import { info, warnOnce } from "./log";
 import { scanPatch } from "./patch";
 import * as pool from "./pool";
 import * as ui from "./ui";
@@ -27,7 +27,11 @@ export class MaDesk implements Desk {
     }
     install(scan: PatchScan): void {
         pool.ensurePool();
-        ensureAppearances();
+        try {
+            ensureAppearances();       // cosmetic: must never keep the fader sequences from being created
+        } catch (e) {
+            warnOnce("appearances", "Could not create the AutoZoom appearances: " + tostring(e));
+        }
         pool.ensureSizeSequence();
         pool.ensureRawMacro(pool.START_MACRO, `Call Plugin "${pool.PLUGIN_NAME}"`);
         for (const f of scan.fixtures) {

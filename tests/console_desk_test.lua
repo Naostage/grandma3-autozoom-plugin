@@ -228,3 +228,47 @@ T.test("undo mark combines index, count and top entry name", function()
   M.cmdObj = { LastCommand = "x" }
   T.eq(desk:undoMark(), "||", "no undo list")
 end)
+
+T.test("install survives an Appearances pool that cannot create", function()
+  M.reset()
+  function M.appearances:Acquire() error("no appearances here") end
+  local desk = az().madesk.createMaDesk()
+  desk:install({ fixtures = { fixture101() }, markers = {}, problems = {} })
+  local joined = table.concat(M.cmds, "\n")
+  T.truthy(joined:find("Store DataPool 'AutoZoom' Sequence 'AZ_ZOOM_101' /o /nc", 1, true), "zoom seq still created")
+  T.truthy(joined:find("Store DataPool 'AutoZoom' Sequence 'AZ_SIZE' /o /nc", 1, true), "size seq still created")
+  local warned = false
+  for _, p in ipairs(M.printed) do if p:find("Could not create the AutoZoom appearances", 1, true) then warned = true end end
+  T.truthy(warned, "warning printed")
+end)
+
+T.test("layout is built although an element rejects a visibility property", function()
+  M.reset()
+  local desk = az().madesk.createMaDesk()
+  desk:install({ fixtures = {}, markers = {}, problems = {} })
+  local orig = M.onCmd
+  M.onCmd = function(s)
+    orig(s)
+    local l = M.dataPools._kids[1].Layouts._kids[1]
+    if l and not l._patched then
+      l._patched = true
+      function l:Append()
+        local e = M.handle({}, {})
+        setmetatable(e, { __newindex = function(t, k, v) if k == "VisibilityCID" then error("unknown property") end rawset(t, k, v) end })
+        self._kids[#self._kids + 1] = e
+        return e
+      end
+    end
+  end
+  local ok, err = pcall(desk.buildLayout, desk, { { key = "a", x = 0, y = 0, w = 1, h = 1, command = "" }, { key = "b", x = 1, y = 0, w = 1, h = 1, command = "" } })
+  M.onCmd = orig
+  T.truthy(ok, "build did not throw: " .. tostring(err))
+  local layout = M.dataPools._kids[1].Layouts._kids[1]
+  T.eq(#layout._kids, 2, "both elements"); T.eq(layout._kids[2].Note, "AZ:b", "second element tagged")
+  T.eq(layout._kids[1].BorderSize, 0, "other properties still written")
+  desk:refreshLayout(VIEWS)
+  T.eq(layout._kids[2].CustomTextText, "B", "refresh works")
+  local warned = false
+  for _, p in ipairs(M.printed) do if p:find("[AZ warning]", 1, true) and p:find("unknown property", 1, true) then warned = true end end
+  T.truthy(warned, "warning printed")
+end)

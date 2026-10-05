@@ -2,6 +2,7 @@
 import { appearanceHandle } from "./appearances";
 import { CellSpec, Views } from "../model";
 import { children, findChild } from "./handles";
+import { warnOnce } from "./log";
 import { ensureMacro, ensurePool, findPool, POOL_ADDR } from "./pool";
 
 export const LAYOUT = "AutoZoom";
@@ -15,6 +16,22 @@ let elements: { [key: string]: any } = {};
 let written: { [key: string]: string } = {};
 // One element checked every refresh: a reloaded/replaced layout invalidates it even when no view changed.
 let sentinel: any = undefined;
+
+const HIDDEN: [string, boolean | number][] = [
+    ["VisibilityObjectName", false], ["VisibilityIcon", false], ["VisibilityID", false], ["VisibilityCID", false],
+    ["VisibilityValue", false], ["VisibilityBar", false], ["VisibilityBorder", false], ["BorderSize", 0],
+];
+
+// Cosmetic: a property this console version does not know must not abort the layout build.
+function hideDetails(el: any): void {
+    for (const [prop, value] of HIDDEN) {
+        try {
+            el[prop] = value;
+        } catch (e) {
+            warnOnce("visibility", `Could not set layout element ${prop}: ${tostring(e)}`);
+        }
+    }
+}
 
 export function buildLayout(cells: CellSpec[]): void {
     const pool = ensurePool();
@@ -35,14 +52,7 @@ export function buildLayout(cells: CellSpec[]): void {
         el.PosY = cell.y;
         el.Width = cell.w;
         el.Height = cell.h;
-        el.VisibilityObjectName = false;
-        el.VisibilityIcon = false;
-        el.VisibilityID = false;
-        el.VisibilityCID = false;
-        el.VisibilityValue = false;
-        el.VisibilityBar = false;
-        el.VisibilityBorder = false;
-        el.BorderSize = 0;
+        hideDetails(el);
         elements[cell.key] = el;
         if (sentinel === undefined) sentinel = el;
     }
