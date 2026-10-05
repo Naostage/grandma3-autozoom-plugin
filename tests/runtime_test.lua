@@ -168,6 +168,32 @@ T.test("config changes while stopped are saved immediately", function()
   T.eq(az().config.parseConfig(d.saved["AutoZoom.config"]).config.disarmed, { 102 }, "saved right away")
 end)
 
+T.test("rescan releases driven fixtures that are no longer patched", function()
+  local d, a = setup()
+  a:Install(); a:Start()
+  d.cids[102] = 1; d.markers["1"] = { pos = { x = 0, y = 0, z = 0 } }; d.size = 0
+  d:tick()
+  T.eq(d.faders[#d.faders].fid, 102, "102 driven")
+  d.releases = {}
+  d.scanResult = { fixtures = { F.fixture(101) }, markers = { F.marker(1, "Lead") }, problems = {} }
+  a:Rescan()
+  local got = {}; for _, fid in ipairs(d.releases) do got[fid] = (got[fid] or 0) + 1 end
+  T.eq(got[102], 1, "102 released once")
+end)
+
+T.test("an abnormal loop end releases the driven fixtures", function()
+  local d, a = setup()
+  a:Install(); a:Start()
+  d.cids[101] = 1; d.markers["1"] = { pos = { x = 0, y = 0, z = 0 } }; d.size = 0
+  d:tick()
+  d.releases = {}
+  d.loop.cleanup()   -- loop ended without Stop (e.g. Timer cleanup)
+  T.eq(d.releases, { 101 }, "101 released, 102 already released")
+  d.releases = {}
+  a:Stop()
+  T.eq(d.releases, {}, "not released twice")
+end)
+
 T.test("late cleanup of an old loop does not stop a newer one", function()
   local d, a = setup()
   d.stopLoop = function(self) self.oldLoop = self.loop; self.loop = nil end

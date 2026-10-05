@@ -35,3 +35,5 @@ Tick each line on a copy of a real show. Note the System Monitor output for any 
 30. [ ] With AutoZoom off/released, the fixture's zoom and iris are the cue's own values (no forced minimum).
 31. [ ] While tracking, firing another cue with zoom/iris values doesn't override AutoZoom.
 32. [ ] Disarm a tracking fixture: zoom/iris return to the cue values.
+33. [ ] Hold a fixture at a mid zoom (Temp around 50) for a minute: AZ_BASE_<fid> stays On and the zoom stays between min and max.
+34. [ ] While tracking, set zoom in the programmer: note whether it overrides (expected: no while the computed zoom is above minimum).

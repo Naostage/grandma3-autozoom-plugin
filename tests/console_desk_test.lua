@@ -20,7 +20,10 @@ T.test("install creates pool, fader sequences and size sequence once", function(
   T.truthy(joined:find([[Set DataPool 'AutoZoom' Macro 'AZ Start'.1 Property 'Command' 'Call Plugin "GMA3 Autozoom"']], 1, true), "AZ Start macro")
   M.cmds = {}
   desk:install({ fixtures = { fixture101() }, markers = {}, problems = {} })
-  for _, c in ipairs(M.cmds) do T.truthy(c:find(" Property 'Priority' ", 1, true), "second install only sets priorities: " .. c) end
+  for _, c in ipairs(M.cmds) do
+    T.truthy(c:find(" Property 'Priority' ", 1, true) or c:find(" Property 'OffWhenOverridden' ", 1, true), "second install only sets properties: " .. c)
+  end
+  T.eq(#M.cmds, 4, "base High + OffWhenOverridden, zoom/iris Super")
 end)
 
 local function hasCmd(c) for _, x in ipairs(M.cmds) do if x == c then return true end end return false end
@@ -40,6 +43,46 @@ T.test("install creates the AZ_BASE sequence at zoom/iris minimum with High prio
   T.truthy(hi and hi > store, "base High after store")
   T.truthy(hasCmd("Set DataPool 'AutoZoom' Sequence 'AZ_ZOOM_101' Property 'Priority' 'Super'"), "zoom Super")
   T.truthy(hasCmd("Set DataPool 'AutoZoom' Sequence 'AZ_IRIS_101' Property 'Priority' 'Super'"), "iris Super")
+  T.truthy(hasCmd("Set DataPool 'AutoZoom' Sequence 'AZ_BASE_101' Property 'OffWhenOverridden' 'No'"), "base OffWhenOverridden No")
+end)
+
+T.test("release still turns the base Off when a Temp write throws", function()
+  M.reset()
+  local desk = az().madesk.createMaDesk()
+  desk:install({ fixtures = { fixture101() }, markers = {}, problems = {} })
+  desk:setFaders(fixture101(), 13.6, 100)
+  local pool = M.dataPools._kids[1]
+  for _, s in ipairs(pool.Sequences._kids) do if s.name == "AZ_ZOOM_101" then function s:SetFader() error("fader refused") end end end
+  M.events = {}
+  local ok, err = pcall(desk.releaseFaders, desk, fixture101())
+  T.truthy(ok, "release did not throw: " .. tostring(err))
+  T.eq(M.events, { "FaderTemp AZ_IRIS_101=0", "Off DataPool 'AutoZoom' Sequence 'AZ_BASE_101'" }, "iris still 0, base Off")
+  M.events = {}
+  pcall(desk.setFaders, desk, fixture101(), 10, 0)
+  T.eq(M.events[1], "On DataPool 'AutoZoom' Sequence 'AZ_BASE_101'", "engaged flag was cleared")
+end)
+
+T.test("a missing base is warned about and never marked engaged", function()
+  M.reset()
+  local f = fixture101(); f.fid = 777
+  local desk = az().madesk.createMaDesk()
+  desk:install({ fixtures = { f }, markers = {}, problems = {} })
+  local pool = M.dataPools._kids[1]
+  for i, s in ipairs(pool.Sequences._kids) do if s.name == "AZ_BASE_777" then s._deleted = true; table.remove(pool.Sequences._kids, i) break end end
+  M.events = {}
+  desk:setFaders(f, 13.6, 100)
+  desk:setFaders(f, 14, 100)
+  for _, e in ipairs(M.events) do T.truthy(not e:find("AZ_BASE_777", 1, true), "no On for a missing base: " .. e) end
+  local warned = false
+  for _, p in ipairs(M.printed) do if p:find("[AZ warning]", 1, true) and p:find("AZ_BASE_777", 1, true) then warned = true end end
+  T.truthy(warned, "warned")
+  M.sequence(pool, "AZ_BASE_777")
+  M.events = {}
+  desk:setFaders(f, 15, 100)
+  T.eq(M.events[1], "On DataPool 'AutoZoom' Sequence 'AZ_BASE_777'", "On once the base exists again")
+  M.events = {}
+  desk:releaseFaders(f)
+  T.eq(M.events[#M.events], "Off DataPool 'AutoZoom' Sequence 'AZ_BASE_777'", "Off")
 end)
 
 T.test("a fixture without iris gets a base with only Zoom and no iris sequence", function()

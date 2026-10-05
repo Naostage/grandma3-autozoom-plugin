@@ -60,8 +60,23 @@ export function setPriority(name: string, priority: "High" | "Super"): void {
     Cmd(`Set ${POOL_ADDR} Sequence '${name}' Property 'Priority' '${priority}'`);
 }
 
-export function sequenceOn(name: string): void { Cmd(`On ${POOL_ADDR} Sequence '${name}'`); }
-export function sequenceOff(name: string): void { Cmd(`Off ${POOL_ADDR} Sequence '${name}'`); }
+// The base must stay On while the Super AZ_ZOOM/AZ_IRIS sequences override it (not verified on the console yet).
+export function setNoOffWhenOverridden(name: string): void {
+    Cmd(`Set ${POOL_ADDR} Sequence '${name}' Property 'OffWhenOverridden' 'No'`);
+}
+
+// false (with a warning) when the sequence is missing; nothing is sent then.
+export function sequenceOn(name: string): boolean { return sequenceSwitch("On", name); }
+export function sequenceOff(name: string): boolean { return sequenceSwitch("Off", name); }
+
+function sequenceSwitch(verb: "On" | "Off", name: string): boolean {
+    if (findSequence(name) === undefined) {
+        warnOnce("missing:" + name, `Sequence ${name} is missing; run Rescan to recreate it`);
+        return false;
+    }
+    Cmd(`${verb} ${POOL_ADDR} Sequence '${name}'`);
+    return true;
+}
 
 export function ensureSizeSequence(): void {
     ensurePool();

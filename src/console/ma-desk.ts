@@ -46,6 +46,7 @@ export class MaDesk implements Desk {
             if (hasIris) base.push(["Iris", f.optics.irisMin]);
             pool.ensureCueSequence(pool.baseSeqName(f.fid), f.fid, base);
             pool.setPriority(pool.baseSeqName(f.fid), "High");
+            pool.setNoOffWhenOverridden(pool.baseSeqName(f.fid));
             pool.ensureFaderSequence(pool.zoomSeqName(f.fid), f.fid, "Zoom", f.optics.zoomMax);
             pool.setPriority(pool.zoomSeqName(f.fid), "Super");
             if (hasIris) {
@@ -62,18 +63,16 @@ export class MaDesk implements Desk {
     // AZ_BASE (High) holds zoom/iris at minimum while driven; it goes On once per engagement, before the Temp faders.
     setFaders(f: PatchFixture, zoom: number, iris: number | undefined): void {
         const key = fidKey(f.fid);
-        if (!this.engaged[key]) {
-            pool.sequenceOn(pool.baseSeqName(f.fid));
-            this.engaged[key] = true;
-        }
+        if (!this.engaged[key] && pool.sequenceOn(pool.baseSeqName(f.fid))) this.engaged[key] = true;
         pool.setTemp(pool.zoomSeqName(f.fid), zoom);
         if (iris !== undefined && f.optics.irisMax > f.optics.irisMin) pool.setTemp(pool.irisSeqName(f.fid), iris);
     }
+    // Each step is guarded: a failing Temp write must never keep the base On.
     releaseFaders(f: PatchFixture): void {
-        pool.setTemp(pool.zoomSeqName(f.fid), 0);
-        if (f.optics.irisMax > f.optics.irisMin) pool.setTemp(pool.irisSeqName(f.fid), 0);
-        pool.sequenceOff(pool.baseSeqName(f.fid));
+        releaseTemp(pool.zoomSeqName(f.fid));
+        if (f.optics.irisMax > f.optics.irisMin) releaseTemp(pool.irisSeqName(f.fid));
         this.engaged[fidKey(f.fid)] = false;
+        pool.sequenceOff(pool.baseSeqName(f.fid));
     }
     buildLayout(cells: CellSpec[]): void { layout.buildLayout(cells); }
     refreshLayout(views: Views): void { layout.refreshLayout(views); }
@@ -87,6 +86,14 @@ export class MaDesk implements Desk {
     topUndoName(): string | undefined { return undo.topUndoName(); }
     undoMark(): string { return undo.undoMark(); }
     undoProgrammer(): void { undo.undoProgrammer(); }
+}
+
+function releaseTemp(name: string): void {
+    try {
+        pool.setTemp(name, 0);
+    } catch (e) {
+        warnOnce("release:" + name + ":" + tostring(e), `Could not release ${name}: ${tostring(e)}`);
+    }
 }
 
 export function createMaDesk(): MaDesk {

@@ -54,7 +54,13 @@ export class AutoZoom {
 
     Rescan(): void {
         if (!this.ensureCurrent()) return;
-        this.scanned = this.desk.scan();
+        const old = this.scanned.fixtures;
+        const next = this.desk.scan();
+        const kept: { [fid: string]: boolean } = {};
+        for (const f of next.fixtures) kept[fidKey(f.fid)] = true;
+        // A fixture dropped from the patch is never updated again: release it (and its AZ_BASE) now.
+        this.releaseAll(old.filter(f => !kept[fidKey(f.fid)]));
+        this.scanned = next;
         for (const p of this.scanned.problems) this.desk.log(p);
         this.config = pruneConfig(this.config, this.scanned.fixtures.map(f => f.fid));
         this.desk.install(this.scanned);
@@ -105,16 +111,7 @@ export class AutoZoom {
         this.desk.stopLoop();
         if (this.pickUntil !== undefined) this.endPick("Preset pick cancelled");
         // Release first: a failing refresh below must never leave a fader driven.
-        for (const f of this.scanned.fixtures) {
-            const key = fidKey(f.fid);
-            if (this.sent[key] === "release") continue;
-            try {
-                this.desk.releaseFaders(f);
-            } catch (e) {
-                this.warnOnce(`release:${key}:${tostring(e)}`, `Fixture ${fmtInt(f.fid)}: release failed: ${tostring(e)}`);
-            }
-            this.sent[key] = "release";
-        }
+        this.releaseAll(this.scanned.fixtures);
         try {
             this.update();
         } catch (e) {
@@ -252,8 +249,23 @@ export class AutoZoom {
     }
 
     protected onLoopStopped(): void {
-        // Called when the loop ends; Stop() already released everything when it was a normal stop.
+        // Only reached when the loop ends without Stop() (Stop bumps loopGen first): release what is still driven.
         this.running = false;
+        this.releaseAll(this.scanned.fixtures);
+    }
+
+    // Releases every listed fixture not already released; one failure never stops the others.
+    private releaseAll(fixtures: PatchFixture[]): void {
+        for (const f of fixtures) {
+            const key = fidKey(f.fid);
+            if (this.sent[key] === "release") continue;
+            try {
+                this.desk.releaseFaders(f);
+            } catch (e) {
+                this.warnOnce(`release:${key}:${tostring(e)}`, `Fixture ${fmtInt(f.fid)}: release failed: ${tostring(e)}`);
+            }
+            this.sent[key] = "release";
+        }
     }
 
     protected update(): void {
