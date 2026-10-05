@@ -9,6 +9,15 @@ T.test("preset command parsing", function()
   T.eq(p.parsePresetCommand("Datapool 4 Preset 2.30"), "DataPool 4 Preset 2.30", "data pool")
   T.eq(p.parsePresetCommand("OK: Go+ Sequence 3"), nil, "not a preset")
   T.eq(p.parsePresetCommand("Preset 2"), nil, "pool only")
+  T.eq(p.parsePresetCommand("Go+ Preset 2.30"), "2.30", "go+ without OK:")
+  T.eq(p.parsePresetCommand("at preset 2.30"), "2.30", "at")
+  T.eq(p.parsePresetCommand("OK: Call Preset 2.30"), "2.30", "call")
+  T.eq(p.parsePresetCommand("At DataPool 4 Preset 2.30"), "DataPool 4 Preset 2.30", "at data pool")
+  T.eq(p.parsePresetCommand("OK: Store Preset 2.30"), nil, "store")
+  T.eq(p.parsePresetCommand("Delete Preset 2.30"), nil, "delete")
+  T.eq(p.parsePresetCommand('Label Preset 2.30 "x"'), nil, "label")
+  T.eq(p.parsePresetCommand('Attribute "XYZ_X" Thru "XYZ_Z" At Preset 2.30'), nil, "plugin's own attribute command")
+  T.eq(p.parsePresetCommand("Fixture 1 At Preset 2.30"), nil, "selection before")
 end)
 
 T.test("undo match is strict plain text", function()
@@ -87,6 +96,30 @@ T.test("a new Store undo entry is not undone", function()
   d.lastCmd = "OK: Preset 2.30"; d.undoName = "Store Preset 2.30"; d.undoCount = 1
   d:tick()
   T.eq(d.undos, 0, "nothing undone")
+end)
+
+T.test("storing a preset during a pick is ignored, logged once and never undone", function()
+  local d, a = setup()
+  a:PickOffset(); d:tick()
+  d.lastCmd = "OK: Store Preset 2.30"; d.undoName = "Store Preset 2.30"; d.undoCount = 1
+  d:tick(); d:tick()
+  T.eq(d.undos, 0, "nothing undone")
+  T.truthy(d.views["offset"].text:find("Tap a preset"), "still waiting")
+  local n = 0; for _, l in ipairs(d.logs) do if l == 'Preset pick ignored "OK: Store Preset 2.30"' then n = n + 1 end end
+  T.eq(n, 1, "ignored logged once")
+end)
+
+T.test("Program during a pick re-takes the baseline so the plugin's own commands are never picked", function()
+  local d, a = setup()
+  local cfg = az().config.defaultConfig(); cfg.offset.source = "preset"; cfg.offset.preset = "2.30"
+  a:PickOffset(); d:tick()
+  function d:runCommands(c) for _, x in ipairs(c) do self.cmds[#self.cmds + 1] = x; self.lastCmd = "OK: " .. x end; self.undoCount = (self.undoCount or 0) + 1 end
+  a.config.offset = cfg.offset
+  a:Program(101, 1)
+  T.eq(a.pickBaseline, d.lastCmd, "baseline re-taken"); T.eq(a.pickUndoMark, d:undoMark(), "undo mark re-taken")
+  d:tick()
+  for _, l in ipairs(d.logs) do T.truthy(not l:find("Preset pick ignored", 1, true), "own command not considered: " .. l) end
+  T.truthy(d.views["offset"].text:find("Tap a preset"), "still waiting")
 end)
 
 T.test("pick times out, cancels and is refused when stopped or not current", function()

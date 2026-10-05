@@ -28,4 +28,4 @@ Tick each line on a copy of a real show. Note the System Monitor output for any 
 24. [ ] Offset pick with fixtures selected: tap Offset, tap an XYZ preset → cell shows "Preset X.Y", programmer is back to what it was, nothing else undone. Note the System Monitor line "Preset pick saw …".
 25. [ ] Offset pick with nothing selected: preset picked, no Oops.
 26. [ ] Offset pick ignores an unrelated command (e.g. Go on a sequence) and times out after 10 s.
-27. [ ] Caveat: any command naming a preset (e.g. Store Preset 2.30) during a pick counts as the pick — avoid storing presets while the Offset cell is waiting.
+27. [ ] Store/Delete/Label of a preset during a pick is ignored (System Monitor: Preset pick ignored …) and never undone.

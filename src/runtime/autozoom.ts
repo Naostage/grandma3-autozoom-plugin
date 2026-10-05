@@ -25,6 +25,7 @@ export class AutoZoom {
     protected pickUntil: number | undefined;
     protected pickBaseline: string | undefined;
     protected pickUndoMark: string | undefined;
+    private pickIgnored: { [cmd: string]: boolean } = {};
     private results: { [fid: string]: FixtureResult } = {};
     private live: { [fid: string]: Live } = {};
     private sent: { [fid: string]: string } = {};
@@ -165,6 +166,11 @@ export class AutoZoom {
         } else {
             this.desk.runCommands(programCommands(fid, cid, f.optics, this.config.offset));
         }
+        if (this.pickUntil !== undefined) {
+            // Our own commands (e.g. `Attribute … At Preset 2.30`) must never count as the pick.
+            this.pickBaseline = this.desk.lastCommand();
+            this.pickUndoMark = this.desk.undoMark();
+        }
         this.update();
     }
 
@@ -269,6 +275,7 @@ export class AutoZoom {
         if (!this.running) { this.say("Start AutoZoom to pick a preset"); return; }
         this.pickBaseline = this.desk.lastCommand();
         this.pickUndoMark = this.desk.undoMark();
+        this.pickIgnored = {};
         this.pickUntil = this.desk.now() + PICK_SECONDS;
         this.message = "Tap the preset that holds the XYZ offset";
         this.update();
@@ -280,7 +287,14 @@ export class AutoZoom {
         const cmd = this.desk.lastCommand();
         if (cmd === undefined || cmd === this.pickBaseline) return;
         const preset = parsePresetCommand(cmd);
-        if (preset === undefined) return;                      // unrelated command: keep waiting
+        if (preset === undefined) {                            // not a preset tap: keep waiting
+            const [named] = string.find(cmd.toLowerCase(), "preset", 1, true);
+            if (named !== undefined && !this.pickIgnored[cmd]) {
+                this.pickIgnored[cmd] = true;
+                this.desk.log(`Preset pick ignored "${cmd}"`);
+            }
+            return;
+        }
         const undoName = this.desk.topUndoName();
         this.desk.log(`Preset pick saw "${cmd}", undo entry "${undoName ?? ""}"`);
         // Oops only a new undo entry that is the tap itself: an older entry (e.g. "Store Preset 2.30") is never touched.
