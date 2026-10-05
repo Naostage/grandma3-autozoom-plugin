@@ -2,7 +2,7 @@
 
 Tick each line on a copy of a real show. Note the System Monitor output for any failure.
 
-1. [ ] Import and run the plugin: "AutoZoom 2.0.0", "Found N fixtures and M markers"; data pool AutoZoom exists with layout, AZ_ZOOM/AZ_IRIS per fixture, AZ_SIZE.
+1. [ ] Import and run the plugin: "AutoZoom 2.0.0.1", "Found N fixtures and M markers"; data pool AutoZoom exists with layout, AZ_ZOOM/AZ_IRIS per fixture, AZ_SIZE.
 2. [ ] Layout opens in a view; header shows Running and PSN x/y; one row per XYZ fixture; marker columns by name/CID.
 3. [ ] Tap an Arm cell: border turns green; tap again: grey.
 4. [ ] Tap a marker cell: programmer gets XYZ_MArker, XYZ offset from Setup, zoom/iris minimum; cell shows red P; tap again releases.

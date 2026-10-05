@@ -14,7 +14,7 @@ function main(_display: unknown, _args: unknown): void {
     }
     const id = string.format("%d-%d", os.time(), math.random(1, 1000000));
     AZ = new AutoZoom(new MaDesk(), id);
-    Printf("[AZ] AutoZoom 2.0.0 by Naostage");
+    Printf("[AZ] AutoZoom 2.0.0.1 by Naostage");
     AZ.Install();
     AZ.Start();
 }

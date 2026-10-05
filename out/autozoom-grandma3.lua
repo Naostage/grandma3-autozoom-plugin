@@ -3750,7 +3750,7 @@ local function main(_display, _args)
         __TS__New(MaDesk),
         id
     )
-    Printf("[AZ] AutoZoom 2.0.0 by Naostage")
+    Printf("[AZ] AutoZoom 2.0.0.1 by Naostage")
     AZ:Install()
     AZ:Start()
 end
