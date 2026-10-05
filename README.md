@@ -6,21 +6,14 @@ AutoZoom keeps a constant beam size on tracked performers: it reads which marker
 Requires grandMA3 2.5 or later.
 
 ## Installation
-1. Copy `out/autozoom-grandma3.lua` and `out/autozoom-grandma3.xml` to `gma3_library/datapools/plugins` (USB stick) or `C:\ProgramData\MALightingTechnology\gma3_library\datapools\plugins` (onPC).
-2. Import the plugin and run it. It creates the **AutoZoom** data pool with the **AutoZoom** layout, one `AZ_BASE_<fid>` / `AZ_ZOOM_<fid>` / `AZ_IRIS_<fid>` sequence per fixture and the `AZ_SIZE` sequence. Every run (and Rescan) sets `AZ_BASE_<fid>` to priority High (with OffWhenOverridden No) and `AZ_ZOOM_<fid>` / `AZ_IRIS_<fid>` to Super. These `AZ_` sequences are created only when missing: after changing a fixture type's optics (zoom/iris ranges or mode), delete that fixture's `AZ_ZOOM_` / `AZ_IRIS_` / `AZ_BASE_` sequences, then Rescan. Creating missing sequences clears the programmer.
-3. Open the AutoZoom layout in a view.
+1. Delete any previous AutoZoom plugin from the Plugins pool (importing over an existing one can leave it unusable).
+2. Copy `out/autozoom-grandma3.lua` and `out/autozoom-grandma3.xml` to `gma3_library/datapools/plugins` (USB stick) or `C:\ProgramData\MALightingTechnology\gma3_library\datapools\plugins` (onPC).
+3. Import the plugin and run it. It creates the **AutoZoom** data pool with the **AutoZoom** layout, one `AZ_BASE_<fid>` / `AZ_ZOOM_<fid>` / `AZ_IRIS_<fid>` sequence per fixture and the `AZ_SIZE` sequence. Every run (and Rescan) sets `AZ_BASE_<fid>` to priority High (with OffWhenOverridden No) and `AZ_ZOOM_<fid>` / `AZ_IRIS_<fid>` to Super. These `AZ_` sequences are created only when missing: after changing a fixture type's optics (zoom/iris ranges or mode), delete that fixture's `AZ_ZOOM_` / `AZ_IRIS_` / `AZ_BASE_` sequences, then Rescan. Creating missing sequences clears the programmer.
+4. Open the AutoZoom layout in a view.
 
 After loading a show (or a reboot), run the plugin again, or the **AZ Start** macro it creates in the AutoZoom data pool (assign it where you like). The layout texts are only live while AutoZoom runs; until then they show the last values and the buttons do nothing. The AZ Start macro calls the plugin by its name (`Call Plugin "GMA3 Autozoom"`): renaming the plugin breaks it.
 
 Fixtures appear when their fixture type mode has XYZ enabled and a Zoom channel. Set the zoom and iris physical ranges of the fixture type to the manufacturer's optical data.
-
-## Upgrading from 2.0.0.1
-- Delete the old plugin before importing the new version.
-- After upgrading, every XYZ fixture is armed; tap Arm to exclude one.
-- Cues stored with the old Capture still contain `Arm('...')` and set the arms when they run. Remove that command from the cue to rely on armed-by-default.
-- `Capture()` was removed; calling it only logs a message.
-- The first run of 2.0.0.3 creates `AZ_BASE_<fid>` for every fixture, which clears the programmer once.
-- From 2.0.0.3 the zoom/iris minimum lives in `AZ_BASE_<fid>`, not in your cues. Cues stored with an earlier tap-to-program still hold zoom/iris at minimum: when AutoZoom releases such a fixture it stays at that minimum. Remove those values from the cue if you want the fixture's own zoom/iris there.
 
 ## Using the layout
 - **Header**: Status · Start/Stop · Setup · Rescan · AZ_SIZE · message.
@@ -36,9 +29,30 @@ Fixtures appear when their fixture type mode has XYZ enabled and a Zoom channel.
 
 ## Commands
 `Lua "AZ:Start()"`, `Stop()`, `Toggle()`, `Arm('101,102')`, `ArmToggle(101)`, `ArmAll()`, `DisarmAll()`, `PickOffset()`, `Program(101, 1)`, `Setup()`, `Size(101)`, `Rescan()`, `Status()`.
-Run `Rescan()` (or tap the Rescan cell) after changing the patch (fixtures, positions, optics, markers). `Arm('101,102')` arms exactly the listed fixtures and disarms the others; cues that contain `Lua "if AZ then AZ:Arm('…') end"` keep working.
+Run `Rescan()` (or tap the Rescan cell) after changing the patch (fixtures, positions, optics, markers). `Arm('101,102')` arms exactly the listed fixtures and disarms the others (usable in a cue or macro as `Lua "if AZ then AZ:Arm('101,102') end"`).
 
-## How it works
+## When does AutoZoom drive a fixture?
+AutoZoom does not need you to tell it who a fixture is lighting: it reads what the desk is already outputting. Several times a second (30 by default, set in Setup) it checks every AutoZoom fixture:
+
+1. **Is it an AutoZoom fixture?** Its fixture type mode has XYZ enabled and a Zoom channel (found by the patch scan at start and on Rescan).
+2. **Is it aiming at a performer?** AutoZoom reads the fixture's live **`XYZ_MArker`** value, the marker your cue (or the programmer) points it at, exactly as the desk outputs it, whichever cue or playback set it. `0` means "not following a marker". Any other value is a marker's CID.
+3. **Where is that performer?** The marker's position comes from the **PSN tracker** whose MArker ID is that CID. A tracker only counts while it is online (receiving data).
+4. **Where exactly to aim?** The aim point is the marker position plus the fixture's live **`XYZ_X/Y/Z`** offset (read in the marker's Target space), e.g. 0.3 m above the head. The distance is measured from the fixture's patch position (including the position of the group it sits in).
+5. **What beam size?** The fixture's fixed size if you set one, otherwise the `AZ_SIZE` fader mapped to the Setup range. AutoZoom computes the beam angle for that size at that distance, sets zoom, and closes the iris further when the beam must be smaller than the minimum zoom allows.
+
+What happens, per fixture:
+
+| Situation | State shown | AutoZoom |
+|---|---|---|
+| Armed, follows a marker, PSN online | Tracking (or Too wide / Too small when the size is outside the optics) | **Drives** zoom/iris: turns `AZ_BASE_<fid>` On, then sets the zoom/iris Temp faders, updating them as the performer moves |
+| Armed, follows a marker, tracker offline | No PSN data | Holds the last zoom/iris |
+| Armed, `XYZ_MArker` = 0 | Armed · no marker | Releases: the cue's own zoom/iris apply |
+| Follows a CID that no patched MArker has | Unknown marker | Releases |
+| Disarmed, or AutoZoom stopped | Disarmed / Offline | Releases |
+
+So a cue triggers AutoZoom simply by setting a fixture's MArker: when a cue gives the fixture a marker, AutoZoom takes over its zoom and iris on the next update; when a cue sets the MArker back to 0 (or AutoZoom is stopped, or the fixture is disarmed), AutoZoom lets go and your cue's zoom and iris come back.
+
+## How it works (zoom/iris sequences)
 AutoZoom owns the zoom/iris range of each fixture it drives:
 - `AZ_BASE_<fid>` (priority High) holds zoom, and iris if the fixture has one, at their physical minimum. AutoZoom turns it On when it starts driving the fixture and Off when it releases it (Stop, disarm, no marker).
 - `AZ_ZOOM_<fid>` (priority Super) holds zoom at maximum; its Temp fader crossfades from the base minimum to it. `AZ_IRIS_<fid>` works the same way for iris when the beam must be smaller than the minimum zoom allows.
