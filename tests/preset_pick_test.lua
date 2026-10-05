@@ -11,9 +11,14 @@ T.test("preset command parsing", function()
   T.eq(p.parsePresetCommand("Preset 2"), nil, "pool only")
 end)
 
-T.test("undo match is plain text", function()
+T.test("undo match is strict plain text", function()
   local p = az().preset
   T.eq(p.undoMatches("\27[32mPreset 2.30\27[0m", "OK: Preset 2.30"), true, "ansi stripped, OK: removed")
+  T.eq(p.undoMatches("preset  2.30 ", "ok: PRESET 2.30"), true, "case and whitespace")
+  T.eq(p.undoMatches("Preset 2.30", "Preset 2.30"), true, "equal")
+  T.eq(p.undoMatches("Store Preset 2.30", "Preset 2.30"), false, "store is not the tap")
+  T.eq(p.undoMatches("Delete Preset 2.30", "OK: Preset 2.30"), false, "delete is not the tap")
+  T.eq(p.undoMatches("Preset 2.30 Thru 2.31", "Preset 2.30"), false, "containment is not enough")
   T.eq(p.undoMatches("Preset 2x30", "Preset 2.30"), false, "dot is not a wildcard")
   T.eq(p.undoMatches(nil, "Preset 2.30"), false, "no undo entry")
 end)
@@ -31,7 +36,7 @@ T.test("pick stores the tapped preset and undoes its programmer effect", functio
   a:PickOffset(); d:tick()
   T.eq(d.views["offset"].text, "Tap a preset…\n10 s · tap to cancel", "waiting")
   T.eq(d.views["offset"].appearance, "capture", "capture look")
-  d.lastCmd = "OK: Preset 2.30"; d.undoName = "Preset 2.30"
+  d.lastCmd = "OK: Preset 2.30"; d.undoName = "Preset 2.30"; d.undoCount = 1
   d:tick()
   T.eq(d.undos, 1, "oops once")
   T.eq(az().config.parseConfig(d.saved["AutoZoom.config"] or "").config.offset.preset, "", "debounced: not yet saved")
@@ -51,9 +56,37 @@ end)
 T.test("no Oops when the undo entry is something else", function()
   local d, a = setup()
   a:PickOffset(); d:tick()
-  d.lastCmd = "OK: Preset 2.30"; d.undoName = "Store Sequence 3"
+  d.lastCmd = "OK: Preset 2.30"; d.undoName = "Store Sequence 3"; d.undoCount = 1
   d:tick()
   T.eq(d.undos, 0, "nothing undone"); T.eq(d.views["offset"].text, "Offset\nPreset 2.30", "picked anyway")
+end)
+
+T.test("a stale undo entry from before the pick is never undone", function()
+  for _, stale in ipairs({ "Store Preset 2.30", "Preset 2.30" }) do
+    local d, a = setup()
+    d.undoName = stale; d.undoCount = 5; d.undoIndex = 0
+    a:PickOffset(); d:tick()
+    d.lastCmd = "OK: Preset 2.30"; d:tick()
+    T.eq(d.undos, 0, "nothing undone (" .. stale .. ")")
+    T.eq(d.views["offset"].text, "Offset\nPreset 2.30", "picked anyway (" .. stale .. ")")
+  end
+end)
+
+T.test("a new undo entry equal to the tap is undone exactly once", function()
+  local d, a = setup()
+  d.undoName = "Store Preset 2.30"; d.undoCount = 5
+  a:PickOffset(); d:tick()
+  d.lastCmd = "OK: Preset 2.30"; d.undoName = "Preset 2.30"; d.undoCount = 6
+  d:tick(); d:tick()
+  T.eq(d.undos, 1, "one oops")
+end)
+
+T.test("a new Store undo entry is not undone", function()
+  local d, a = setup()
+  a:PickOffset(); d:tick()
+  d.lastCmd = "OK: Preset 2.30"; d.undoName = "Store Preset 2.30"; d.undoCount = 1
+  d:tick()
+  T.eq(d.undos, 0, "nothing undone")
 end)
 
 T.test("pick times out, cancels and is refused when stopped or not current", function()

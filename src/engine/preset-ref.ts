@@ -15,12 +15,22 @@ export function stripAnsi(text: string): string {
     return out;
 }
 
-// Plain-text containment: the undo entry name contains the command (without a leading "OK:").
+function normalize(text: string): string {
+    let t = stripAnsi(text).trim();
+    if (t.toLowerCase().startsWith("ok:")) t = t.substring(3);
+    const [collapsed] = string.gsub(t.trim(), "%s+", " ");
+    return collapsed.toLowerCase();
+}
+
+const NOT_A_TAP = ["store", "delete", "copy", "move", "label", "edit", "update", "assign", "attribute"];
+
+// Strict plain-text match: the undo entry is the tapped command itself (ANSI, "OK:", case and spacing ignored),
+// or ends with it; entries that store/delete/edit/... a preset never match.
 export function undoMatches(undoName: string | undefined, command: string): boolean {
     if (undoName === undefined) return false;
-    let cmd = command.trim();
-    if (cmd.startsWith("OK:")) cmd = cmd.substring(3).trim();
-    if (cmd === "") return false;
-    const [found] = string.find(stripAnsi(undoName), cmd, 1, true);
-    return found !== undefined;
+    const undo = normalize(undoName);
+    const cmd = normalize(command);
+    if (cmd === "" || undo === "") return false;
+    for (const verb of NOT_A_TAP) if (undo.startsWith(verb)) return false;
+    return undo === cmd || undo.endsWith(" " + cmd);
 }

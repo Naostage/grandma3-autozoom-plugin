@@ -24,6 +24,7 @@ export class AutoZoom {
     protected captureStartId: string | undefined;
     protected pickUntil: number | undefined;
     protected pickBaseline: string | undefined;
+    protected pickUndoMark: string | undefined;
     private results: { [fid: string]: FixtureResult } = {};
     private live: { [fid: string]: Live } = {};
     private sent: { [fid: string]: string } = {};
@@ -267,6 +268,7 @@ export class AutoZoom {
         if (this.pickUntil !== undefined) { this.endPick("Preset pick cancelled"); return; }
         if (!this.running) { this.say("Start AutoZoom to pick a preset"); return; }
         this.pickBaseline = this.desk.lastCommand();
+        this.pickUndoMark = this.desk.undoMark();
         this.pickUntil = this.desk.now() + PICK_SECONDS;
         this.message = "Tap the preset that holds the XYZ offset";
         this.update();
@@ -281,7 +283,8 @@ export class AutoZoom {
         if (preset === undefined) return;                      // unrelated command: keep waiting
         const undoName = this.desk.topUndoName();
         this.desk.log(`Preset pick saw "${cmd}", undo entry "${undoName ?? ""}"`);
-        if (undoMatches(undoName, cmd)) this.desk.undoProgrammer();
+        // Oops only a new undo entry that is the tap itself: an older entry (e.g. "Store Preset 2.30") is never touched.
+        if (this.desk.undoMark() !== this.pickUndoMark && undoMatches(undoName, cmd)) this.desk.undoProgrammer();
         this.config.offset = { ...this.config.offset, source: "preset", preset };
         this.markDirty();
         this.endPick(`Offset preset ${preset}`);
@@ -290,6 +293,7 @@ export class AutoZoom {
     private endPick(message: string): void {
         this.pickUntil = undefined;
         this.pickBaseline = undefined;
+        this.pickUndoMark = undefined;
         this.say(message);
     }
 

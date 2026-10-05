@@ -34,5 +34,6 @@ export interface Desk {
     runCommands(commands: string[]): void;
     lastCommand(): string | undefined;                     // CmdObj().LastCommand
     topUndoName(): string | undefined;                     // name of the most recent undo entry
+    undoMark(): string;                                    // changes whenever an undo entry is added or undone
     undoProgrammer(): void;                                // Oops with CurrentProfile().OopsProgrammer temporarily on
 }

@@ -216,3 +216,15 @@ T.test("a failing Oops is logged and OopsProgrammer is still restored", function
   local found = false; for _, p in ipairs(M.printed) do if p:find("[AZ] Oops failed", 1, true) then found = true end end
   T.truthy(found, "failure printed")
 end)
+
+T.test("undo mark combines index, count and top entry name", function()
+  M.reset()
+  M.cmdObj = { LastCommand = "x", Undos = M.handle({ UndoIndex = 2 }, { {}, {}, {} }) }
+  M.cmdObj.Undos[3] = { Name = "\27[32mPreset 2.30\27[0m" }
+  local desk = az().madesk.createMaDesk()
+  T.eq(desk:undoMark(), "2|3|Preset 2.30", "with count")
+  M.cmdObj = { LastCommand = "x", Undos = { UndoIndex = 0 } }
+  T.eq(desk:undoMark(), "0||", "no Count(), no entry")
+  M.cmdObj = { LastCommand = "x" }
+  T.eq(desk:undoMark(), "||", "no undo list")
+end)

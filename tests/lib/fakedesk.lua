@@ -15,6 +15,7 @@ function F.new(scan)
     scanResult = scan or { fixtures = {}, markers = {}, problems = {} } }
   function d:lastCommand() return self.lastCmd end
   function d:topUndoName() return self.undoName end
+  function d:undoMark() return tostring(self.undoIndex or 0) .. "|" .. tostring(self.undoCount or 0) .. "|" .. tostring(self.undoName or "") end
   function d:undoProgrammer() self.undos = self.undos + 1 end
   function d:now() return self.t end
   function d:log(m) self.logs[#self.logs + 1] = m end

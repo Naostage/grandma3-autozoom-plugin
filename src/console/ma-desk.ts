@@ -63,6 +63,7 @@ export class MaDesk implements Desk {
     runCommands(commands: string[]): void { ui.runCommands(commands); }
     lastCommand(): string | undefined { return undo.lastCommand(); }
     topUndoName(): string | undefined { return undo.topUndoName(); }
+    undoMark(): string { return undo.undoMark(); }
     undoProgrammer(): void { undo.undoProgrammer(); }
 }
 
