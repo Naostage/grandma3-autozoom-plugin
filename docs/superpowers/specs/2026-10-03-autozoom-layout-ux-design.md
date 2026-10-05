@@ -249,3 +249,13 @@ A header cell **Offset** shows the current offset source ("Preset 2.30" / "0/0/0
 3. The undo state (`UndoIndex`, entry count, top entry name) is recorded at pick start. The tap's effect is undone with `Oops /nc` (while `CurrentProfile().OopsProgrammer` is temporarily `true`) only if the undo state changed since then **and** the top undo entry (`CmdObj().Undos[UndoIndex + 1].Name`) is that preset command: compared after stripping ANSI colour codes and a leading `OK:`, collapsing whitespace and lowercasing, it equals the command or ends with it, and it does not start with store/delete/copy/move/label/edit/update/assign/attribute. Otherwise nothing is undone.
 4. The config's offset becomes `{ source: "preset", preset: "<p>.<q>" }` (or `"DataPool <n> Preset <p>.<q>"` when the command named a data pool); saved with the show. A System Monitor line records the LastCommand and undo name seen (diagnostics for the console checklist).
 5. Tap-to-program uses `Attribute "XYZ_X" Thru "XYZ_Z" At Preset <p>.<q>`, or `… At DataPool <n> Preset <p>.<q>` for a data-pool address.
+
+### 15.3 Simplification (2026-10-05, after the second console run)
+
+AutoZoom already follows the marker that the cues set, so the arm state no longer needs to be recalled from cues.
+
+- **Capture is removed**: the layout cell, the runtime flow (sequence selection, cue prompt, cue command rewrite) and the Desk methods it used (`selectedSequence`, `runningCue`, `selectedCue`, `readCueCommand`, `writeCueCommand`). The `AZ:Arm('…')` command stays for macros and for cues that already contain it.
+- **Fixtures are armed by default.** The config stores the **disarmed** fixtures (`disarmed: number[]`); every scanned fixture not listed is armed, so newly patched fixtures work as soon as a cue gives them a marker. `Arm('list')` arms exactly the listed fixtures (all others disarmed); `ArmToggle`, `ArmAll`, `DisarmAll` keep their meaning. A saved config without `disarmed` (older builds) means "all armed".
+- **Header**: Status · Start/Stop · Setup · Rescan · AZ_SIZE · message. Arm all / Disarm all / Capture / Offset cells are removed (`ArmAll()` / `DisarmAll()` stay as commands).
+- **Offset preset pick moves into Setup**: the Setup dialog has a third command, **Pick preset…**, which closes the dialog and starts the pick (§15.2 rules unchanged); the countdown and result appear in the header message cell. `PickOffset()` stays as a command.
+- Version 2.0.0.2.
