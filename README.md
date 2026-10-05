@@ -1,77 +1,32 @@
 # Auto Zoom grandma3 plugin <img src="docs/assets/naostage-logo-white.svg" alt="drawing" width="120" align="right" height="100%">
 
+AutoZoom keeps a constant beam size on tracked performers: it reads which marker each fixture follows
+(from your cues), the marker position (PSN) and the fixture position, and drives zoom and iris.
+
+Requires grandMA3 2.5 or later.
+
 ## Installation
+1. Copy `out/autozoom-grandma3.lua` and `out/autozoom-grandma3.xml` to `gma3_library/datapools/plugins` (USB stick) or `C:\ProgramData\MALightingTechnology\gma3_library\datapools\plugins` (onPC).
+2. Import the plugin and run it. It creates the **AutoZoom** data pool with the **AutoZoom** layout, one `AZ_ZOOM_<fid>` / `AZ_IRIS_<fid>` sequence per fixture and the `AZ_SIZE` sequence. Creating missing sequences clears the programmer.
+3. Open the AutoZoom layout in a view.
 
-1. Download the files `autozoom-grandma3.lua` and `autozoom-grandma3.xml`
-2. Move the downloaded files to :
-   - Either a USBStick in folder : `grandMA3\gma3_library\datapools\plugins`
-   - Either to your onPC datapools folder : `C:\ProgramData\MALightingTechnology\gma3_library\datapools\plugins`
-3. Import the plugin in grandma3 (help : [Doc](https://help.malighting.com/grandMA3/2.2/HTML/plugins.html#h2_1665288257) )
+Fixtures appear when their fixture type mode has XYZ enabled and a Zoom channel. Set the zoom and iris physical ranges of the fixture type to the manufacturer's optical data.
 
-## Usage
+## Using the layout
+- **Arm column**: tap to arm/disarm a fixture. Only armed fixtures are driven.
+- **Marker cells**: a lit cell shows the marker the fixture currently follows (green tracking, amber no PSN data, grey disarmed). Tap a cell to put that fixture in the programmer on that marker, with the Setup XYZ offset and zoom/iris at minimum (red **P**); tap it again to send `Off Fixture <fid>`, which removes all of that fixture's values from the programmer.
+- **State, Distance, Zoom, Iris**: live values. "Too wide"/"Too small" mean the beam size is outside the fixture's optics.
+- **Size**: "Global" follows the `AZ_SIZE` fader (range set in Setup); tap to type a fixed size in metres.
+- **Capture**: tap, then select a sequence (pool tile or executor Select key). Confirm the cue number (pre-filled with the running cue). Type another cue number to store elsewhere. The current arms are written into that cue as `Lua "AZ:Arm('101,102')"`; replaying the cue restores them. If the target sequence is already selected, select another sequence first. Capture works only while AutoZoom is running; it is refused when stopped, and Stop cancels a capture in progress.
+- **Setup**: XYZ offset source (preset number or X/Y/Z values), size fader range, refresh rate. XYZ offsets are read relative to the followed marker's Target space (from the show), so they are correct whatever the space size. Marker positions come from PSN trackers (each tracker's MArker ID must be set).
+- **Start/Stop**: stopping releases every AutoZoom fader.
 
-### Preparing the console
+## Commands
+`Lua "AZ:Start()"`, `Stop()`, `Toggle()`, `Arm('101,102')`, `ArmToggle(101)`, `ArmAll()`, `DisarmAll()`, `Capture()`, `Program(101, 1)`, `Setup()`, `Size(101)`, `Rescan()`, `Status()`.
+Run `Rescan()` after changing the patch (fixtures, positions, optics, markers).
 
-Make sure that XYZ is enabled for all fixture types that you want to use autozoom with.
+## How it works
+Each `AZ_ZOOM_<fid>` sequence holds zoom at maximum; its Temp fader crossfades from the cue's zoom (minimum) to it. Iris works the same way when the beam must be smaller than the minimum zoom allows.
 
-Also make sure that the zoom and iris physical ranges (of the fixture type) correspond to the optical parameters given by the constructor on the fixture's datasheet.
-
-### Importing the macros
-
-- Launch the plugin to import all the commands.
-  All the commands that this plugin creates need to start by `AZ:`.
-  To launch a command, simply type `Lua "AZ:<command>(<args>)"` in the command line or in a macro.
-
-- You can create all the avaiable macros by typing `Lua "AZ:CreateMacros(<starting-index>)"`
-
-### Reading the patch
-
-- When the plugin starts, it automaticaly to scan the patch to see where the fixtures are in 3D space, and their Zoom/Iris physical ranges.
-
-- If you change the fixtures position, or change the physical ranges for any fixture, please rescan the patch by executing `Lua "AZ:ScanPatch()"`
-
-### Enabling Autozoom on a fixture
-
-- Supposed you have a tracking sequence, in which the position of the fixture is set to the marker.
-- Store in the same cue the zoom and iris values at minimum.
-
-- Create 2 sequences 'AZ_ZOOM_<fixture_id>' and 'AZ_IRIS_<fixture_id>' with zoom and iris at max (manually or automatically using `Lua "AZ:CreateAZSequences(<fid>)"`)
-- Enable the fixture to a certain beam size : `Lua "AZ:EnableFixture(<fixture_id>, <marker_fid>, <beamSize>)"`
-
-#### Note on using automatic sequence creation :
-  Automatic creation creates fixtures either in a new datapool called "AZ", or in the current datapool you're in.
-  You can enable/disable the use of the "AZ" Datapool using `Lua "AZ:EnableDatapool()"` or `Lua "AZ:DisableDatapool()"`
-  It works on fixtures that are enabled only (because in the future, it will create also the tracking sequence, with XYZ 0, Zoom and Iris min, and marker set)
-
-### Disabling a fixture
-
-- To disable Autozoom on a fixture, simply launch / type `Lua "AZ:DisableFixture(<fixture_id>)"`
-- If you want to disable AutoZoom on all fixtures at once, type `Lua "AZ:DisableAllFixtures()"`
-
-### Using a fader for beamSize
-
-- To use a fader as Beam Size Fader, you can either :
-  - Use one for each fixture ex : (AZ_SIZE_101, AZ_SIZE_102, ...)
-  - Use one global fader for all fixture : "AZ_SIZE"
-
-- To enable Size Fader for a fixture, type `Lua "AZ:EnableSizeFader(<fid>)"`
-- To go back to fixed value, use `Lua "AZ:DisableSizeFader(<fid>)"`
-
-- To enable the "global" fader, use : `Lua "AZ:EnableGlobalSizeFader()"`
-- To disable the "global" fader, use : `Lua "AZ:DisableGlobalSizeFader()"`
-
-- The faders need to have a range set, to remap the fader value (0->100) to a beamSize in meters (for exemple : 1m -> 5m). To change this range, use `Lua "AZ:SetSizeFaderRange(<min>, <max>)"`
-
-### Get the current status
-
-- You can print the current status of the fixtures (which one is following which marker, at which beam_size) using `Lua "AZ:GetFixturesStatus()"`
-
-## Developping
-
-This plugin uses [TypescriptToLua](https://typescripttolua.github.io/) and [GrandMA3-TS-Types](https://github.com/ma3-pro-plugins/grandma3-ts-types).
-
-To install them, use node js, and type `npm install` in folder.
-
-You can build using `npm run build` or use `npm run dev` to automatically build the plugin on code change.
-
-After building, run the regression tests with `npm test` (requires a `lua` 5.3+ interpreter in your PATH). They run the compiled plugin against a minimal mock of the grandMA3 API (`tests/harness.lua`).
+## Developing
+`npm install`, then `npm run build`. Tests: `npm test` (needs `lua` 5.3+ on the PATH; on NixOS `nix shell nixpkgs#nodejs_22 nixpkgs#lua5_4`). Design: `docs/superpowers/specs/2026-10-03-autozoom-layout-ux-design.md`. Prototype: `docs/prototype/autozoom-layout-prototype.html`.
