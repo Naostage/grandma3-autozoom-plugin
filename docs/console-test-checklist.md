@@ -23,3 +23,9 @@ Tick each line on a copy of a real show. Note the System Monitor output for any 
 19. [ ] A marker with a resized/renamed Target space: offsets still match the programmer values.
 20. [ ] PSN tracker ISONLINE value when receiving data is recognised (marker header turns green; stop the feed → No PSN data).
 21. [ ] Load another show and back without running the plugin: replaying a captured cue and tapping layout buttons raise no Lua error; the AZ Start macro (`Call Plugin "GMA3 Autozoom"`) starts AutoZoom.
+22. [ ] Layout cells show tinted fills (no paper icon, no macro name); colours change with state (arm, tracking, no PSN, programmer P, capture waiting).
+23. [ ] Appearances pool contains the nine `AZ …` appearances once; Rescan does not duplicate them.
+24. [ ] Offset pick with fixtures selected: tap Offset, tap an XYZ preset → cell shows "Preset X.Y", programmer is back to what it was, nothing else undone. Note the System Monitor line "Preset pick saw …".
+25. [ ] Offset pick with nothing selected: preset picked, no Oops.
+26. [ ] Offset pick ignores an unrelated command (e.g. Go on a sequence) and times out after 10 s.
+27. [ ] Caveat: any command naming a preset (e.g. Store Preset 2.30) during a pick counts as the pick — avoid storing presets while the Offset cell is waiting.
