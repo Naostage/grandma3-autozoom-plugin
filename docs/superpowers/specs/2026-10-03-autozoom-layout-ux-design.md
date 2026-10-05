@@ -215,3 +215,35 @@ All through the global: `Lua "AZ:<Command>(...)"`.
 ## 14. Out of scope
 
 Auto-start on show load (DMX remote trick), custom "AZ Control" fixture type, hooks, multi-instance sub-fixtures beyond position composition, migrating 1.x shows, a web/network UI.
+
+## 15. Addendum (2026-10-05, after the first console run)
+
+### 15.1 Layout appearances (tinted fills)
+
+Layout elements showed the bound macro's default "paper" appearance. Every cell now gets a tinted fill from a small set of **AutoZoom appearances**, BeatGrid-style:
+
+| Kind | Name | IMAGERGBA | Used for |
+|---|---|---|---|
+| tracking | `AZ Tracking` | `137A38E0` | status Running, armed, live marker header, followed marker (tracking/too-wide/too-small), state Tracking |
+| warn | `AZ Warn` | `7A6A10D9` | state Too wide / Too small |
+| nopsn | `AZ No PSN` | `85520AD9` | marker header without PSN, followed marker without PSN, state No PSN |
+| error | `AZ Error` | `851F1AD9` | status Offline, state Unknown marker |
+| programmer | `AZ Programmer` | `8F211CE6` | matrix cell in the programmer (P) |
+| capture | `AZ Capture` | `B8650FE0` | Capture / Offset pick waiting |
+| button | `AZ Button` | `24283AE0` | tappable header cells, Size cells |
+| header | `AZ Header` | `171C3DB8` | AZ_SIZE value and message cells |
+| idle | `AZ Idle` | `10121CD9` | everything else (disarmed, empty matrix cells, values) |
+
+- Appearances live in the show's **Appearances pool** (`ShowData().Appearances`) — appearances cannot live in a data pool, so this is the one exception to "everything in DataPool AutoZoom". They are found by name (`AZ …`), created with `Acquire()` when missing, and their `IMAGERGBA` is (re)applied at every install/Rescan; never duplicated.
+- Elements hide the bound object's name, icon, ID, CID, value and bar and draw no border (booleans `false`, as BeatGrid does); `el.Appearance` is set to the cell's appearance and changed only when the cell's appearance kind changes (same write-only-on-change rule as the text).
+- Text stays white (`E6E8EBFF`), muted (`8E96A3FF`) for the message cell.
+
+### 15.2 Offset preset pick
+
+A header cell **Offset** shows the current offset source ("Preset 2.30" / "0/0/0.3 m"). Tapping it starts a pick, the same way FXMAker/BounceMAker/FlyoutMAker pick presets on 2.5 (verified from their 2.5 builds):
+
+1. Only while AutoZoom runs (refused when stopped; Stop cancels a pick). The cell turns to the capture appearance: "Tap a preset… / N s · tap to cancel", 10 s timeout; tapping Offset again cancels.
+2. The update loop polls `CmdObj().LastCommand`; when it differs from the value at pick start and matches `datapool <n> preset <p>.<q>` or `preset <p>.<q>` (case-insensitive), that preset is picked. Other commands are ignored (the pick keeps waiting).
+3. If the top undo entry (`CmdObj().Undos[UndoIndex + 1].Name`, ANSI colour codes stripped) contains the matched command text (minus a leading `OK:`; plain-text comparison, not a Lua pattern), the tap's effect is undone with `Oops /nc` while `CurrentProfile().OopsProgrammer` is temporarily `true`. Otherwise nothing is undone.
+4. The config's offset becomes `{ source: "preset", preset: "<p>.<q>" }` (or `"DataPool <n> Preset <p>.<q>"` when the command named a data pool); saved with the show. A System Monitor line records the LastCommand and undo name seen (diagnostics for the console checklist).
+5. Tap-to-program uses `Attribute "XYZ_X" Thru "XYZ_Z" At Preset <p>.<q>`, or `… At DataPool <n> Preset <p>.<q>` for a data-pool address.
