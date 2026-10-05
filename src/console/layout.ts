@@ -12,6 +12,8 @@ export function macroName(key: string): string {
 
 let elements: { [key: string]: any } = {};
 let written: { [key: string]: string } = {};
+// One element checked every refresh: a reloaded/replaced layout invalidates it even when no view changed.
+let sentinel: any = undefined;
 
 export function buildLayout(cells: CellSpec[]): void {
     const pool = ensurePool();
@@ -21,6 +23,7 @@ export function buildLayout(cells: CellSpec[]): void {
     if (layout === undefined) throw new Error("Could not create the AutoZoom layout");
     elements = {};
     written = {};
+    sentinel = undefined;
     for (const cell of cells) {
         ensureMacro(macroName(cell.key), cell.command);
         const el = layout.Append();
@@ -35,24 +38,34 @@ export function buildLayout(cells: CellSpec[]): void {
         el.VisibilityIcon = "Hidden";
         el.VisibilityBorder = "Visible";
         elements[cell.key] = el;
+        if (sentinel === undefined) sentinel = el;
     }
 }
 
 // Never creates anything: if the pool or layout is gone, elements stays empty.
+// Forgets what was written: the elements found may be new objects (layout reloaded) without our texts.
 function findElements(): void {
     elements = {};
+    written = {};
+    sentinel = undefined;
     const pool = findPool();
     if (pool === undefined) return;
     const layout = findChild(pool.Layouts, LAYOUT);
     if (layout === undefined) return;
     for (const el of children(layout)) {
         const note = tostring(el.Note ?? "");
-        if (note.startsWith(TAG)) elements[note.substring(TAG.length)] = el;
+        if (!note.startsWith(TAG)) continue;
+        elements[note.substring(TAG.length)] = el;
+        if (sentinel === undefined) sentinel = el;
     }
 }
 
 export function refreshLayout(views: Views): void {
     let rescanned = false;
+    if (sentinel !== undefined && !IsObjectValid(sentinel)) {
+        rescanned = true;
+        findElements();
+    }
     for (const key in views) {
         const view = views[key];
         const signature = `${view.text}|${view.border}|${view.textColor}`;

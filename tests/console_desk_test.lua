@@ -132,3 +132,18 @@ T.test("refresh with the data pool deleted issues no command", function()
   desk:refreshLayout(VIEWS); desk:refreshLayout(VIEWS)
   T.eq(#M.cmds, 0, "no commands")
 end)
+
+T.test("a reloaded layout gets its texts rewritten although the views did not change", function()
+  local desk = builtLayout()
+  desk:refreshLayout(VIEWS)
+  local layout = M.dataPools._kids[1].Layouts._kids[1]
+  local fresh = {}
+  for i, e in ipairs(layout._kids) do e._deleted = true; fresh[i] = M.handle({ Note = e.Note }, {}) end
+  layout._kids = fresh
+  desk:refreshLayout(VIEWS)
+  T.eq(fresh[1].CustomTextText, "A", "a rewritten"); T.eq(fresh[2].CustomTextText, "B", "b rewritten")
+  T.eq(fresh[2].BorderColor, "1", "border rewritten")
+  fresh[1].CustomTextText = "tampered"
+  desk:refreshLayout(VIEWS)
+  T.eq(fresh[1].CustomTextText, "tampered", "then unchanged views are skipped again")
+end)
