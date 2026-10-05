@@ -21,3 +21,4 @@ Tick each line on a copy of a real show. Note the System Monitor output for any 
 17. [ ] Layout macro buttons created inside DataPool 'AutoZoom' run their `Lua "AZ:..."` command when tapped.
 18. [ ] AZ_ZOOM/AZ_IRIS Temp faders move zoom/iris smoothly (FaderTemp readback was inconclusive in the probe).
 19. [ ] A marker with a resized/renamed Target space: offsets still match the programmer values.
+20. [ ] PSN tracker ISONLINE value when receiving data is recognised (marker header turns green; stop the feed → No PSN data).

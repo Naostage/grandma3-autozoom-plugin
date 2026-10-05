@@ -47,12 +47,22 @@ export function readOffset(f: PatchFixture, markers: PatchMarker[]): Vec3 {
     );
 }
 
+// Trackers persist while the PSN feed is down; ISONLINE is "" when offline (probe 2 dump).
+const ONLINE_WORDS = ["yes", "on", "true", "1"];
+
+export function isOnline(v: unknown): boolean {
+    if (v === true || v === 1) return true;
+    if (typeof v !== "string") return false;
+    return ONLINE_WORDS.indexOf(v.trim().toLowerCase()) >= 0;
+}
+
 export function readMarkers(): MarkerReadings {
     const out: MarkerReadings = {};
     for (const system of children(ShowData().PSNProtocol)) {
         for (const tracker of children(system)) {
             const cid = num(tracker.MARKERID);
             if (cid === undefined || cid === 0) continue;
+            if (!isOnline(tracker.ISONLINE)) continue;
             const pos = vec(num(tracker.POSITIONX) ?? 0, num(tracker.POSITIONY) ?? 0, num(tracker.POSITIONZ) ?? 0);
             const rot = APPLY_MARKER_ROTATION
                 ? vec(num(tracker[TRACKER_ROTATION_PROPS[0]]) ?? 0, num(tracker[TRACKER_ROTATION_PROPS[1]]) ?? 0, num(tracker[TRACKER_ROTATION_PROPS[2]]) ?? 0)

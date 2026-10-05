@@ -99,8 +99,9 @@ function M.stage(nodes, spaces)
     Spaces = handle({}, spaces or { M.space("Stage", { -35, -35, 0 }, { 35, 35, 35 }) }),
   }, {})
 end
-function M.tracker(cid, x, y, z, rot)
-  local t = handle({ MARKERID = cid, POSITIONX = x, POSITIONY = y, POSITIONZ = z }, {})
+function M.tracker(cid, x, y, z, rot, online)
+  if online == nil then online = "Yes" end
+  local t = handle({ MARKERID = cid, POSITIONX = x, POSITIONY = y, POSITIONZ = z, ISONLINE = online }, {})
   if rot then t.ROTX, t.ROTY, t.ROTZ = rot[1], rot[2], rot[3] end
   return t
 end

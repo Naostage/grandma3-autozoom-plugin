@@ -102,6 +102,18 @@ T.test("PSN markers", function()
   T.eq(r["2"], nil, "missing")
 end)
 
+T.test("PSN trackers count only while ISONLINE is truthy", function()
+  M.reset()
+  M.psnSystem({ M.tracker(1, 1, 2, 3, nil, ""), M.tracker(2, 0, 0, 0, nil, "Yes"), M.tracker(3, 0, 0, 0, nil, "No"),
+    M.tracker(4, 0, 0, 0, nil, true), M.tracker(5, 0, 0, 0, nil, 1), M.tracker(6, 0, 0, 0, nil, " on "), M.tracker(7, 0, 0, 0, nil, "TRUE"),
+    M.tracker(8, 0, 0, 0, nil, "1"), M.tracker(9, 0, 0, 0, nil, false), M.tracker(10, 0, 0, 0, nil, 0) })
+  M.psn._kids[1]._kids[#M.psn._kids[1]._kids + 1] = M.handle({ MARKERID = 11, POSITIONX = 0, POSITIONY = 0, POSITIONZ = 0 }, {})
+  local r = az().live.readMarkers()
+  T.eq(r["1"], nil, "offline (empty) tracker omitted"); T.eq(r["2"].pos, { x = 0, y = 0, z = 0 }, "online tracker read")
+  T.eq(r["3"], nil, "No"); T.truthy(r["4"], "true"); T.truthy(r["5"], "1"); T.truthy(r["6"], "on"); T.truthy(r["7"], "TRUE")
+  T.truthy(r["8"], "'1'"); T.eq(r["9"], nil, "false"); T.eq(r["10"], nil, "0"); T.eq(r["11"], nil, "no ISONLINE")
+end)
+
 T.test("GlobalVars text", function()
   M.reset()
   az().vars.saveText("k", "v"); T.eq(az().vars.loadText("k"), "v", "round trip")
