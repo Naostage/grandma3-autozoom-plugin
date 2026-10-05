@@ -182,7 +182,10 @@ export class AutoZoom {
             const answers = this.desk.setupDialog(this.config);
             if (answers === undefined) return;
             if (answers.pick) {                                // "Pick preset…": the other answers are not applied
-                this.PickOffset();
+                this.pickUntil = undefined;                    // an active pick restarts instead of toggling off
+                this.pickBaseline = undefined;
+                this.pickUndoMark = undefined;
+                this.startPick();
                 return;
             }
             const rate = this.config.rate;
@@ -259,6 +262,10 @@ export class AutoZoom {
     PickOffset(): void {
         if (!this.ensureCurrent()) return;
         if (this.pickUntil !== undefined) { this.endPick("Preset pick cancelled"); return; }
+        this.startPick();
+    }
+
+    private startPick(): void {
         if (!this.running) { this.say("Start AutoZoom to pick a preset"); return; }
         this.pickBaseline = this.desk.lastCommand();
         this.pickUndoMark = this.desk.undoMark();

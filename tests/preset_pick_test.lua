@@ -184,6 +184,24 @@ T.test("Setup with Pick preset starts the pick and ignores the other answers", f
   for _, l in ipairs(d.logs) do T.truthy(l ~= "Setup saved", "not saved") end
 end)
 
+T.test("Setup with Pick preset during an active pick restarts it", function()
+  local d, a = setup()
+  a:PickOffset(); d:tick()
+  d.t = 6; d.lastCmd = "OK: Go+ Sequence 3"
+  d.setupAnswer = { pick = true, source = "values", preset = "", x = "9", y = "9", z = "9", min = "2", max = "3", rate = "60" }
+  a:Setup(); d:runLaters()
+  T.truthy(a.pickUntil ~= nil, "pick still active")
+  T.eq(a.pickUntil, 16, "fresh 10 s countdown")
+  T.eq(a.pickBaseline, "OK: Go+ Sequence 3", "fresh baseline")
+  T.eq(a.message, "Tap the preset that holds the XYZ offset", "pick message")
+end)
+
+T.test("PickOffset still toggles an active pick off", function()
+  local d, a = setup()
+  a:PickOffset(); a:PickOffset()
+  T.eq(a.pickUntil, nil, "cancelled")
+end)
+
 T.test("Setup with Pick preset while stopped is refused", function()
   local d, a = setup()
   a:Stop()
