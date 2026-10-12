@@ -127,42 +127,34 @@ export class AZ_Global_Type {
         // Check if the fixtureid is in the patch_info.fixtures
         // Check if the markerid is in the patch_info.markers
         // Store in enabledFixtures a new AZ_EnabledFixture at index [fixtureid]
-        if (!this.patch_info.fixtures) {
-            PrintEcho("Patch is not defined", 10);
+
+        // Check fixture with XYZ mode is on in the patch
+        if (this.patch_info.fixtures.length === 0) return PrintEcho("No fixtures with XYZ mode active in patch", 10);
+
+        // check the patch
+        if (!this.patch_info.fixtures) return PrintEcho("Patch is not defined", 10);
+
+        // Check marker exist in the patch
+        if (this.patch_info.markers.length === 0) return PrintEcho("No markers in patch", 10);
+
+        let fixture = this.patch_info.fixtures.find(fixture => fixture.fid === fixtureid);
+        if (!fixture) return PrintEcho("No fixture with id " + fixtureid + " found", 10);
+
+        let marker = this.patch_info.markers.find(marker => marker.fid === markerid);
+        if (!marker) return PrintEcho("No marker with id " + markerid + " found", 10);
+
+        let fixtureExist = this.enabledFixtures.find(enabledFixture => enabledFixture.fixture.fid === fixtureid);
+
+        if (fixtureExist) {
+            fixtureExist.marker = marker;
+            fixtureExist.beamSize = beamSize;
+            PrintEcho("Updated fixture " + fixtureid + " - Marker : " + marker.fid + " |  Beam size : " + beamSize, 10)
+            fixtureExist.fixture.forceUpdate();
+        } else {
+            let enabledFixture = new AZ_EnabledFixture(fixture, marker, beamSize);
+            this.enabledFixtures.push(enabledFixture);
+            PrintEcho("Enabled fixture " + fixtureid + " - Marker : " + marker.fid + " |  Beam size : " + beamSize, 10)
         }
-        if (this.patch_info.fixtures.length === 0) {
-            PrintEcho("No fixtures with XYZ mode active in patch", 10);
-            return;
-        }
-        if (this.patch_info.markers.length === 0) {
-            PrintEcho("No markers in patch", 10);
-            return;
-        }
-        for (let fixture of this.patch_info.fixtures) {
-            if (fixture.fid === fixtureid) {
-                for (let marker of this.patch_info.markers) {
-                    if (marker.fid === markerid) {
-                        let enabledFixture = new AZ_EnabledFixture(
-                            fixture, marker, beamSize)
-                        for (let i = 0; i < this.enabledFixtures.length; i++) {
-                            if (this.enabledFixtures[i].fixture.fid == fixtureid){
-                                this.enabledFixtures[i].marker = marker;
-                                this.enabledFixtures[i].beamSize = beamSize;
-                                PrintEcho("Updated fixture " + fixtureid + " - Marker : " + marker.fid + " - " + marker.cid + " |  Beam size : " + beamSize, 10)
-                                this.enabledFixtures[i].fixture.forceUpdate();
-                                return;
-                            }
-                        }
-                        this.enabledFixtures.push(enabledFixture);
-                        PrintEcho("Enabled fixture " + fixtureid + " - Marker : " + marker.fid + " |  Beam size : " + beamSize, 10)
-                        return;
-                    }
-                }
-                PrintEcho("No marker with id " + markerid + " found", 10);
-                return;
-            }
-        }
-        PrintEcho("No fixture with id " + fixtureid + " found", 10);
     }
 
     DisableFixture(fixtureid: number): void {
