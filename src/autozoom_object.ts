@@ -131,7 +131,7 @@ export class AZ_Global_Type {
             PrintEcho("Patch is not defined", 10);
         }
         if (this.patch_info.fixtures.length === 0) {
-            PrintEcho("No fixtures in patch", 10);
+            PrintEcho("No fixtures with XYZ mode active in patch", 10);
             return;
         }
         if (this.patch_info.markers.length === 0) {
