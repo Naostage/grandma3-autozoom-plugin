@@ -123,25 +123,15 @@ export class AZ_Marker {
     }
 
     update() : boolean {
-        // Printf("AZ->Marker->Update")
-        // ShowData().PSNProtocol[1][3]:
-        let PSNProtocol = ShowData().PSNProtocol;
-        for (let i = 1; i <= PSNProtocol.count; i++){
-            let trackingSystem = PSNProtocol[i];
-            // Printf(i)
-            for(let j = 1; j <= trackingSystem.count; j++){
-                // Printf(j)
-                let tracker = trackingSystem[j];
-                if (tracker.MARKERID == this.cid) {
-                    this.position.x = tracker.POSITIONX;
-                    this.position.y = tracker.POSITIONY;
-                    this.position.z = tracker.POSITIONZ;
-                    // PrintEcho("Marker " + this.fid + " | Position (" + this.position.x + ", " + this.position.y + ", " + this.position.z + ")", 0)
-                    return true;
-                }
-            }
-        }
-        return false;
+        let tracker = (ShowData().PSNProtocol.Children() as any[])
+            .flatMap(trackingSystem => trackingSystem.Children() as any[])
+            .find(tracker => tracker.MARKERID == this.cid);
+        if (!tracker) return false;
+
+        this.position.x = tracker.POSITIONX;
+        this.position.y = tracker.POSITIONY;
+        this.position.z = tracker.POSITIONZ;
+        return true;
     }
 }
 
