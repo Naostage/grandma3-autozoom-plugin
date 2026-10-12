@@ -143,18 +143,22 @@ export class AZ_Global_Type {
         let marker = this.patch_info.markers.find(marker => marker.fid === markerid);
         if (!marker) return PrintEcho("No marker with id " + markerid + " found", 10);
 
-        let fixtureExist = this.enabledFixtures.find(enabledFixture => enabledFixture.fixture.fid === fixtureid);
+        let enabledFixture = this.enabledFixtures.find(enabledFixture => enabledFixture.fixture.fid === fixtureid);
 
-        if (fixtureExist) {
-            fixtureExist.marker = marker;
-            fixtureExist.beamSize = beamSize;
+        if (enabledFixture) {
+            enabledFixture.marker = marker;
+            enabledFixture.beamSize = beamSize;
             PrintEcho("Updated fixture " + fixtureid + " - Marker : " + marker.fid + " |  Beam size : " + beamSize, 10)
-            fixtureExist.fixture.forceUpdate();
         } else {
-            let enabledFixture = new AZ_EnabledFixture(fixture, marker, beamSize);
+            enabledFixture = new AZ_EnabledFixture(fixture, marker, beamSize);
             this.enabledFixtures.push(enabledFixture);
             PrintEcho("Enabled fixture " + fixtureid + " - Marker : " + marker.fid + " |  Beam size : " + beamSize, 10)
         }
+
+        if (!marker.update()) {
+            PrintEcho("WARNING : Marker " + marker.fid + " (MArker ID " + marker.cid + ") is not assigned to any PSN tracker, the zoom will not follow it. Set the MArker ID in the PSN configuration.", 10);
+        }
+        enabledFixture.forceUpdate(this.sizeFaderConfig);
     }
 
     DisableFixture(fixtureid: number): void {
@@ -194,7 +198,12 @@ export class AZ_Global_Type {
     expected_remaining_update = 0;
     global_call_repeat = 10;
 
-    UpdateLoop():void {
+    loopId = 0;
+
+    UpdateLoop(loopId: number):void {
+        if (loopId != this.loopId) {
+            return;
+        }
         this.expected_remaining_update--;
         if(!this.enabled){
             this.expected_remaining_update = 0;
@@ -229,7 +238,9 @@ export class AZ_Global_Type {
 
         this.global_call_repeat = this.refreshRate*10;
         this.expected_remaining_update = this.global_call_repeat;
-        Timer(()=>{this.UpdateLoop()}, updatePeriod, this.expected_remaining_update);
+        this.loopId++;
+        let loopId = this.loopId;
+        Timer(()=>{this.UpdateLoop(loopId)}, updatePeriod, this.expected_remaining_update);
     }
 
     Init() : void {
@@ -244,6 +255,7 @@ export class AZ_Global_Type {
         PrintEcho("Plugin author : Naostage 2025", 10);
         PrintEcho("", 10)
         this.ScanPatch();
+        this.initialized = true;
         this.ShowEnabled();
     }
 

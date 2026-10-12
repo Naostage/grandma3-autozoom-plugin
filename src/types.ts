@@ -80,15 +80,19 @@ export class AZ_Fixture {
             moveFaderGMA3(this.getZoomFader(), Math.round(targetZI.zoom));
             this.lastZoom = Math.round(targetZI.zoom);
         }
-        if (Math.round(targetZI.iris) != this.lastIris && targetZI.iris != -1) {
+        if (this.hasIris() && Math.round(targetZI.iris) != this.lastIris && targetZI.iris != -1) {
             moveFaderGMA3(this.getIrisFader(), Math.round(targetZI.iris));
             this.lastIris = Math.round(targetZI.iris);
         }
     }
 
-    forceUpdate() : void {
-        moveFaderGMA3(this.getZoomFader(), this.lastZoom);
-        moveFaderGMA3(this.getIrisFader(), this.lastIris);
+    hasIris() : boolean {
+        return this.fixtureType.opticalParameters.iris.min != this.fixtureType.opticalParameters.iris.max;
+    }
+
+    invalidate() : void {
+        this.lastZoom = -1;
+        this.lastIris = -1;
     }
 
     getZoomFader():string{
@@ -118,7 +122,7 @@ export class AZ_Marker {
         PrintEcho("Marker: " + this.fid + " - " + this.name, level)
     }
 
-    update() : void {
+    update() : boolean {
         // Printf("AZ->Marker->Update")
         // ShowData().PSNProtocol[1][3]:
         let PSNProtocol = ShowData().PSNProtocol;
@@ -133,10 +137,11 @@ export class AZ_Marker {
                     this.position.y = tracker.POSITIONY;
                     this.position.z = tracker.POSITIONZ;
                     // PrintEcho("Marker " + this.fid + " | Position (" + this.position.x + ", " + this.position.y + ", " + this.position.z + ")", 0)
-                    return;
+                    return true;
                 }
             }
         }
+        return false;
     }
 }
 
@@ -169,6 +174,11 @@ export class AZ_EnabledFixture {
         let targetZoomIris = calculateZoomIrisFaderValues(this.fixture.position, this.marker.position, this.fixture.fixtureType.opticalParameters, targettedBeamSize);
         // PrintEcho("Fixture " + this.fixture.fid + " should now be at (zoom :" + targetZoomIris.zoom + " | iris : " + targetZoomIris.iris + ")", 0)
         this.fixture.updateTo(targetZoomIris)
+    }
+
+    forceUpdate(sizeFaderConfig : AZ_SizeFaderConfig) : void {
+        this.fixture.invalidate();
+        this.Update(sizeFaderConfig);
     }
 }
 export type AZ_SizeFaderConfig = {

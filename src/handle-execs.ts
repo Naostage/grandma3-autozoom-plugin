@@ -14,19 +14,29 @@ export function moveFaderGMA3(faderName: string, level: number){
 }
 
 
+function getSequencesPool(datapool: any): any {
+    for (let child of datapool.Children() as any[]){
+        if (child.GetClass() == "Sequences"){
+            return child;
+        }
+    }
+    return null;
+}
+
 export function getSeqHandleFromName(seqName: string): any{
-    for (let i = 0; i < ShowData().DataPools.Count(); i++){
-        let datapool = ShowData().DataPools[i];
-        for (let j = 1; j <= datapool[6].Count(); j++){
-            let seq = datapool[6][j];
-            //@ts-expect-error
-            if (seq.Name == seqName){
+    for (let datapool of ShowData().DataPools.Children()){
+        let sequences = getSequencesPool(datapool);
+        if (sequences == null){
+            continue;
+        }
+        for (let seq of sequences.Children() as any[]){
+            if (seq.name == seqName){
                 return seq;
             }
         }
     }
-    // accept to return an error type not null
     PrintEcho("Sequence " + seqName + " not found", 3);
+    return null;
 }
 
 
