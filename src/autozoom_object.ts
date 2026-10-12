@@ -57,7 +57,9 @@ export class AZ_Global_Type {
         }
     }
     ScanPatch(): void {
-        Popup(this.loadPatch());
+        let enabledCount = this.enabledFixtures.length;
+        let message = this.loadPatch();
+        Popup(message, this.enabledFixtures.length < enabledCount ? 2 : 10);
     }
 
     loadPatch(): string[] {
@@ -134,8 +136,10 @@ export class AZ_Global_Type {
 
         enabledFixture.fixture.invalidate();
         if (!marker.update()) {
-            messages.push("( - WARNING - Marker ID : " + marker.fid + " with Channel ID: " + marker.cid + ") is not assigned to any PSN tracker in, the zoom will not follow it. Set the Channel ID of the Marker in the PSN configuration.");
-        } else if (this.enabled) {
+            messages.push("", "Marker ID : " + marker.fid + " with Channel ID : " + marker.cid + " is not assigned to any PSN tracker, the zoom will not follow it. Set the Channel ID of the Marker in the PSN configuration.");
+            return Popup(messages, 2);
+        }
+        if (this.enabled) {
             enabledFixture.forceUpdate(this.sizeFaderConfig);
         }
         Popup(messages);
