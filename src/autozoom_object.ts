@@ -60,7 +60,7 @@ export class AZ_Global_Type {
         Popup(this.loadPatch());
     }
 
-    loadPatch(): string {
+    loadPatch(): string[] {
         this.patch_info = { fixtures: [], markers: [] };
         let fixtureTypes_in_XYZ = loadFixtureTypes();
         let fixture_and_markers = fetchFixtures(fixtureTypes_in_XYZ);
@@ -79,9 +79,13 @@ export class AZ_Global_Type {
             return true;
         });
 
-        let message = "Patch fetched - found " + this.patch_info.fixtures.length + " fixtures and " + this.patch_info.markers.length + " markers.";
+        let message = [
+            "Patch scanned",
+            "  - XYZ fixtures : " + this.patch_info.fixtures.length,
+            "  - Markers : " + this.patch_info.markers.length,
+        ];
         if (removedFixtures.length == 0) return message;
-        return message + "\nDisabled fixtures no longer in the patch : " + removedFixtures.join(", ");
+        return [...message, "  - Disabled fixtures no longer in the patch : " + removedFixtures.join(", ")];
     }
 
     PrintCurrentPatch(): void {
@@ -90,9 +94,11 @@ export class AZ_Global_Type {
 
         Popup([
             "Current Patch",
-            "Fixtures",
+            "",
+            "XYZ fixtures (" + this.patch_info.fixtures.length + ")",
             ...this.patch_info.fixtures.flatMap(fixture => fixture.describe()),
-            "Markers",
+            "",
+            "Markers (" + this.patch_info.markers.length + ")",
             ...this.patch_info.markers.map(marker => marker.describe()),
         ]);
     }
@@ -224,7 +230,8 @@ export class AZ_Global_Type {
             "Plugin version : 1.1.2",
             "Plugin author : Naostage 2025",
             "",
-            patchMessage,
+            ...patchMessage,
+            "",
             this.statusMessage(),
         ]);
     }
