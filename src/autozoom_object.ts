@@ -1,4 +1,4 @@
-import { PrintEcho, PrintLogLevel, SetLogLevel } from "./utils";
+import { PrintEcho, PrintLogLevel, SetLogLevel, getLogLevelString } from "./utils";
 import { fetchFixtures, loadFixtureTypes } from "./load-patch";
 import { AZ_EnabledFixture, AZ_PatchInfo, AZ_SizeFaderConfig } from "./types";
 import { createSequencesForFixture, moveFaderGMA3 } from "./handle-execs";
@@ -161,7 +161,7 @@ export class AZ_Global_Type {
 
         enabledFixture.fixture.invalidate();
         if (!marker.update()) {
-            return PrintEcho("WARNING : Marker " + marker.fid + " (MArker ID " + marker.cid + ") is not assigned to any PSN tracker, the zoom will not follow it. Set the MArker ID in the PSN configuration.", 10);
+            return PrintEcho("( - WARNING - Marker ID : " + marker.fid + " with Channel ID: " + marker.cid + ") is not assigned to any PSN tracker in, the zoom will not follow it. Set the Channel ID of the Marker in the PSN configuration.", 10);
         }
         if (this.enabled) {
             enabledFixture.forceUpdate(this.sizeFaderConfig);
