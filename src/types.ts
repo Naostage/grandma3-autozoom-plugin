@@ -1,7 +1,7 @@
 import { calculateZoomIrisFaderValues, TargetZoomIris } from "./calculate-zoom-iris";
 import { getFixtureSizeFaderValue, getGlobalSizeFaderValue, moveFaderGMA3 } from "./handle-execs";
 import { getFixturePosition } from "./load-patch";
-import { PrintEcho, remap } from "./utils";
+import { remap } from "./utils";
 
 export class Vector3 {
     x: number;
@@ -45,10 +45,12 @@ export class AZ_FixtureType {
         this.mode = mode;
     }
 
-    print(level : number) : void{
-        PrintEcho("Fixture Type: " + this.name + " is in " + this.mode + " mode", level);
-        PrintEcho("Optical Parameters: Zoom min: " + this.opticalParameters.zoom.min + " max: " + this.opticalParameters.zoom.max, level);
-        PrintEcho("Optical Parameters: Iris min: " + this.opticalParameters.iris.min + " max: " + this.opticalParameters.iris.max, level);
+    describe() : string[] {
+        return [
+            "Fixture Type: " + this.name + " is in " + this.mode + " mode",
+            "Optical Parameters: Zoom min: " + this.opticalParameters.zoom.min + " max: " + this.opticalParameters.zoom.max,
+            "Optical Parameters: Iris min: " + this.opticalParameters.iris.min + " max: " + this.opticalParameters.iris.max,
+        ];
     }
 }
 
@@ -70,9 +72,11 @@ export class AZ_Fixture {
         this.lastIris = -1;
     }
 
-    print(level: number) : void {
-        PrintEcho("Fixture: "+ this.fid + "  -  " + this.name + " at position (" + this.position.x + ", " + this.position.y + ", " + this.position.z + ")", level);
-        this.fixtureType.print(level);
+    describe() : string[] {
+        return [
+            "Fixture: "+ this.fid + "  -  " + this.name + " at position (" + this.position.x + ", " + this.position.y + ", " + this.position.z + ")",
+            ...this.fixtureType.describe(),
+        ];
     }
 
     updateTo(targetZI : TargetZoomIris) : void {
@@ -119,8 +123,8 @@ export class AZ_Marker {
         this.position = new Vector3(0,0,0);
     }
 
-    print(level : number) {
-        PrintEcho("Marker: " + this.fid + " - " + this.name, level)
+    describe() : string {
+        return "Marker: " + this.fid + " - " + this.name;
     }
 
     update() : boolean {

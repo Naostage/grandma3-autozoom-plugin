@@ -1,5 +1,5 @@
 import { AZ_EnabledFixture, AZ_Fixture } from "./types";
-import { ClearAll, PrintEcho } from "./utils";
+import { ClearAll, PrintEcho, Popup } from "./utils";
 
 export function moveFaderGMA3(faderName: string, level: number){
     PrintEcho("Moving fader " + faderName + " to " + level, 0)   
@@ -116,8 +116,8 @@ export function createSequencesForFixture(enabledFixture : AZ_EnabledFixture, us
     createZoomIrisSequence(enabledFixture.fixture, useAZDatapool);
     createSizeSequence(enabledFixture.fixture, useAZDatapool);
     if (useAZDatapool){
-        PrintEcho("Sequences created for fixture " + enabledFixture.fixture.fid + " in AZ Datapool", 0);
+        Popup("Sequences created for fixture " + enabledFixture.fixture.fid + " in AZ Datapool");
     } else {
-        PrintEcho("Sequences created for fixture " + enabledFixture.fixture.fid, 0);
+        Popup("Sequences created for fixture " + enabledFixture.fixture.fid);
     }
 }

@@ -9,9 +9,7 @@ declare var AZ : AZ_Global_Type;
 function main(display: any, args: any) {
     // if AZ exists, we clean it up
     if (AZ !== undefined) {
-        AZ.DisableAllFixtures();
         AZ.Cleanup();
-        AZ.Disable();
     }   
     AZ = new AZ_Global_Type();
     AZ.Init();

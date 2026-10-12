@@ -1,6 +1,6 @@
 // The goal of this file is to return all fixture types that are in XYZ mode enabled
 import { AZ_Fixture, AZ_FixtureType, AZ_Marker, Vector3 } from "./types";
-import { PrintEcho } from "./utils";
+import { PrintEcho, Popup } from "./utils";
 
 export interface AZ_FTZoom {
     min: number;
@@ -167,7 +167,7 @@ export function fetchFixtures(XYZFixtureTypes : AZ_FixtureType[]): AZ_FixtureMar
     let return_markers: AZ_Marker[] = [];
     let stages = Patch().Stages;
     if (stages.count === 0) {
-        PrintEcho("No stages found", 3);
+        Popup("No stages found", 3);
         return { fixtures: [], markers: [] };
     }   
     PrintEcho("Number of stages : " + stages.count, 0);

@@ -19,7 +19,7 @@ export function SetLogLevel(levelString: string) {
             logLevel = 1;
             break;
     }
-    PrintEcho("Log level set to " + getLogLevelString(logLevel), 10);
+    Popup("Log level set to " + getLogLevelString(logLevel));
 }
 
 function getLogLevelString(level : number) {
@@ -38,7 +38,7 @@ function getLogLevelString(level : number) {
 }
 
 export function PrintLogLevel() {
-    PrintEcho("Log level is " + getLogLevelString(logLevel), 10);
+    Popup("Log level is " + getLogLevelString(logLevel));
 }
 export function PrintEcho(message : string, level : number) {
     if (level >= logLevel) {
@@ -54,4 +54,12 @@ export function remap(value: number, low1: number, high1: number, low2: number, 
 
 export function ClearAll() : void {
     Cmd("ClearAll");
+}
+
+export function Popup(message : string | string[], level : number = 10) {
+    MessageBox({
+        title: "AutoZoom" + getLogLevelString(level),
+        message: typeof message === "string" ? message : message.join("\n"),
+        commands: [{ value: 1, name: "OK" }],
+    });
 }
