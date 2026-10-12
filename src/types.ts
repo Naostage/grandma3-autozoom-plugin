@@ -66,8 +66,8 @@ export class AZ_Fixture {
         this.fixtureType = fixtureType;
         this.position = position;
         this.handle = handle;
-        this.lastZoom = 0
-        this.lastIris = 0;
+        this.lastZoom = -1;
+        this.lastIris = -1;
     }
 
     print(level: number) : void {
@@ -109,6 +109,7 @@ export class AZ_Marker {
     name: string;
     handle: Fixture;
     position : Vector3;
+    tracked = false;
 
     constructor(fid: number, cid: number, name: string, handle: Fixture) {
         this.fid = fid;
@@ -126,6 +127,7 @@ export class AZ_Marker {
         let tracker = (ShowData().PSNProtocol.Children() as any[])
             .flatMap(trackingSystem => trackingSystem.Children() as any[])
             .find(tracker => tracker.MARKERID == this.cid);
+        this.tracked = tracker !== undefined;
         if (!tracker) return false;
 
         this.position.x = tracker.POSITIONX;
@@ -152,6 +154,7 @@ export class AZ_EnabledFixture {
     }
 
     Update(sizeFaderConfig : AZ_SizeFaderConfig) : void {
+        if (!this.marker.tracked) return;
         let sizeFaderValue : number | undefined = undefined;
         if (sizeFaderConfig.globalEnabled == true){
             sizeFaderValue = getGlobalSizeFaderValue();

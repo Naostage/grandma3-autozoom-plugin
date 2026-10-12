@@ -44,6 +44,7 @@ export class AZ_Global_Type {
             PrintEcho("Enabling Plugin AutoZoom", 10);
             this.enabled = true;
         }
+        this.enabledFixtures.forEach(enabledFixture => enabledFixture.fixture.invalidate());
         this.ShowEnabled();
 
         this.RegisterUpdateLoop();
@@ -136,14 +137,8 @@ export class AZ_Global_Type {
 
     }
     EnableFixture(fixtureid: number, markerid: number, beamSize: number): void {
-        // Check if the fixtureid is in the patch_info.fixtures
-        // Check if the markerid is in the patch_info.markers
-        // Store in enabledFixtures a new AZ_EnabledFixture at index [fixtureid]
-
-        // Check fixture with XYZ mode is on in the patch
         if (this.patch_info.fixtures.length === 0) return PrintEcho("No fixtures with XYZ mode active in patch", 10);
 
-        // Check marker exist in the patch
         if (this.patch_info.markers.length === 0) return PrintEcho("No markers in patch", 10);
 
         let fixture = this.patch_info.fixtures.find(fixture => fixture.fid === fixtureid);
@@ -335,16 +330,11 @@ export class AZ_Global_Type {
         // Checks if fid in enabledFixtures
         // if yes -> Create a sequences => X, Y, Z at 0, Marker set, and Zoom, Iris at min
         // Also create 3 sequences : AZ_ZOOM_fid, AZ_IRIS_fid, AZ_SIZE_fid
-        for (let i = 0; i < this.enabledFixtures.length; i++){
-            let enabledFixture = this.enabledFixtures[i];
-            if (enabledFixture.fixture.fid == fid){
-                createSequencesForFixture(enabledFixture, this.useAZDatapool);
-                enabledFixture.fixture.invalidate();
-                return;
-            }
-        }
-        // if no -> Print error message
-        PrintEcho("Fixture " + fid + " is not enabled", 10);
+        let enabledFixture = this.enabledFixtures.find(enabledFixture => enabledFixture.fixture.fid == fid);
+        if (!enabledFixture) return PrintEcho("Fixture " + fid + " is not enabled", 10);
+
+        createSequencesForFixture(enabledFixture, this.useAZDatapool);
+        enabledFixture.fixture.invalidate();
     }
 
 }
