@@ -25,7 +25,8 @@ export function getSeqHandleFromName(seqName: string): any{
             }
         }
     }
-    return null;
+    // accept to return an error type not null
+    PrintEcho("Sequence " + seqName + " not found", 3);
 }
 
 
