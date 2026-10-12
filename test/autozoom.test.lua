@@ -65,6 +65,20 @@ test("fixture on an untracked marker follows it once a PSN tracker is assigned",
     assertEqual(zoomFader(101), 63, "AZ_ZOOM_101")
 end)
 
+test("re-enabling a fixture on an untracked marker re-syncs its fader once tracked", function()
+    local seq = mocks.addSequence("AZ_ZOOM_101")
+    AZ:Enable()
+    AZ:EnableFixture(101, 1001, 3)
+    mocks.tick()
+    AZ:DisableFixture(101)
+    seq.fader = 50
+    AZ:EnableFixture(101, 1002, 3)
+    mocks.tick()
+    mocks.setTracker(2, 0, 0, 0)
+    mocks.tick()
+    assertEqual(zoomFader(101), 27, "AZ_ZOOM_101")
+end)
+
 test("Enable re-syncs faders changed while AutoZoom was disabled", function()
     local seq = mocks.addSequence("AZ_ZOOM_101")
     AZ:Enable()

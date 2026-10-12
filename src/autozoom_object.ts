@@ -159,6 +159,7 @@ export class AZ_Global_Type {
             PrintEcho("Enabled fixture " + fixtureid + " - Marker : " + marker.fid + " | Beam size : " + beamSize, 10)
         }
 
+        enabledFixture.fixture.invalidate();
         if (!marker.update()) {
             return PrintEcho("WARNING : Marker " + marker.fid + " (MArker ID " + marker.cid + ") is not assigned to any PSN tracker, the zoom will not follow it. Set the MArker ID in the PSN configuration.", 10);
         }
@@ -327,10 +328,7 @@ export class AZ_Global_Type {
     }
 
     CreateAZSequences(fid: number) {
-        // Checks if fid in enabledFixtures
-        // if yes -> Create a sequences => X, Y, Z at 0, Marker set, and Zoom, Iris at min
-        // Also create 3 sequences : AZ_ZOOM_fid, AZ_IRIS_fid, AZ_SIZE_fid
-        let enabledFixture = this.enabledFixtures.find(enabledFixture => enabledFixture.fixture.fid == fid);
+        let enabledFixture = this.enabledFixtures.find(enabledFixture => enabledFixture.fixture.fid === fid);
         if (!enabledFixture) return PrintEcho("Fixture " + fid + " is not enabled", 10);
 
         createSequencesForFixture(enabledFixture, this.useAZDatapool);
