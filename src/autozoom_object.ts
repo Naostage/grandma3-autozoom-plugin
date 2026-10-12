@@ -1,4 +1,4 @@
-import { PrintEcho, PrintLogLevel, SetLogLevel } from "./utils";
+import { PrintEcho, PrintLogLevel, SetLogLevel, getLogLevelString } from "./utils";
 import { fetchFixtures, loadFixtureTypes } from "./load-patch";
 import { AZ_EnabledFixture, AZ_PatchInfo, AZ_SizeFaderConfig } from "./types";
 import { createSequencesForFixture, moveFaderGMA3 } from "./handle-execs";
@@ -44,6 +44,7 @@ export class AZ_Global_Type {
             PrintEcho("Enabling Plugin AutoZoom", 10);
             this.enabled = true;
         }
+        this.enabledFixtures.forEach(enabledFixture => enabledFixture.fixture.invalidate());
         this.ShowEnabled();
 
         this.RegisterUpdateLoop();
@@ -70,6 +71,18 @@ export class AZ_Global_Type {
         PrintEcho("--- Scanned all fixtures that have XYZ", 1)
         this.patch_info = { fixtures: fixture_and_markers.fixtures, markers: fixture_and_markers.markers};
         PrintEcho("--- Patch fetched - found " + this.patch_info.fixtures.length + " fixtures and " + this.patch_info.markers.length + " markers.", 10);
+
+        this.enabledFixtures = this.enabledFixtures.filter(enabledFixture => {
+            let fixture = this.patch_info.fixtures.find(fixture => fixture.fid === enabledFixture.fixture.fid);
+            let marker = this.patch_info.markers.find(marker => marker.fid === enabledFixture.marker.fid);
+            if (!fixture || !marker) {
+                PrintEcho("Disabled fixture " + enabledFixture.fixture.fid + " : it or its marker " + enabledFixture.marker.fid + " is no longer in the patch", 10);
+                return false;
+            }
+            enabledFixture.fixture = fixture;
+            enabledFixture.marker = marker;
+            return true;
+        });
     }
 
     PrintCurrentPatch(): void {
@@ -124,56 +137,43 @@ export class AZ_Global_Type {
 
     }
     EnableFixture(fixtureid: number, markerid: number, beamSize: number): void {
-        // Check if the fixtureid is in the patch_info.fixtures
-        // Check if the markerid is in the patch_info.markers
-        // Store in enabledFixtures a new AZ_EnabledFixture at index [fixtureid]
-        if (!this.patch_info.fixtures) {
-            PrintEcho("Patch is not defined", 10);
+        if (this.patch_info.fixtures.length === 0) return PrintEcho("No fixtures with XYZ mode active in patch", 10);
+
+        if (this.patch_info.markers.length === 0) return PrintEcho("No markers in patch", 10);
+
+        let fixture = this.patch_info.fixtures.find(fixture => fixture.fid === fixtureid);
+        if (!fixture) return PrintEcho("No fixture with id " + fixtureid + " found", 10);
+
+        let marker = this.patch_info.markers.find(marker => marker.fid === markerid);
+        if (!marker) return PrintEcho("No marker with id " + markerid + " found", 10);
+
+        let enabledFixture = this.enabledFixtures.find(enabledFixture => enabledFixture.fixture.fid === fixtureid);
+
+        if (enabledFixture) {
+            enabledFixture.marker = marker;
+            enabledFixture.beamSize = beamSize;
+            PrintEcho("Updated fixture " + fixtureid + " - Marker : " + marker.fid + " | Beam size : " + beamSize, 10)
+        } else {
+            enabledFixture = new AZ_EnabledFixture(fixture, marker, beamSize);
+            this.enabledFixtures.push(enabledFixture);
+            PrintEcho("Enabled fixture " + fixtureid + " - Marker : " + marker.fid + " | Beam size : " + beamSize, 10)
         }
-        if (this.patch_info.fixtures.length === 0) {
-            PrintEcho("No fixtures in patch", 10);
-            return;
+
+        enabledFixture.fixture.invalidate();
+        if (!marker.update()) {
+            return PrintEcho("( - WARNING - Marker ID : " + marker.fid + " with Channel ID: " + marker.cid + ") is not assigned to any PSN tracker in, the zoom will not follow it. Set the Channel ID of the Marker in the PSN configuration.", 10);
         }
-        if (this.patch_info.markers.length === 0) {
-            PrintEcho("No markers in patch", 10);
-            return;
+        if (this.enabled) {
+            enabledFixture.forceUpdate(this.sizeFaderConfig);
         }
-        for (let fixture of this.patch_info.fixtures) {
-            if (fixture.fid === fixtureid) {
-                for (let marker of this.patch_info.markers) {
-                    if (marker.fid === markerid) {
-                        let enabledFixture = new AZ_EnabledFixture(
-                            fixture, marker, beamSize)
-                        for (let i = 0; i < this.enabledFixtures.length; i++) {
-                            if (this.enabledFixtures[i].fixture.fid == fixtureid){
-                                this.enabledFixtures[i].marker = marker;
-                                this.enabledFixtures[i].beamSize = beamSize;
-                                PrintEcho("Updated fixture " + fixtureid + " - Marker : " + marker.fid + " - " + marker.cid + " |  Beam size : " + beamSize, 10)
-                                this.enabledFixtures[i].fixture.forceUpdate();
-                                return;
-                            }
-                        }
-                        this.enabledFixtures.push(enabledFixture);
-                        PrintEcho("Enabled fixture " + fixtureid + " - Marker : " + marker.fid + " |  Beam size : " + beamSize, 10)
-                        return;
-                    }
-                }
-                PrintEcho("No marker with id " + markerid + " found", 10);
-                return;
-            }
-        }
-        PrintEcho("No fixture with id " + fixtureid + " found", 10);
     }
 
     DisableFixture(fixtureid: number): void {
-        for (let i = 0; i < this.enabledFixtures.length; i++) {
-            if (this.enabledFixtures[i].fixture.fid == fixtureid) {
-                delete this.enabledFixtures[i];
-                PrintEcho("Disabled fixture " + fixtureid, 10);
-                return;
-            }
-        }
-        PrintEcho("Fixture " + fixtureid + " was not enabled", 10);
+        let index = this.enabledFixtures.findIndex(enabledFixture => enabledFixture.fixture.fid == fixtureid);
+        if (index === -1) return PrintEcho("Fixture " + fixtureid + " was not enabled", 10);
+
+        this.enabledFixtures.splice(index, 1);
+        PrintEcho("Disabled fixture " + fixtureid, 10);
     }
     LogLevel(levelString: string): void {
         SetLogLevel(levelString);
@@ -202,7 +202,12 @@ export class AZ_Global_Type {
     expected_remaining_update = 0;
     global_call_repeat = 10;
 
-    UpdateLoop():void {
+    loopId = 0;
+
+    UpdateLoop(loopId: number):void {
+        if (loopId != this.loopId) {
+            return;
+        }
         this.expected_remaining_update--;
         if(!this.enabled){
             this.expected_remaining_update = 0;
@@ -230,14 +235,12 @@ export class AZ_Global_Type {
             return;
         }
         let updatePeriod = 1/this.refreshRate;
-        if (this.expected_remaining_update > 0) {
-            PrintEcho("Update loop is already registered, expected remaining update " + this.expected_remaining_update, 1);
-            return;
-        }
 
         this.global_call_repeat = this.refreshRate*10;
         this.expected_remaining_update = this.global_call_repeat;
-        Timer(()=>{this.UpdateLoop()}, updatePeriod, this.expected_remaining_update);
+        this.loopId++;
+        let loopId = this.loopId;
+        Timer(()=>{this.UpdateLoop(loopId)}, updatePeriod, this.expected_remaining_update);
     }
 
     Init() : void {
@@ -252,6 +255,7 @@ export class AZ_Global_Type {
         PrintEcho("Plugin author : Naostage 2025", 10);
         PrintEcho("", 10)
         this.ScanPatch();
+        this.initialized = true;
         this.ShowEnabled();
     }
 
@@ -324,18 +328,11 @@ export class AZ_Global_Type {
     }
 
     CreateAZSequences(fid: number) {
-        // Checks if fid in enabledFixtures
-        // if yes -> Create a sequences => X, Y, Z at 0, Marker set, and Zoom, Iris at min
-        // Also create 3 sequences : AZ_ZOOM_fid, AZ_IRIS_fid, AZ_SIZE_fid
-        for (let i = 0; i < this.enabledFixtures.length; i++){
-            let enabledFixture = this.enabledFixtures[i];
-            if (enabledFixture.fixture.fid == fid){
-                createSequencesForFixture(enabledFixture, this.useAZDatapool);
-                return;
-            }
-        }
-        // if no -> Print error message
-        PrintEcho("Fixture " + fid + " is not enabled", 10);
+        let enabledFixture = this.enabledFixtures.find(enabledFixture => enabledFixture.fixture.fid === fid);
+        if (!enabledFixture) return PrintEcho("Fixture " + fid + " is not enabled", 10);
+
+        createSequencesForFixture(enabledFixture, this.useAZDatapool);
+        enabledFixture.fixture.invalidate();
     }
 
 }

@@ -5,12 +5,14 @@
   "private": true,
   "scripts": {
     "build": "tstl && node scripts/generateXML.js",
-    "dev": "tstl --watch"
+    "dev": "tstl --watch",
+    "test": "npm run build && node test/run.js"
   },
   "author": "naostage",
   "license": "ISC",
   "devDependencies": {
     "@types/node": "^22.14.0",
+    "fengari": "^0.1.5",
     "grandma3-ts-types": "^2.0.0",
     "lua-types": "^2.13.0",
     "typescript": "^5.9.3",

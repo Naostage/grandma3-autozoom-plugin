@@ -66,8 +66,8 @@ export class AZ_Fixture {
         this.fixtureType = fixtureType;
         this.position = position;
         this.handle = handle;
-        this.lastZoom = 0
-        this.lastIris = 0;
+        this.lastZoom = -1;
+        this.lastIris = -1;
     }
 
     print(level: number) : void {
@@ -80,15 +80,19 @@ export class AZ_Fixture {
             moveFaderGMA3(this.getZoomFader(), Math.round(targetZI.zoom));
             this.lastZoom = Math.round(targetZI.zoom);
         }
-        if (Math.round(targetZI.iris) != this.lastIris && targetZI.iris != -1) {
+        if (this.hasIris() && Math.round(targetZI.iris) != this.lastIris && targetZI.iris != -1) {
             moveFaderGMA3(this.getIrisFader(), Math.round(targetZI.iris));
             this.lastIris = Math.round(targetZI.iris);
         }
     }
 
-    forceUpdate() : void {
-        moveFaderGMA3(this.getZoomFader(), this.lastZoom);
-        moveFaderGMA3(this.getIrisFader(), this.lastIris);
+    hasIris() : boolean {
+        return this.fixtureType.opticalParameters.iris.min != this.fixtureType.opticalParameters.iris.max;
+    }
+
+    invalidate() : void {
+        this.lastZoom = -1;
+        this.lastIris = -1;
     }
 
     getZoomFader():string{
@@ -105,6 +109,7 @@ export class AZ_Marker {
     name: string;
     handle: Fixture;
     position : Vector3;
+    tracked = false;
 
     constructor(fid: number, cid: number, name: string, handle: Fixture) {
         this.fid = fid;
@@ -118,25 +123,17 @@ export class AZ_Marker {
         PrintEcho("Marker: " + this.fid + " - " + this.name, level)
     }
 
-    update() : void {
-        // Printf("AZ->Marker->Update")
-        // ShowData().PSNProtocol[1][3]:
-        let PSNProtocol = ShowData().PSNProtocol;
-        for (let i = 1; i <= PSNProtocol.count; i++){
-            let trackingSystem = PSNProtocol[i];
-            // Printf(i)
-            for(let j = 1; j <= trackingSystem.count; j++){
-                // Printf(j)
-                let tracker = trackingSystem[j];
-                if (tracker.MARKERID == this.cid) {
-                    this.position.x = tracker.POSITIONX;
-                    this.position.y = tracker.POSITIONY;
-                    this.position.z = tracker.POSITIONZ;
-                    // PrintEcho("Marker " + this.fid + " | Position (" + this.position.x + ", " + this.position.y + ", " + this.position.z + ")", 0)
-                    return;
-                }
-            }
-        }
+    update() : boolean {
+        let tracker = (ShowData().PSNProtocol.Children() as any[])
+            .flatMap(trackingSystem => trackingSystem.Children() as any[])
+            .find(tracker => tracker.MARKERID == this.cid);
+        this.tracked = tracker !== undefined;
+        if (!tracker) return false;
+
+        this.position.x = tracker.POSITIONX;
+        this.position.y = tracker.POSITIONY;
+        this.position.z = tracker.POSITIONZ;
+        return true;
     }
 }
 
@@ -157,18 +154,23 @@ export class AZ_EnabledFixture {
     }
 
     Update(sizeFaderConfig : AZ_SizeFaderConfig) : void {
-        let targettedBeamSize = this.beamSize;
+        if (!this.marker.tracked) return;
+        let sizeFaderValue : number | undefined = undefined;
         if (sizeFaderConfig.globalEnabled == true){
-            targettedBeamSize = remap(getGlobalSizeFaderValue(), 0, 100, sizeFaderConfig.rangeMin, sizeFaderConfig.rangeMax);
-            // PrintEcho("Using global size fader value for fixture " + this.fixture.fid + " : " + targettedBeamSize, 0)
+            sizeFaderValue = getGlobalSizeFaderValue();
         }
         else if (sizeFaderConfig.fixturesEnabled[this.fixture.fid] == true){
-            targettedBeamSize = remap(getFixtureSizeFaderValue(this.fixture.fid), 0, 100, sizeFaderConfig.rangeMin, sizeFaderConfig.rangeMax);
-            // PrintEcho("Using fixture size fader value for fixture " + this.fixture.fid + " : " + targettedBeamSize, 0)
+            sizeFaderValue = getFixtureSizeFaderValue(this.fixture.fid);
         }
+        let targettedBeamSize = sizeFaderValue === undefined ? this.beamSize : remap(sizeFaderValue, 0, 100, sizeFaderConfig.rangeMin, sizeFaderConfig.rangeMax);
         let targetZoomIris = calculateZoomIrisFaderValues(this.fixture.position, this.marker.position, this.fixture.fixtureType.opticalParameters, targettedBeamSize);
         // PrintEcho("Fixture " + this.fixture.fid + " should now be at (zoom :" + targetZoomIris.zoom + " | iris : " + targetZoomIris.iris + ")", 0)
         this.fixture.updateTo(targetZoomIris)
+    }
+
+    forceUpdate(sizeFaderConfig : AZ_SizeFaderConfig) : void {
+        this.fixture.invalidate();
+        this.Update(sizeFaderConfig);
     }
 }
 export type AZ_SizeFaderConfig = {

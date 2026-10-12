@@ -6,7 +6,7 @@ export function moveFaderGMA3(faderName: string, level: number){
     // CmdIndirect("FaderMaster " + faderName + " At " + level);
     let seq = getSeqHandleFromName(faderName);
     if (seq == null){
-        PrintEcho("Fader not found", 3); // Error
+        PrintEcho("Sequence " + faderName + " not found", 3); // Error
         return;
     }
     seq.SetFader({"value":level, "token":"FaderTemp"});
@@ -15,31 +15,26 @@ export function moveFaderGMA3(faderName: string, level: number){
 
 
 export function getSeqHandleFromName(seqName: string): any{
-    for (let i = 0; i < ShowData().DataPools.Count(); i++){
-        let datapool = ShowData().DataPools[i];
-        for (let j = 1; j <= datapool[6].Count(); j++){
-            let seq = datapool[6][j];
-            //@ts-expect-error
-            if (seq.Name == seqName){
-                return seq;
-            }
-        }
-    }
+    let seq = (ShowData().DataPools.Children() as any[])
+        .flatMap(datapool => (datapool.Children() as any[]).filter(child => child.GetClass() == "Sequences"))
+        .flatMap(sequences => sequences.Children() as any[])
+        .find(seq => seq.name == seqName);
+    if (seq) return seq;
     return null;
 }
 
 
-export function getFixtureSizeFaderValue(fid : number) : number{
+export function getFixtureSizeFaderValue(fid : number) : number | undefined {
     let seqName = "AZ_SIZE_"+fid;
     let seq = getSeqHandleFromName(seqName);
-    return seq.GetFader({"token":"FaderMaster"});
+    return seq?.GetFader({"token":"FaderMaster"});
 }
 
 
-export function getGlobalSizeFaderValue() : number {
+export function getGlobalSizeFaderValue() : number | undefined {
     let seqName = "AZ_SIZE";
     let seq = getSeqHandleFromName(seqName);
-    return seq.GetFader({"token":"FaderMaster"});
+    return seq?.GetFader({"token":"FaderMaster"});
 }
 
 
