@@ -70,6 +70,18 @@ export class AZ_Global_Type {
         PrintEcho("--- Scanned all fixtures that have XYZ", 1)
         this.patch_info = { fixtures: fixture_and_markers.fixtures, markers: fixture_and_markers.markers};
         PrintEcho("--- Patch fetched - found " + this.patch_info.fixtures.length + " fixtures and " + this.patch_info.markers.length + " markers.", 10);
+
+        this.enabledFixtures = this.enabledFixtures.filter(enabledFixture => {
+            let fixture = this.patch_info.fixtures.find(fixture => fixture.fid === enabledFixture.fixture.fid);
+            let marker = this.patch_info.markers.find(marker => marker.fid === enabledFixture.marker.fid);
+            if (!fixture || !marker) {
+                PrintEcho("Disabled fixture " + enabledFixture.fixture.fid + " : it or its marker " + enabledFixture.marker.fid + " is no longer in the patch", 10);
+                return false;
+            }
+            enabledFixture.fixture = fixture;
+            enabledFixture.marker = marker;
+            return true;
+        });
     }
 
     PrintCurrentPatch(): void {
@@ -131,9 +143,6 @@ export class AZ_Global_Type {
         // Check fixture with XYZ mode is on in the patch
         if (this.patch_info.fixtures.length === 0) return PrintEcho("No fixtures with XYZ mode active in patch", 10);
 
-        // check the patch
-        if (!this.patch_info.fixtures) return PrintEcho("Patch is not defined", 10);
-
         // Check marker exist in the patch
         if (this.patch_info.markers.length === 0) return PrintEcho("No markers in patch", 10);
 
@@ -148,28 +157,27 @@ export class AZ_Global_Type {
         if (enabledFixture) {
             enabledFixture.marker = marker;
             enabledFixture.beamSize = beamSize;
-            PrintEcho("Updated fixture " + fixtureid + " - Marker : " + marker.fid + " |  Beam size : " + beamSize, 10)
+            PrintEcho("Updated fixture " + fixtureid + " - Marker : " + marker.fid + " | Beam size : " + beamSize, 10)
         } else {
             enabledFixture = new AZ_EnabledFixture(fixture, marker, beamSize);
             this.enabledFixtures.push(enabledFixture);
-            PrintEcho("Enabled fixture " + fixtureid + " - Marker : " + marker.fid + " |  Beam size : " + beamSize, 10)
+            PrintEcho("Enabled fixture " + fixtureid + " - Marker : " + marker.fid + " | Beam size : " + beamSize, 10)
         }
 
         if (!marker.update()) {
-            PrintEcho("WARNING : Marker " + marker.fid + " (MArker ID " + marker.cid + ") is not assigned to any PSN tracker, the zoom will not follow it. Set the MArker ID in the PSN configuration.", 10);
+            return PrintEcho("WARNING : Marker " + marker.fid + " (MArker ID " + marker.cid + ") is not assigned to any PSN tracker, the zoom will not follow it. Set the MArker ID in the PSN configuration.", 10);
         }
-        enabledFixture.forceUpdate(this.sizeFaderConfig);
+        if (this.enabled) {
+            enabledFixture.forceUpdate(this.sizeFaderConfig);
+        }
     }
 
     DisableFixture(fixtureid: number): void {
-        for (let i = 0; i < this.enabledFixtures.length; i++) {
-            if (this.enabledFixtures[i].fixture.fid == fixtureid) {
-                delete this.enabledFixtures[i];
-                PrintEcho("Disabled fixture " + fixtureid, 10);
-                return;
-            }
-        }
-        PrintEcho("Fixture " + fixtureid + " was not enabled", 10);
+        let index = this.enabledFixtures.findIndex(enabledFixture => enabledFixture.fixture.fid == fixtureid);
+        if (index === -1) return PrintEcho("Fixture " + fixtureid + " was not enabled", 10);
+
+        this.enabledFixtures.splice(index, 1);
+        PrintEcho("Disabled fixture " + fixtureid, 10);
     }
     LogLevel(levelString: string): void {
         SetLogLevel(levelString);
@@ -231,10 +239,6 @@ export class AZ_Global_Type {
             return;
         }
         let updatePeriod = 1/this.refreshRate;
-        if (this.expected_remaining_update > 0) {
-            PrintEcho("Update loop is already registered, expected remaining update " + this.expected_remaining_update, 1);
-            return;
-        }
 
         this.global_call_repeat = this.refreshRate*10;
         this.expected_remaining_update = this.global_call_repeat;
@@ -335,6 +339,7 @@ export class AZ_Global_Type {
             let enabledFixture = this.enabledFixtures[i];
             if (enabledFixture.fixture.fid == fid){
                 createSequencesForFixture(enabledFixture, this.useAZDatapool);
+                enabledFixture.fixture.invalidate();
                 return;
             }
         }
