@@ -12,9 +12,10 @@
 
 ### Preparing the console
 
-Make sure that XYZ is enabled for all fixture types that you want to use autozoom with.
-
-Also make sure that the zoom and iris physical ranges (of the fixture type) correspond to the optical parameters given by the constructor on the fixture's datasheet.
+Make sure all this things below are correctly setup:
+- XYZ is enabled for all fixture types that you wan to use autozoom with.
+- The zoom and iris physical ranges (of the fixtures type) correspond to the optical parameters given by the constructor on the fixture's datasheet 
+- You marker(s) are correctly assign to a tracker in the PSN menu sheet
 
 ### Importing the macros
 
