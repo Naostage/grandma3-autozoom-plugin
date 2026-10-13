@@ -55,6 +55,13 @@ test("EnableFixture does not move faders when the marker is not tracked", functi
     assertEqual(zoomFader(101), nil, "AZ_ZOOM_101")
 end)
 
+test("EnableFixture on an untracked marker opens a warning pop-up", function()
+    AZ:EnableFixture(101, 1002, 3)
+    assertEqual(mocks.popups[#mocks.popups].title, "AutoZoom - WARN", "pop-up title")
+    AZ:EnableFixture(102, 1001, 3)
+    assertEqual(mocks.popups[#mocks.popups].title, "AutoZoom", "pop-up title")
+end)
+
 test("fixture on an untracked marker follows it once a PSN tracker is assigned", function()
     mocks.addSequence("AZ_ZOOM_101")
     AZ:Enable()

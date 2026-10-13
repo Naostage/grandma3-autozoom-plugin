@@ -32,12 +32,14 @@ local spotType = {
 
 function M.reset()
     M.printed = {}
+    M.popups = {}
     M.timers = {}
     M.sequences = node({})
     M.trackers = node({})
     M.patchFixtures = node({})
 
     _G.Printf = function(msg) M.printed[#M.printed + 1] = msg end
+    _G.MessageBox = function(options) M.popups[#M.popups + 1] = options end
     _G.Cmd = function() end
     _G.CmdIndirect = function() end
     _G.CmdIndirectWait = function(cmd)
