@@ -3,3 +3,4 @@
 declare function GetRTChannel(uiChannel: number): any;
 declare function Time(): number;
 declare function Timer(callback: () => void, delaySec: number, repeatTimes: number, cleanup?: () => void): void;
+declare function GetPresetData(preset: any, phasers: boolean, byFixtures: boolean): any;

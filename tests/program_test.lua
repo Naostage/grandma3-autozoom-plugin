@@ -32,7 +32,7 @@ end)
 
 T.test("Setup applies answers and reports errors", function()
   local d, a = setup()
-  d.setupAnswer = { source = "preset", preset = "2.12", x = "0", y = "0", z = "0", min = "1", max = "3", rate = "500" }
+  d.setupAnswer = { action = "save", source = "preset", preset = "2.12", x = "0", y = "0", z = "0", min = "1", max = "3", rate = "500" }
   a:Setup(); d:runLaters()
   T.eq(d.logs[#d.logs], "Setup saved", "saved")
   local found = false; for _, l in ipairs(d.logs) do if l == "Refresh rate must be between 1 and 60" then found = true end end

@@ -41,11 +41,9 @@ T.test("header cells are status, toggle, setup, rescan, size, message in that or
   for _, gone in ipairs({ "capture", "offset", "armall", "disarmall" }) do T.eq(views[gone], nil, "no " .. gone .. " view") end
 end)
 
-T.test("message cell shows the pick countdown while picking", function()
+T.test("message cell shows the message", function()
   local v = az().view
-  local views = v.buildViews({ running = true, pickSecondsLeft = 7, liveMarkers = 0, globalSize = 1, offsetLabel = "", message = "Tap the preset that holds the XYZ offset" }, {}, {}, {})
-  T.eq(views["message"].text, "Tap a preset…  7 s", "countdown"); T.eq(views["message"].appearance, "capture", "capture look")
-  views = v.buildViews({ running = true, liveMarkers = 0, globalSize = 1, offsetLabel = "", message = "Setup saved" }, {}, {}, {})
+  local views = v.buildViews({ running = true, liveMarkers = 0, globalSize = 1, offsetLabel = "", message = "Setup saved" }, {}, {}, {})
   T.eq(views["message"].text, "Setup saved", "message"); T.eq(views["message"].appearance, "header", "header look")
 end)
 

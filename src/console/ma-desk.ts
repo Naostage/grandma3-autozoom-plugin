@@ -10,8 +10,8 @@ import * as live from "./live";
 import { info, warnOnce } from "./log";
 import { scanPatch } from "./patch";
 import * as pool from "./pool";
+import { openPresetPicker } from "./preset-picker";
 import * as ui from "./ui";
-import * as undo from "./undo";
 import * as vars from "./vars";
 
 export class MaDesk implements Desk {
@@ -82,10 +82,7 @@ export class MaDesk implements Desk {
     prompt(title: string, value: string): string | undefined { return ui.prompt(title, value); }
     setupDialog(current: Config): SetupAnswers | undefined { return ui.setupDialog(current); }
     runCommands(commands: string[]): void { ui.runCommands(commands); }
-    lastCommand(): string | undefined { return undo.lastCommand(); }
-    topUndoName(): string | undefined { return undo.topUndoName(); }
-    undoMark(): string { return undo.undoMark(); }
-    undoProgrammer(): void { undo.undoProgrammer(); }
+    openPresetPicker(current: string, onPick: (preset: string) => void): void { openPresetPicker(current, onPick); }
 }
 
 function releaseTemp(name: string): void {

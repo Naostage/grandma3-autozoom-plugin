@@ -1,6 +1,5 @@
 /** @noSelfInFile */
 import { normalizeFids, parseArmList } from "../engine/arm-command";
-import { parsePresetCommand, undoMatches } from "../engine/preset-ref";
 import { programCommands, releaseCommands } from "../engine/program";
 import { evaluate, FaderOutput, FixtureResult, MarkerSample } from "../engine/fixture-state";
 import { vec, Vec3 } from "../engine/vec";
@@ -10,8 +9,6 @@ import { MarkerReadings, PatchFixture, PatchScan } from "../model";
 import { applySetup, Config, CONFIG_KEY, defaultConfig, INSTANCE_KEY, offsetLabel, parseConfig, pruneConfig, serializeConfig } from "../store/config";
 import { buildViews, layoutCells, RowState, stateLabel } from "../ui/view-model";
 
-export const PICK_SECONDS = 10;
-
 interface Live { cid: number; programmerCid: number; offset: Vec3 }
 
 export class AutoZoom {
@@ -19,10 +16,6 @@ export class AutoZoom {
     protected scanned: PatchScan = { fixtures: [], markers: [], problems: [] };
     protected running = false;
     protected message = "";
-    protected pickUntil: number | undefined;
-    protected pickBaseline: string | undefined;
-    protected pickUndoMark: string | undefined;
-    private pickIgnored: { [cmd: string]: boolean } = {};
     private results: { [fid: string]: FixtureResult } = {};
     private live: { [fid: string]: Live } = {};
     private sent: { [fid: string]: string } = {};
@@ -109,7 +102,6 @@ export class AutoZoom {
         this.running = false;
         this.loopGen++;
         this.desk.stopLoop();
-        if (this.pickUntil !== undefined) this.endPick("Preset pick cancelled");
         // Release first: a failing refresh below must never leave a fader driven.
         this.releaseAll(this.scanned.fixtures);
         try {
@@ -176,11 +168,6 @@ export class AutoZoom {
         } else {
             this.desk.runCommands(programCommands([fid], cid, this.config.offset));
         }
-        if (this.pickUntil !== undefined) {
-            // Our own commands (e.g. `Attribute … At Preset 2.30`) must never count as the pick.
-            this.pickBaseline = this.desk.lastCommand();
-            this.pickUndoMark = this.desk.undoMark();
-        }
         this.update();
     }
 
@@ -189,13 +176,11 @@ export class AutoZoom {
         this.desk.later(() => {
             const answers = this.desk.setupDialog(this.config);
             if (answers === undefined) return;
-            if (answers.pick) {                                // "Pick preset…": the other answers are not applied
-                this.pickUntil = undefined;                    // an active pick restarts instead of toggling off
-                this.pickBaseline = undefined;
-                this.pickUndoMark = undefined;
-                this.startPick();
+            if (answers.action === "pick") {                  // the other answers are not applied
+                this.openPicker();
                 return;
             }
+            if (answers.action !== "save") return;
             const rate = this.config.rate;
             const result = applySetup(this.config, answers);
             for (const e of result.errors) this.desk.log(e);
@@ -269,7 +254,6 @@ export class AutoZoom {
     }
 
     protected update(): void {
-        this.beforeUpdate();
         const markers = this.desk.readMarkers();
         const globalSize = this.globalSize();
         for (const f of this.scanned.fixtures) {
@@ -284,57 +268,17 @@ export class AutoZoom {
 
     PickOffset(): void {
         if (!this.ensureCurrent()) return;
-        if (this.pickUntil !== undefined) { this.endPick("Preset pick cancelled"); return; }
-        this.startPick();
+        this.openPicker();
     }
 
-    private startPick(): void {
-        if (!this.running) { this.say("Start AutoZoom to pick a preset"); return; }
-        this.pickBaseline = this.desk.lastCommand();
-        this.pickUndoMark = this.desk.undoMark();
-        this.pickIgnored = {};
-        this.pickUntil = this.desk.now() + PICK_SECONDS;
-        this.message = "Tap the preset that holds the XYZ offset";
-        this.update();
-    }
-
-    private updatePick(): void {
-        if (this.pickUntil === undefined) return;
-        if (this.desk.now() > this.pickUntil) { this.endPick("Preset pick timed out"); return; }
-        const cmd = this.desk.lastCommand();
-        if (cmd === undefined || cmd === this.pickBaseline) return;
-        const preset = parsePresetCommand(cmd);
-        if (preset === undefined) {                            // not a preset tap: keep waiting
-            const [named] = string.find(cmd.toLowerCase(), "preset", 1, true);
-            if (named !== undefined && !this.pickIgnored[cmd]) {
-                this.pickIgnored[cmd] = true;
-                this.desk.log(`Preset pick ignored "${cmd}"`);
-            }
-            return;
-        }
-        const undoName = this.desk.topUndoName();
-        this.desk.log(`Preset pick saw "${cmd}", undo entry "${undoName ?? ""}"`);
-        // Saved first: a failing Oops must not lose the pick.
-        this.config.offset = { ...this.config.offset, source: "preset", preset };
-        this.markDirty();
-        // Oops only a new undo entry that is the tap itself: an older entry (e.g. "Store Preset 2.30") is never touched.
-        if (this.desk.undoMark() !== this.pickUndoMark && undoMatches(undoName, cmd)) this.desk.undoProgrammer();
-        this.endPick(`Offset preset ${preset}`);
-    }
-
-    private endPick(message: string): void {
-        this.pickUntil = undefined;
-        this.pickBaseline = undefined;
-        this.pickUndoMark = undefined;
-        this.say(message);
-    }
-
-    protected beforeUpdate(): void {
-        try {
-            this.updatePick();
-        } catch (e) {
-            this.endPick("Preset pick failed: " + tostring(e));
-        }
+    private openPicker(): void {
+        this.desk.openPresetPicker(this.config.offset.preset, preset => {
+            if (!this.ensureCurrent()) return;
+            this.config.offset = { ...this.config.offset, source: "preset", preset };
+            this.markDirty();
+            this.say(`Offset preset ${preset}`);
+            this.update();
+        });
     }
 
     private updateFixture(f: PatchFixture, markers: MarkerReadings, globalSize: number): void {
@@ -378,9 +322,8 @@ export class AutoZoom {
         }
         let liveMarkers = 0;
         for (const m of this.scanned.markers) if (markers[fidKey(m.cid)] !== undefined) liveMarkers++;
-        const pickLeft = this.pickUntil === undefined ? undefined : Math.max(0, Math.ceil(this.pickUntil - this.desk.now()));
         this.desk.refreshLayout(buildViews(
-            { running: this.running, pickSecondsLeft: pickLeft, liveMarkers, globalSize, offsetLabel: offsetLabel(this.config), message: this.message },
+            { running: this.running, liveMarkers, globalSize, offsetLabel: offsetLabel(this.config), message: this.message },
             rows, this.scanned.markers, markers,
         ));
     }

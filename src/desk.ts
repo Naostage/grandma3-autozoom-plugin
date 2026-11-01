@@ -27,8 +27,5 @@ export interface Desk {
     prompt(title: string, value: string): string | undefined;      // undefined = cancelled
     setupDialog(current: Config): SetupAnswers | undefined;
     runCommands(commands: string[]): void;
-    lastCommand(): string | undefined;                     // CmdObj().LastCommand
-    topUndoName(): string | undefined;                     // name of the most recent undo entry
-    undoMark(): string;                                    // changes whenever an undo entry is added or undone
-    undoProgrammer(): void;                                // Oops with CurrentProfile().OopsProgrammer temporarily on
+    openPresetPicker(current: string, onPick: (preset: string) => void): void;   // onPick gets "<pool>.<no>"
 }

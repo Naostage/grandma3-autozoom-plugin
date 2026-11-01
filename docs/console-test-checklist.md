@@ -24,13 +24,13 @@ Tick each line on a copy of a real show. Note the System Monitor output for any 
 19. [ ] Load another show and back without running the plugin: replaying a cue containing `AZ:Arm('…')` and tapping layout buttons raise no Lua error; the AZ Start macro (`Call Plugin "GMA3 Autozoom"`) starts AutoZoom.
 20. [ ] Cells show tinted fills (no paper icon); colours follow state (arm, tracking, no PSN, programmer P, preset pick waiting in the message cell).
 21. [ ] Appearances pool holds the nine AZ appearances at 9001+ once; Rescan neither duplicates nor moves them again.
-22. [ ] Offset pick with fixtures selected: Setup → Pick preset…, tap an XYZ preset → Setup cell shows "Preset X.Y", programmer is back to what it was, nothing else undone. Note the System Monitor line "Preset pick saw …".
-23. [ ] Offset pick with nothing selected (Setup → Pick preset…): preset picked, no Oops.
-24. [ ] Offset pick (Setup → Pick preset…) ignores an unrelated command (e.g. Go on a sequence) and times out after 10 s.
-25. [ ] Store/Delete/Label of a preset during a pick (Setup → Pick preset…) is ignored (System Monitor: Preset pick ignored …) and never undone.
+22. [ ] Setup → Pick preset… opens the preset picker, both while running and while stopped; the first tab is the pool of the current offset preset (else pool 2) and the current preset tile is highlighted.
+23. [ ] In the picker, presets without XYZ values are greyed (status "no XYZ") and cannot be tapped.
+24. [ ] Tapping an XYZ tile closes the picker and the Setup cell shows "Preset X.Y"; the programmer and the fixture selection are untouched.
+25. [ ] Cancel in the picker closes it and changes nothing.
 26. [ ] Rescan cell rebuilds the layout while running (no duplicate cells, AutoZoom keeps running).
 27. [ ] New fixtures are armed by default: patch a new XYZ fixture, tap Rescan: its Arm cell is green.
-28. [ ] Setup → Pick preset… while stopped: refused with "Start AutoZoom to pick a preset".
+28. [ ] The picker's pool tabs switch pools; a pool with many presets scrolls.
 29. [ ] Rescan and plugin re-run keep the AutoZoom layout object: a view showing it stays intact; elements you added to the layout yourself are kept.
 30. [ ] With AutoZoom off/released, the fixture's zoom and iris are the cue's own values (no forced minimum).
 31. [ ] While tracking, firing another cue with zoom/iris values doesn't override AutoZoom.

@@ -175,11 +175,13 @@ T.test("prompt and setup dialog", function()
   M.boxAnswer = { result = 1, inputs = { ["Offset preset"] = "2.12", ["Offset X (m)"] = "0", ["Offset Y (m)"] = "-1", ["Offset Z (m)"] = "0",
     ["Size min (m)"] = "0.5", ["Size max (m)"] = "5", ["Refresh rate (Hz)"] = "30" }, selectors = { ["Offset source"] = 1 } }
   local a = desk:setupDialog(az().config.defaultConfig())
-  T.eq(a.source, "preset", "source"); T.eq(a.preset, "2.12", "preset"); T.eq(a.y, "-1", "y"); T.eq(a.pick, false, "save")
-  T.eq(M.lastBox.commands, { { value = 1, name = "Save" }, { value = 2, name = "Pick preset…" }, { value = 0, name = "Cancel" } }, "three commands")
+  T.eq(a.source, "preset", "source"); T.eq(a.preset, "2.12", "preset"); T.eq(a.y, "-1", "y"); T.eq(a.action, "save", "save")
+  T.eq(M.lastBox.commands, { { value = 1, name = "Save" }, { value = 2, name = "Pick preset…" }, { value = 3, name = "Layout rows…" }, { value = 0, name = "Cancel" } }, "four commands")
   M.boxAnswer.result = 2
   local p = desk:setupDialog(az().config.defaultConfig())
-  T.eq(p.pick, true, "pick"); T.eq(p.preset, "2.12", "inputs still read")
+  T.eq(p.action, "pick", "pick"); T.eq(p.preset, "2.12", "inputs still read")
+  M.boxAnswer.result = 3
+  T.eq(desk:setupDialog(az().config.defaultConfig()).action, "rows", "rows")
   M.boxAnswer = { result = 0 }; T.eq(desk:setupDialog(az().config.defaultConfig()), nil, "cancel")
 end)
 
@@ -383,42 +385,6 @@ T.test("deleted appearance is skipped and recreated on install", function()
   local found = false
   for _, a in ipairs(M.appearances._kids) do if a.name == "AZ Button" then found = true end end
   T.truthy(found, "recreated")
-end)
-
-T.test("desk reads last command and undo name, oops restores OopsProgrammer", function()
-  M.reset()
-  M.cmdObj = { LastCommand = "OK: Preset 2.30", Undos = { UndoIndex = 0, [1] = { Name = "Preset 2.30" } } }
-  M.profile = { OopsProgrammer = false }
-  local desk = az().madesk.createMaDesk()
-  T.eq(desk:lastCommand(), "OK: Preset 2.30", "last command"); T.eq(desk:topUndoName(), "Preset 2.30", "undo name")
-  desk:undoProgrammer()
-  T.eq(M.cmds[#M.cmds], "Oops /nc", "oops"); T.eq(M.profile.OopsProgrammer, false, "restored")
-  T.eq(M.oopsProgrammerDuringOops, true, "was true during Oops")
-end)
-
-T.test("a failing Oops is logged and OopsProgrammer is still restored", function()
-  M.reset()
-  M.profile = { OopsProgrammer = false }
-  local orig = M.onCmd
-  M.onCmd = function(s) if s == "Oops /nc" then error("denied") end end
-  local desk = az().madesk.createMaDesk()
-  desk:undoProgrammer()
-  M.onCmd = orig
-  T.eq(M.profile.OopsProgrammer, false, "restored")
-  local found = false; for _, p in ipairs(M.printed) do if p:find("[AZ] Oops failed", 1, true) then found = true end end
-  T.truthy(found, "failure printed")
-end)
-
-T.test("undo mark combines index, count and top entry name", function()
-  M.reset()
-  M.cmdObj = { LastCommand = "x", Undos = M.handle({ UndoIndex = 2 }, { {}, {}, {} }) }
-  M.cmdObj.Undos[3] = { Name = "\27[32mPreset 2.30\27[0m" }
-  local desk = az().madesk.createMaDesk()
-  T.eq(desk:undoMark(), "2|3|Preset 2.30", "with count")
-  M.cmdObj = { LastCommand = "x", Undos = { UndoIndex = 0 } }
-  T.eq(desk:undoMark(), "0||", "no Count(), no entry")
-  M.cmdObj = { LastCommand = "x" }
-  T.eq(desk:undoMark(), "||", "no undo list")
 end)
 
 T.test("install survives an Appearances pool that cannot create", function()

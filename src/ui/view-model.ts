@@ -22,7 +22,7 @@ export const APPEARANCES: { [kind: string]: { name: string; rgba: string } } = {
 export const GRID = { w: 130, markerW: 70, h: 64, gap: 6 };
 export const Y_DIR = -1; // layout "down" direction (probe P10)
 
-export interface HeaderState { running: boolean; pickSecondsLeft?: number; liveMarkers: number; globalSize: number; offsetLabel: string; message: string }
+export interface HeaderState { running: boolean; liveMarkers: number; globalSize: number; offsetLabel: string; message: string }
 export interface RowState {
     fixture: PatchFixture; armed: boolean; markerCid: number; programmerCid: number; offset: Vec3;
     result: FixtureResult; size: number; sizeFixed: boolean;
@@ -94,8 +94,7 @@ export function buildViews(header: HeaderState, rows: RowState[], markers: Patch
     cell("setup", `Setup\nXYZ ${header.offsetLabel}`, "button");
     cell("rescan", "Rescan\npatch", "button");
     cell("size", `AZ_SIZE\n${fmtNum(header.globalSize)} m`, "header");
-    if (header.pickSecondsLeft !== undefined) cell("message", `Tap a preset…  ${fmtInt(header.pickSecondsLeft)} s`, "capture", COLORS.accent, COLORS.accent);
-    else cell("message", header.message, "header", COLORS.idle, COLORS.muted);
+    cell("message", header.message, "header", COLORS.idle, COLORS.muted);
     for (const m of markers) {
         const live = readings[fidKey(m.cid)] !== undefined;
         cell(`mh ${fmtInt(m.cid)}`, `${m.name}\nCID ${fmtInt(m.cid)}`, live ? "tracking" : "nopsn", live ? COLORS.on : COLORS.bad, live ? COLORS.text : COLORS.bad);

@@ -35,6 +35,7 @@ function M.reset()
   M.fixtureTypes = handle({}, {})
   M.psn = handle({}, {})
   M.dataPools = handle({}, {})
+  M.presetPools = handle({}, {})
   M.appearances = handle({}, {})
   function M.appearances:Find(name) for _, a in ipairs(self._kids) do if a.name == name then return a end end end
   local function newAppearance(pool, no)
@@ -56,19 +57,32 @@ function M.reset()
     for i, a in ipairs(M.appearances._kids) do if a.No == no then a._deleted = true; table.remove(M.appearances._kids, i); return end end
   end
   M.time = 0
-  M.cmdObj = { LastCommand = nil, Undos = { UndoIndex = 0 } }
-  M.profile = { OopsProgrammer = false }
-  M.oopsProgrammerDuringOops = nil
   M.textAnswer, M.boxAnswer = nil, nil
 end
 
 function Printf(s) M.printed[#M.printed + 1] = s end
-function CmdObj() return M.cmdObj end
-function CurrentProfile() return M.profile end
-function Cmd(s) M.cmds[#M.cmds + 1] = s; M.events[#M.events + 1] = s; if s == "Oops /nc" then M.oopsProgrammerDuringOops = M.profile and M.profile.OopsProgrammer end; if M.onCmd then M.onCmd(s) end; return "Ok" end
+function Cmd(s) M.cmds[#M.cmds + 1] = s; M.events[#M.events + 1] = s; if M.onCmd then M.onCmd(s) end; return "Ok" end
 CmdIndirect = Cmd
 CmdIndirectWait = Cmd
 function Patch() return { Stages = M.stages, FixtureTypes = M.fixtureTypes } end
+-- Preset pools for the picker: DataPool().PresetPools:Children(), each preset read through GetPresetData.
+function M.presetPool(no, name)
+  local p = handle({ no = no, name = name }, {})
+  M.presetPools._kids[#M.presetPools._kids + 1] = p
+  return p
+end
+function M.preset(poolNo, no, name, attrs)
+  for _, pool in ipairs(M.presetPools._kids) do
+    if pool.no == poolNo then
+      local p = handle({ no = no, name = name, _attrs = attrs }, {})
+      pool._kids[#pool._kids + 1] = p
+      return p
+    end
+  end
+  error("no preset pool " .. tostring(poolNo))
+end
+function DataPool() return { PresetPools = M.presetPools } end
+function GetPresetData(p) return { by_fixtures = { ["101"] = p._attrs } } end
 function ShowData() return { DataPools = M.dataPools, PSNProtocol = M.psn, Appearances = M.appearances } end
 function GlobalVars() return "GlobalVars" end
 function GetVar(_, k) return M.vars[k] end
