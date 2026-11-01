@@ -6,7 +6,7 @@ local function fx(fid) return { fid = fid, name = "Spot " .. fid, position = { x
 local MARKERS = { { cid = 1, name = "Lead" }, { cid = 2, name = "Bass" } }
 
 T.test("layout cells cover header, marker heads and every row cell", function()
-  local cells = az().view.layoutCells({ fx(101), fx(102) }, MARKERS)
+  local cells = az().view.layoutCells({ { kind = "fixture", fixture = fx(101) }, { kind = "fixture", fixture = fx(102) } }, MARKERS)
   local keys = {}
   for _, c in ipairs(cells) do keys[c.key] = c.command end
   T.eq(keys["toggle"], "Toggle()", "toggle"); T.eq(keys["setup"], "Setup()", "setup"); T.eq(keys["rescan"], "RescanLater()", "rescan")
@@ -67,4 +67,61 @@ T.test("cells carry appearance kinds", function()
   T.eq(views["zo 101"].appearance, "idle", "value cell")
   T.eq(views["sz 101"].appearance, "button", "size cell is tappable")
   T.eq(v.APPEARANCES.tracking, { name = "AZ Tracking", rgba = "137A38E0" }, "palette")
+end)
+
+local HEADER = { running = true, liveMarkers = 1, globalSize = 2, offsetLabel = "0/0/0 m", message = "" }
+local function member(fid, state, opts)
+  opts = opts or {}
+  return { fixture = fx(fid), armed = opts.armed ~= false, markerCid = opts.markerCid or 1, programmerCid = opts.programmerCid or 0,
+    offset = { x = 0, y = 0, z = 0 }, result = { state = state, output = { kind = "release" } }, size = 2, sizeFixed = false }
+end
+local function group(members, opts)
+  opts = opts or {}
+  return { no = 3, name = "Front truss", missing = opts.missing or false, members = members }
+end
+
+T.test("group row cells have no distance, zoom, iris or size", function()
+  local cells = az().view.layoutCells({ { kind = "group", no = 3, name = "Front truss", fixtures = { fx(101), fx(102) }, missing = false } }, MARKERS)
+  local keys = {}
+  for _, c in ipairs(cells) do keys[c.key] = c.command end
+  T.eq(keys["garm 3"], "ArmGroup(3)", "arm"); T.eq(keys["gmx 3 2"], "ProgramGroup(3,2)", "marker")
+  T.eq(keys["gst 3"], "", "state is display only")
+  for _, gone in ipairs({ "di 3", "zo 3", "ir 3", "sz 3", "arm 101", "st 101" }) do T.eq(keys[gone], nil, "no " .. gone) end
+  T.eq(#cells, 6 + 2 + 1 + 2 + 1, "count")
+end)
+
+T.test("group state counts tracking and shows the worst", function()
+  local v = az().view
+  local views = v.buildViews(HEADER, { group({ member(101, "tracking"), member(102, "tracking"), member(103, "no-psn") }) }, MARKERS, {})
+  T.eq(views["gst 3"].text, "2/3 tracking\n1 No PSN data", "state text"); T.eq(views["gst 3"].appearance, "nopsn", "worst look")
+  T.eq(views["garm 3"].text, "G3 Front truss\n3/3 armed", "arm text"); T.eq(views["garm 3"].appearance, "tracking", "all armed")
+  views = v.buildViews(HEADER, { group({ member(101, "tracking"), member(102, "tracking") }) }, MARKERS, {})
+  T.eq(views["gst 3"].text, "2/2 tracking", "no second line when all track")
+  T.eq(v.summarize({ member(101, "disarmed"), member(102, "unknown-marker"), member(103, "unknown-marker") }),
+    { tracking = 0, total = 3, worst = "unknown-marker", worstCount = 2 }, "summarize")
+end)
+
+T.test("group marker cell P counts programmer members", function()
+  local v = az().view
+  local views = v.buildViews(HEADER, { group({ member(101, "tracking", { programmerCid = 2 }), member(102, "tracking") }) }, MARKERS, {})
+  T.eq(views["gmx 3 2"].text, "P 1/2", "some"); T.eq(views["gmx 3 2"].appearance, "programmer", "programmer look")
+  T.eq(views["gmx 3 1"].text, "●", "followed"); T.eq(views["gmx 3 1"].border, v.COLORS.on, "best state colour")
+  views = v.buildViews(HEADER, { group({ member(101, "tracking", { programmerCid = 2 }), member(102, "tracking", { programmerCid = 2 }) }) }, MARKERS, {})
+  T.eq(views["gmx 3 2"].text, "P", "all")
+end)
+
+T.test("partially armed group arm cell is warn", function()
+  local v = az().view
+  local views = v.buildViews(HEADER, { group({ member(101, "tracking"), member(102, "disarmed", { armed = false }) }) }, MARKERS, {})
+  T.eq(views["garm 3"].text, "G3 Front truss\n1/2 armed", "text"); T.eq(views["garm 3"].appearance, "warn", "partial")
+  views = v.buildViews(HEADER, { group({ member(102, "disarmed", { armed = false }) }) }, MARKERS, {})
+  T.eq(views["garm 3"].appearance, "idle", "none armed")
+end)
+
+T.test("missing group shows Group missing", function()
+  local v = az().view
+  local views = v.buildViews(HEADER, { group({}, { missing = true }) }, MARKERS, {})
+  T.eq(views["gst 3"].text, "Group missing", "missing"); T.eq(views["gst 3"].appearance, "error", "error look")
+  views = v.buildViews(HEADER, { group({}) }, MARKERS, {})
+  T.eq(views["gst 3"].text, "No XYZ fixtures", "empty"); T.eq(views["gst 3"].appearance, "idle", "idle look")
 end)

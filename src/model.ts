@@ -18,3 +18,5 @@ export interface CellSpec { key: string; x: number; y: number; w: number; h: num
 export type AppearanceKind = "tracking" | "warn" | "nopsn" | "error" | "programmer" | "capture" | "button" | "header" | "idle";
 export interface CellView { text: string; border: string; textColor: string; appearance: AppearanceKind }
 export type Views = { [key: string]: CellView };
+// One layout row: a single fixture, or a console group (its XYZ fixtures; missing = the group is gone).
+export type LayoutRow = { kind: "fixture"; fixture: PatchFixture } | { kind: "group"; no: number; name: string; fixtures: PatchFixture[]; missing: boolean };

@@ -4,6 +4,7 @@ import { fidKey } from "../format";
 import { Vec3 } from "../engine/vec";
 import { CellSpec, MarkerReadings, PatchFixture, PatchScan, Views } from "../model";
 import { Config, SetupAnswers } from "../store/config";
+import { GroupInfo } from "../store/rows";
 import { ensureAppearances } from "./appearances";
 import * as layout from "./layout";
 import * as live from "./live";
@@ -26,6 +27,7 @@ export class MaDesk implements Desk {
         this.lastScan = scanPatch();
         return this.lastScan;
     }
+    listGroups(): GroupInfo[] { return []; }             // read from the console once the group probe is back
     install(scan: PatchScan): void {
         pool.ensurePool();
         try {

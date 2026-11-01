@@ -2,6 +2,7 @@
 import { Vec3 } from "./engine/vec";
 import { CellSpec, MarkerReadings, PatchFixture, PatchScan, Views } from "./model";
 import { Config, SetupAnswers } from "./store/config";
+import { GroupInfo } from "./store/rows";
 
 // Everything AutoZoom needs from the console. MaDesk (src/console) implements it on grandMA3;
 // tests use tests/lib/fakedesk.lua.
@@ -11,6 +12,7 @@ export interface Desk {
     loadText(key: string): string | undefined;             // GlobalVars
     saveText(key: string, value: string): void;
     scan(): PatchScan;
+    listGroups(): GroupInfo[];                             // console Groups with their fixture IDs
     install(scan: PatchScan): void;                        // DataPool, AZ_BASE/AZ_ZOOM/AZ_IRIS/AZ_SIZE sequences
     readMarkerCid(f: PatchFixture): number;                // live XYZ_MArker output, 0 = none
     readOffset(f: PatchFixture): Vec3;                     // live XYZ_X/Y/Z output in metres

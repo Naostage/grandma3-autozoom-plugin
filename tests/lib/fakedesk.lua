@@ -13,6 +13,7 @@ function F.new(scan)
   local d = { logs = {}, saved = {}, faders = {}, releases = {}, laters = {}, cmds = {}, t = 0,
     cids = {}, offsets = {}, progCids = {}, markers = {}, answers = {},
     scanResult = scan or { fixtures = {}, markers = {}, problems = {} } }
+  function d:listGroups() return self.groups or {} end
   function d:openPresetPicker(current, onPick) self.picker = { current = current, onPick = onPick } end
   function d:now() return self.t end
   function d:log(m) self.logs[#self.logs + 1] = m end

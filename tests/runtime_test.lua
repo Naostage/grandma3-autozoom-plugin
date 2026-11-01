@@ -269,3 +269,104 @@ T.test("Capture logs that it was removed", function()
   a:Install(); a:Capture()
   T.eq(d.logs[#d.logs], "Capture was removed in 2.0.0.2", "logged")
 end)
+
+-- ---------- layout rows ----------
+local G3 = '{"kind":"group","no":3,"name":"Front truss"}'
+local function rowsSetup(rows)
+  local d, a = setup({ F.fixture(101), F.fixture(102), F.fixture(103), F.fixture(205) }, { F.marker(1, "Lead") })
+  d.groups = { { no = 3, name = "Front truss", fids = { 101, 102, 999 } } }
+  if rows then d.saved["AutoZoom.config"] = '{"rows":[' .. rows .. ']}' end
+  return d, a
+end
+local function cellKeys(d) local k = {} for _, c in ipairs(d.cells) do k[c.key] = true end return k end
+local function installedFids(d) local out = {} for _, f in ipairs(d.installed.fixtures) do out[#out + 1] = f.fid end return out end
+
+T.test("empty rows keep one row per patch fixture", function()
+  local d, a = rowsSetup()
+  a:Install()
+  local k = cellKeys(d)
+  for _, fid in ipairs({ 101, 102, 103, 205 }) do T.truthy(k["arm " .. fid], "arm " .. fid) end
+  T.eq(k["garm 3"], nil, "no group row")
+end)
+
+T.test("rows limit the managed fixtures and release the others", function()
+  local d, a = rowsSetup()
+  a:Install(); a:Start()
+  d.cids[103] = 1; d.markers["1"] = { pos = { x = 0, y = 0, z = 0 } }; d:tick()
+  d.releases = {}
+  a.config.rows = az().rows.parseRows({ { kind = "group", no = 3, name = "Front truss" }, { kind = "fixture", fid = 205 } })
+  a:Rescan()
+  T.eq(installedFids(d), { 101, 102, 205 }, "installed")
+  local got = {}; for _, fid in ipairs(d.releases) do got[fid] = (got[fid] or 0) + 1 end
+  T.eq(got[103], 1, "103 released once")
+  local k = cellKeys(d)
+  T.truthy(k["garm 3"], "group row"); T.truthy(k["arm 205"], "fixture row")
+  T.eq(k["arm 101"], nil, "no own row for 101"); T.eq(k["arm 103"], nil, "103 not shown")
+end)
+
+T.test("ProgramGroup programs every XYZ member with one selection", function()
+  local d, a = rowsSetup(G3)
+  a:Install()
+  a:ProgramGroup(3, 1)
+  T.eq(d.cmds[1], "Fixture 101 + 102", "one selection, 999 ignored")
+  T.truthy(#d.cmds > 1, "attribute lines follow")
+end)
+
+T.test("ProgramGroup releases when all members are on that marker", function()
+  local d, a = rowsSetup(G3)
+  a:Install()
+  d.progCids[101] = 2; d.progCids[102] = 2
+  a:ProgramGroup(3, 2)
+  T.eq(d.cmds, { "Off Fixture 101 + 102" }, "release")
+end)
+
+T.test("ArmGroup arms all when one is disarmed, else disarms all", function()
+  local d, a = rowsSetup(G3)
+  a:Install()
+  a:ArmToggle(101)
+  a:ArmGroup(3)
+  T.eq(d.views["garm 3"].text, "G3 Front truss\n2/2 armed", "armed all")
+  a:ArmGroup(3)
+  T.eq(d.views["garm 3"].text, "G3 Front truss\n0/2 armed", "disarmed all")
+end)
+
+T.test("a fixture in two rows is tracked once", function()
+  local d, a = rowsSetup(G3 .. ',{"kind":"fixture","fid":101}')
+  a:Install()
+  T.eq(installedFids(d), { 101, 102 }, "101 installed once")
+  local k = cellKeys(d)
+  T.truthy(k["arm 101"], "fixture row"); T.truthy(k["garm 3"], "group row")
+  a:Start(); d.cids[101] = 1; d.markers["1"] = { pos = { x = 0, y = 0, z = 0 } }; d.faders = {}
+  d:tick()
+  local n = 0; for _, f in ipairs(d.faders) do if f.fid == 101 then n = n + 1 end end
+  T.eq(n, 1, "one fader set for 101 per tick")
+end)
+
+T.test("missing or empty group: row kept, taps send nothing", function()
+  local d, a = rowsSetup(G3)
+  a:Install()
+  d.groups = {}
+  a:Rescan()
+  T.eq(d.views["gst 3"].text, "Group missing", "missing")
+  d.logs = {}
+  a:ProgramGroup(3, 1)
+  T.eq(d.cmds, {}, "no commands")
+  T.eq(d.logs[1], "Group 3 has no XYZ fixtures", "logged")
+end)
+
+T.test("fixture entry not in the patch is left out and logged", function()
+  local d, a = rowsSetup('{"kind":"fixture","fid":777}')
+  a:Install()
+  T.eq(cellKeys(d)["arm 777"], nil, "no row")
+  local found = false
+  for _, l in ipairs(d.logs) do if l == "Fixture 777 in the layout rows is not an XYZ fixture" then found = true end end
+  T.truthy(found, "logged")
+end)
+
+T.test("Status logs group rows with their counts", function()
+  local d, a = rowsSetup(G3)
+  a:Install()
+  d.logs = {}
+  a:Status()
+  T.eq(d.logs[2], "  G3 Front truss: 0/2 tracking", "group line")
+end)
