@@ -259,6 +259,10 @@ export class AutoZoom {
                 this.openPicker();
                 return;
             }
+            if (answers.action === "rows") {
+                this.openRows();
+                return;
+            }
             if (answers.action !== "save") return;
             const rate = this.config.rate;
             const result = applySetup(this.config, answers);
@@ -343,6 +347,23 @@ export class AutoZoom {
             }
         }
         this.render(markers, globalSize);
+    }
+
+    Rows(): void {
+        if (!this.ensureCurrent()) return;
+        this.openRows();
+    }
+
+    // Edits are stored as they are made; closing with changes rebuilds the layout and the managed set.
+    private openRows(): void {
+        const catalog = { groups: this.desk.listGroups(), fixtures: this.patch.fixtures.map(f => ({ fid: f.fid, name: f.name })) };
+        this.desk.openRowsEditor(this.config.rows, catalog, rows => {
+            if (!this.ensureCurrent()) return;
+            this.config.rows = rows;
+            this.markDirty();
+        }, changed => {
+            if (changed) this.RescanLater();
+        });
     }
 
     PickOffset(): void {

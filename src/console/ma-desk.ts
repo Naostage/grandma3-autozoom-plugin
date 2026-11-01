@@ -4,7 +4,7 @@ import { fidKey } from "../format";
 import { Vec3 } from "../engine/vec";
 import { CellSpec, MarkerReadings, PatchFixture, PatchScan, Views } from "../model";
 import { Config, SetupAnswers } from "../store/config";
-import { GroupInfo } from "../store/rows";
+import { Catalog, GroupInfo, RowEntry } from "../store/rows";
 import { ensureAppearances } from "./appearances";
 import * as layout from "./layout";
 import * as live from "./live";
@@ -12,6 +12,7 @@ import { info, warnOnce } from "./log";
 import { scanPatch } from "./patch";
 import * as pool from "./pool";
 import { openPresetPicker } from "./preset-picker";
+import { openRowsEditor } from "./rows-editor";
 import * as ui from "./ui";
 import * as vars from "./vars";
 
@@ -85,6 +86,9 @@ export class MaDesk implements Desk {
     setupDialog(current: Config): SetupAnswers | undefined { return ui.setupDialog(current); }
     runCommands(commands: string[]): void { ui.runCommands(commands); }
     openPresetPicker(current: string, onPick: (preset: string) => void): void { openPresetPicker(current, onPick); }
+    openRowsEditor(rows: RowEntry[], catalog: Catalog, onChange: (rows: RowEntry[]) => void, onClose: (changed: boolean) => void): void {
+        openRowsEditor(rows, catalog, onChange, onClose);
+    }
 }
 
 function releaseTemp(name: string): void {

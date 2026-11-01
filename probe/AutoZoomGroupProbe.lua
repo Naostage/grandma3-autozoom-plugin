@@ -1,5 +1,5 @@
 -- AutoZoom — group probe: how to read a Group's fixtures, program several fixtures at once,
--- and read the attribute names of an XYZ preset.
+-- read the attribute names of an XYZ preset, and list the theme colour names (tick colours).
 --
 -- SETUP: a Group holding a few XYZ fixtures, those fixtures' IDs, a marker CID and an XYZ preset.
 -- The probe clears the programmer (ClearAll) twice. Send back the whole command line feedback
@@ -58,7 +58,7 @@ local function prog(ui)
 end
 
 return function()
-    P("================ AutoZoomGroupProbe v0.1 ================")
+    P("================ AutoZoomGroupProbe v0.2 ================")
     local box = MessageBox({
         title = "AutoZoom group probe",
         commands = { { value = 1, name = "Run" }, { value = 0, name = "Cancel" } },
@@ -75,6 +75,15 @@ return function()
     local cid = box.inputs["Marker CID"]
     local preset = box.inputs["XYZ preset"]
     P("inputs: group " .. tostring(gno) .. ", fixtures " .. join(list) .. ", cid " .. tostring(cid) .. ", preset " .. tostring(preset))
+
+    run("G0", function()
+        local kids = children(DataPool().Groups)
+        P("G0: " .. #kids .. " groups")
+        for i, g in ipairs(kids) do
+            if i > 10 then P("G0:   ...") break end
+            P("G0:   no " .. tostring(field(g, "no")) .. ", name " .. tostring(field(g, "name")))
+        end
+    end)
 
     run("G1", function()
         local g = DataPool().Groups[gno]
@@ -142,6 +151,14 @@ return function()
             table.sort(names)
             P("X1: fixture " .. tostring(fid) .. ": " .. table.concat(names, ", "))
             break
+        end
+    end)
+    run("C1", function()
+        local groups = Root().ColorTheme.ColorGroups
+        for _, gname in ipairs({ "Global", "ProgLayer" }) do
+            local names = {}
+            for _, c in ipairs(children(groups[gname])) do names[#names + 1] = tostring(field(c, "name")) end
+            P("C1: " .. gname .. ": " .. table.concat(names, ", "))
         end
     end)
     P("================ done ================")

@@ -144,6 +144,16 @@ export function paint(obj: any, c: any): void {
     if (c !== undefined) set(obj, "BackColor", c);
 }
 
+// Tick colours of the add picker: green = in the list by itself, yellow = only through a group.
+// Theme colour names to be confirmed by the group probe (C1).
+export function tickColor(kind: "self" | "group"): any {
+    return kind === "self" ? color("Global", "Selected") : color("Global", "WarningText");
+}
+
+export function textColor(obj: any, c: any): void {
+    if (c !== undefined) set(obj, "TextColor", c);
+}
+
 export function closeWindow(): void {
     screenOverlay().ClearUIChildren();
 }

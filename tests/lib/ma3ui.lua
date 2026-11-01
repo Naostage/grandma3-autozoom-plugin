@@ -30,7 +30,7 @@ function U.install()
   _G.GetFocusDisplay = function() return {} end
   _G.Obj = { Index = function() return 1 end }
   _G.GetDisplayByIndex = function() return { ScreenOverlay = U.overlay } end
-  _G.Root = function() return { ColorTheme = { ColorGroups = { Global = { ErrorText = "red", Selected = "green" },
+  _G.Root = function() return { ColorTheme = { ColorGroups = { Global = { ErrorText = "red", Selected = "green", WarningText = "yellow" },
     ProgLayer = { Absolute = "blue" } } } } end
   _G.CloseAllOverlays = function() end
 end

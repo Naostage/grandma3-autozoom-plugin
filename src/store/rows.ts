@@ -6,6 +6,9 @@ export type RowEntry = { kind: "group"; no: number; name: string } | { kind: "fi
 
 export interface GroupInfo { no: number; name: string; fids: number[] }
 
+// What the add picker offers: console groups and the scanned XYZ fixtures.
+export interface Catalog { groups: GroupInfo[]; fixtures: { fid: number; name: string }[] }
+
 export function sameEntry(a: RowEntry, b: RowEntry): boolean {
     if (a.kind === "group") return b.kind === "group" && a.no === b.no;
     return b.kind === "fixture" && a.fid === b.fid;

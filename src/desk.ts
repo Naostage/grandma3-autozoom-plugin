@@ -2,7 +2,7 @@
 import { Vec3 } from "./engine/vec";
 import { CellSpec, MarkerReadings, PatchFixture, PatchScan, Views } from "./model";
 import { Config, SetupAnswers } from "./store/config";
-import { GroupInfo } from "./store/rows";
+import { Catalog, GroupInfo, RowEntry } from "./store/rows";
 
 // Everything AutoZoom needs from the console. MaDesk (src/console) implements it on grandMA3;
 // tests use tests/lib/fakedesk.lua.
@@ -30,4 +30,6 @@ export interface Desk {
     setupDialog(current: Config): SetupAnswers | undefined;
     runCommands(commands: string[]): void;
     openPresetPicker(current: string, onPick: (preset: string) => void): void;   // onPick gets "<pool>.<no>"
+    // onChange after every edit; onClose(changed) when the window is closed.
+    openRowsEditor(rows: RowEntry[], catalog: Catalog, onChange: (rows: RowEntry[]) => void, onClose: (changed: boolean) => void): void;
 }

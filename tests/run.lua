@@ -19,6 +19,7 @@ local FILES = {
   "console_desk_test",
   "integration_test",
   "window_test",
+  "rows_editor_test",
 }
 
 for _, name in ipairs(FILES) do
