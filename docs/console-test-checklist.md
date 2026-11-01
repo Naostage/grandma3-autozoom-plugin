@@ -1,8 +1,8 @@
-# AutoZoom 2.0 console test checklist (grandMA3 onPC 2.5.x)
+# AutoZoom 2.1 console test checklist (grandMA3 onPC 2.5.x)
 
 Tick each line on a copy of a real show. Note the System Monitor output for any failure.
 
-1. [ ] Import and run the plugin: "AutoZoom 2.0.0.3", "Found N fixtures and M markers"; data pool AutoZoom exists with layout, AZ_BASE/AZ_ZOOM/AZ_IRIS per fixture (AZ_BASE priority High, AZ_ZOOM/AZ_IRIS Super), AZ_SIZE.
+1. [ ] Import and run the plugin: "AutoZoom 2.1.0.0 by Naostage", "Found N fixtures and M markers"; data pool AutoZoom exists with layout, AZ_BASE/AZ_ZOOM/AZ_IRIS per fixture (AZ_BASE priority High, AZ_ZOOM/AZ_IRIS Super), AZ_SIZE.
 2. [ ] Layout opens in a view; header shows Running and PSN x/y; one row per XYZ fixture; marker columns by name/CID.
 3. [ ] Tap an Arm cell: border turns grey (disarmed); tap again: green.
 4. [ ] Tap a marker cell: programmer gets XYZ_MArker, XYZ offset from Setup (no Zoom/Iris values); cell shows red P; tap again releases.
@@ -22,7 +22,7 @@ Tick each line on a copy of a real show. Note the System Monitor output for any 
 17. [ ] A marker with a resized/renamed Target space: offsets still match the programmer values.
 18. [ ] PSN tracker ISONLINE value when receiving data is recognised (marker header turns green; stop the feed → No PSN data).
 19. [ ] Load another show and back without running the plugin: replaying a cue containing `AZ:Arm('…')` and tapping layout buttons raise no Lua error; the AZ Start macro (`Call Plugin "GMA3 Autozoom"`) starts AutoZoom.
-20. [ ] Cells show tinted fills (no paper icon); colours follow state (arm, tracking, no PSN, programmer P, preset pick waiting in the message cell).
+20. [ ] Cells show tinted fills (no paper icon); colours follow state (arm, tracking, no PSN, programmer P).
 21. [ ] Appearances pool holds the nine AZ appearances at 9001+ once; Rescan neither duplicates nor moves them again.
 22. [ ] Setup → Pick preset… opens the preset picker, both while running and while stopped; the first tab is the pool of the current offset preset (else pool 2) and the current preset tile is highlighted.
 23. [ ] In the picker, presets without XYZ values are greyed (status "no XYZ") and cannot be tapped.
@@ -37,3 +37,13 @@ Tick each line on a copy of a real show. Note the System Monitor output for any 
 32. [ ] Disarm a tracking fixture: zoom/iris return to the cue values.
 33. [ ] Hold a fixture at a mid zoom (Temp around 50) for a minute: AZ_BASE_<fid> stays On and the zoom stays between min and max.
 34. [ ] While tracking, set zoom in the programmer: note whether it overrides (expected: no while the computed zoom is above minimum).
+35. [ ] Setup → Layout rows… opens the editor; /\ and \/ reorder lines (disabled at the ends); the trash asks "Remove …?" and No keeps the line.
+36. [ ] + opens the picker: Groups and Fixtures tabs, several tiles numbered in tap order, Add appends them in that order; Cancel adds nothing.
+37. [ ] Ticks: a fixture listed by itself has a green tick (tile disabled); a fixture only in a listed group has a yellow tick; a listed group has a green tick.
+38. [ ] Close after a change rebuilds the layout (also while running): group rows and fixture rows in list order, group rows without Distance/Zoom/Iris/Size.
+39. [ ] Tap a marker cell of a group row: every XYZ fixture of the group is in the programmer on that marker with the XYZ offset (check each fixture in the Fixture sheet); the cell shows P; tap again releases them all.
+40. [ ] Group Arm cell: shows n/m armed; with one member disarmed a tap arms all, then a tap disarms all.
+41. [ ] A fixture left out of the list stops being driven: its zoom/iris return to the cue values.
+42. [ ] Delete the group on the console, tap Rescan: the row shows "Group missing" and its taps do nothing (System Monitor: "Group N has no XYZ fixtures").
+43. [ ] Remove every line: after Close the layout shows one row per XYZ fixture again.
+44. [ ] Change a group's members on the console, tap Rescan: the group row follows (exact fixture IDs).
