@@ -172,9 +172,9 @@ export class AutoZoom {
             return;
         }
         if (this.desk.readProgrammerCid(f) === cid) {
-            this.desk.runCommands(releaseCommands(fid));
+            this.desk.runCommands(releaseCommands([fid]));
         } else {
-            this.desk.runCommands(programCommands(fid, cid, this.config.offset));
+            this.desk.runCommands(programCommands([fid], cid, this.config.offset));
         }
         if (this.pickUntil !== undefined) {
             // Our own commands (e.g. `Attribute … At Preset 2.30`) must never count as the pick.

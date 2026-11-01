@@ -50,3 +50,24 @@ T.test("Size sets, clears and rejects values", function()
   d.answers = { "-2" }; a:Size(101); d:runLaters()
   T.eq(d.logs[#d.logs], "Size must be a number of metres above 0", "rejected")
 end)
+
+T.test("group program is one selection then the attribute lines", function()
+  local cmds = az().program.programCommands({ 101, 102, 103 }, 2, { source = "values", preset = "", values = { 0, 0, 0.3 } })
+  T.eq(cmds, { "Fixture 101 + 102 + 103", 'Attribute "XYZ_MArker" At 2', 'Attribute "XYZ_X" At 0',
+    'Attribute "XYZ_Y" At 0', 'Attribute "XYZ_Z" At 0.3' }, "commands")
+end)
+
+T.test("group program from a preset", function()
+  local cmds = az().program.programCommands({ 101, 102 }, 2, { source = "preset", preset = "2.30", values = { 0, 0, 0 } })
+  T.eq(#cmds, 3, "three lines"); T.eq(cmds[3], 'Attribute "XYZ_X" Thru "XYZ_Z" At Preset 2.30', "preset")
+end)
+
+T.test("group release", function()
+  T.eq(az().program.releaseCommands({ 101, 102 }), { "Off Fixture 101 + 102" }, "release")
+end)
+
+T.test("no fixtures, no commands", function()
+  local p = az().program
+  T.eq(p.programCommands({}, 2, { source = "values", preset = "", values = { 0, 0, 0 } }), {}, "program")
+  T.eq(p.releaseCommands({}), {}, "release")
+end)
