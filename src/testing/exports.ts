@@ -3,6 +3,7 @@
 import * as format from "../format";
 import * as json from "../store/json";
 import * as config from "../store/config";
+import * as rows from "../store/rows";
 import * as vec from "../engine/vec";
 import * as beam from "../engine/beam";
 import * as state from "../engine/fixture-state";
@@ -18,4 +19,4 @@ import * as madesk from "../console/ma-desk";
 import * as window from "../console/window";
 
 export const ready = true;
-export { format, json, config, vec, beam, state, arm, program, preset, view, runtime, patch, live, vars, madesk, window };
+export { format, json, config, rows, vec, beam, state, arm, program, preset, view, runtime, patch, live, vars, madesk, window };

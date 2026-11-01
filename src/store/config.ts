@@ -2,6 +2,7 @@
 import { parsePresetCommand } from "../engine/preset-ref";
 import { fidKey, fmtNum } from "../format";
 import { decode, encode } from "./json";
+import { RowEntry, parseRows } from "./rows";
 
 export type OffsetSource = "preset" | "values";
 
@@ -11,6 +12,7 @@ export interface Config {
     range: number[];                    // [min, max] metres of the AZ_SIZE fader
     rate: number;                       // updates per second
     offset: { source: OffsetSource; preset: string; values: number[] };
+    rows: RowEntry[];                   // layout rows in order; empty = one row per scanned fixture
 }
 
 export const CONFIG_KEY = "AutoZoom.config";
@@ -18,7 +20,7 @@ export const INSTANCE_KEY = "AutoZoom.instance";
 const UNREADABLE = "Saved AutoZoom settings were unreadable; defaults restored";
 
 export function defaultConfig(): Config {
-    return { disarmed: [], size: {}, range: [0.5, 5], rate: 30, offset: { source: "values", preset: "", values: [0, 0, 0] } };
+    return { disarmed: [], size: {}, range: [0.5, 5], rate: 30, offset: { source: "values", preset: "", values: [0, 0, 0] }, rows: [] };
 }
 
 function num(v: unknown): number | undefined {
@@ -58,11 +60,12 @@ export function parseConfig(text: string | undefined): { config: Config; warning
             config.offset.values = [num(o.values[0]) ?? 0, num(o.values[1]) ?? 0, num(o.values[2]) ?? 0];
         }
     }
+    config.rows = parseRows(raw.rows);
     return { config };
 }
 
 export function serializeConfig(c: Config): string {
-    return encode({ v: 1, disarmed: c.disarmed, size: c.size, range: c.range, rate: c.rate, offset: c.offset });
+    return encode({ v: 1, disarmed: c.disarmed, size: c.size, range: c.range, rate: c.rate, offset: c.offset, rows: c.rows });
 }
 
 export function pruneConfig(config: Config, fids: number[]): Config {

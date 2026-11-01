@@ -83,3 +83,23 @@ T.test("applySetup normalizes a typed data pool preset", function()
   T.eq(preset("2.30"), "2.30", "plain number kept")
   T.eq(preset("Preset 2.30"), "2.30", "preset word dropped")
 end)
+
+T.test("rows round trip", function()
+  local c = az().config
+  local cfg = c.defaultConfig()
+  cfg.rows = { { kind = "group", no = 3, name = "Front truss" }, { kind = "fixture", fid = 205 } }
+  T.eq(c.parseConfig(c.serializeConfig(cfg)).config.rows, cfg.rows, "rows")
+end)
+
+T.test("a 2.0 config without rows gives an empty list", function()
+  local r = az().config.parseConfig('{"v":1,"disarmed":[101],"rate":30}')
+  T.eq(r.config.rows, {}, "rows"); T.eq(r.warning, nil, "warning")
+end)
+
+T.test("garbage rows are dropped without warning", function()
+  local c = az().config
+  local text = az().json.encode({ v = 1, rows = { { kind = "group", no = "x", name = "a" }, { kind = "group", no = 2 },
+    { kind = "fixture", fid = 1.5 }, { kind = "fixture", fid = 7 }, { kind = "fixture", fid = 7 }, { kind = "other", fid = 8 } } })
+  local r = c.parseConfig(text)
+  T.eq(r.config.rows, { { kind = "fixture", fid = 7 } }, "rows"); T.eq(r.warning, nil, "warning")
+end)

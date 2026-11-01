@@ -7,6 +7,7 @@ local FILES = {
   "smoke_test",
   "json_test",
   "config_test",
+  "rows_test",
   "beam_test",
   "fixture_state_test",
   "commands_test",
