@@ -15,6 +15,7 @@ import * as patch from "../console/patch";
 import * as live from "../console/live";
 import * as vars from "../console/vars";
 import * as madesk from "../console/ma-desk";
+import * as window from "../console/window";
 
 export const ready = true;
-export { format, json, config, vec, beam, state, arm, program, preset, view, runtime, patch, live, vars, madesk };
+export { format, json, config, vec, beam, state, arm, program, preset, view, runtime, patch, live, vars, madesk, window };

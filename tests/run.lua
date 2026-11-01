@@ -17,6 +17,7 @@ local FILES = {
   "console_patch_test",
   "console_desk_test",
   "integration_test",
+  "window_test",
 }
 
 for _, name in ipairs(FILES) do
