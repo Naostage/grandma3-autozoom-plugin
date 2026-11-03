@@ -36,6 +36,7 @@ function M.reset()
   M.psn = handle({}, {})
   M.dataPools = handle({}, {})
   M.presetPools = handle({}, {})
+  M.groups = handle({}, {})
   M.appearances = handle({}, {})
   function M.appearances:Find(name) for _, a in ipairs(self._kids) do if a.name == name then return a end end end
   local function newAppearance(pool, no)
@@ -81,7 +82,15 @@ function M.preset(poolNo, no, name, attrs)
   end
   error("no preset pool " .. tostring(poolNo))
 end
-function DataPool() return { PresetPools = M.presetPools } end
+-- Groups as the console shows them (probe S1, onPC 2.5.1.1): SelectionData = { { sf_index = n, grid = {...} }, ... }.
+function M.poolGroup(no, name, fids)
+  local data = {}
+  for i, fid in ipairs(fids) do data[i] = { sf_index = M.subIndexOf[fid] or (1000 + fid), grid = { x = i - 1, y = 0, z = 0 } } end
+  local g = handle({ no = no, name = name, SelectionData = data }, {})
+  M.groups._kids[#M.groups._kids + 1] = g
+  return g
+end
+function DataPool() return { PresetPools = M.presetPools, Groups = M.groups } end
 function GetPresetData(p) return { by_fixtures = { ["101"] = p._attrs } } end
 function ShowData() return { DataPools = M.dataPools, PSNProtocol = M.psn, Appearances = M.appearances } end
 function GlobalVars() return "GlobalVars" end

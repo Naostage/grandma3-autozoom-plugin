@@ -604,3 +604,26 @@ T.test("cell text is centred vertically and horizontally", function()
   local el = M.dataPools._kids[1].Layouts._kids[1]._kids[1]
   T.eq(el.CustomTextAlignmentV, "Center", "vertical"); T.eq(el.CustomTextAlignmentH, "Center", "horizontal")
 end)
+
+T.test("listGroups reads each group's fixtures from SelectionData without touching the selection", function()
+  M.reset()
+  for _, fid in ipairs({ 101, 102, 103 }) do M.fixture(fid, "Esprite", "Mode 1") end
+  M.subfixtures[M.nextSub] = {}; M.nextSub = M.nextSub + 1   -- a member with no fid (e.g. a sub-fixture): skipped
+  M.poolGroup(12, "Floor", { 103 })
+  local g10 = M.poolGroup(10, "ESPRITE XYZ", { 102, 101 })
+  g10.SelectionData[3] = { sf_index = M.nextSub - 1, grid = {} }
+  g10.SelectionData[4] = { sf_index = M.subIndexOf[101], grid = {} }   -- listed twice: kept once
+  M.poolGroup(11, "Empty", {})
+  local groups = az().madesk.createMaDesk():listGroups()
+  T.eq(#groups, 3, "three groups")
+  T.eq(groups[1].no, 10, "sorted by number"); T.eq(groups[1].name, "ESPRITE XYZ", "name")
+  T.eq(table.concat(groups[1].fids, ","), "102,101", "fids in group order, no-fid member and duplicate dropped")
+  T.eq(#groups[2].fids, 0, "empty group"); T.eq(groups[3].fids[1], 103, "group 12")
+  T.eq(#M.cmds, 0, "no command sent (no SelFix)")
+end)
+
+T.test("listGroups survives a missing or unreadable group pool", function()
+  M.reset()
+  M.groups = nil
+  T.eq(#az().madesk.createMaDesk():listGroups(), 0, "no groups")
+end)

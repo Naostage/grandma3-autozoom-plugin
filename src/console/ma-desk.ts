@@ -6,6 +6,7 @@ import { CellSpec, MarkerReadings, PatchFixture, PatchScan, Views } from "../mod
 import { Config, SetupAnswers } from "../store/config";
 import { Catalog, GroupInfo, RowEntry } from "../store/rows";
 import { ensureAppearances } from "./appearances";
+import { listGroups as readGroups } from "./groups";
 import * as layout from "./layout";
 import * as live from "./live";
 import { info, warnOnce } from "./log";
@@ -28,7 +29,7 @@ export class MaDesk implements Desk {
         this.lastScan = scanPatch();
         return this.lastScan;
     }
-    listGroups(): GroupInfo[] { return []; }             // read from the console once the group probe is back
+    listGroups(): GroupInfo[] { return readGroups(); }
     install(scan: PatchScan): void {
         pool.ensurePool();
         try {
