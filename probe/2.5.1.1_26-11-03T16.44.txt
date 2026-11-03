@@ -1,0 +1,668 @@
+15h24m13.000s          App : Using shared memory to determine the app index
+15h24m15.071s          App : Deleting directory C:/ProgramData/MALightingTechnology/gma3_2.5.0/onpc/temp/combined_shaders
+15h24m15.072s          App : Deleting directory C:/ProgramData/MALightingTechnology/gma3_2.5.0/onpc/temp/crashlogs/invalid
+15h24m15.073s          App : Deleting directory C:/ProgramData/MALightingTechnology/gma3_2.5.0/onpc/temp/crashlogs/processed
+15h24m15.073s          App : Deleting directory C:/ProgramData/MALightingTechnology/gma3_2.5.0/onpc/temp/crashlogs
+15h24m15.075s          App : Deleting directory C:/ProgramData/MALightingTechnology/gma3_2.5.0/onpc/temp/statistics
+15h24m15.183s          App : Deleting directory C:/ProgramData/MALightingTechnology/gma3_2.5.0/onpc/temp/undo
+15h24m15.323s          App : Could not open optional file C:/ProgramData/MALightingTechnology/gma3_2.5.0/shared/shows/NewShow_2026.10.26_15.09.14UTC.show for reading
+Using ports to determine the app index
+SystemCheckApplication has created components
+SystemCheckApplication is starting components
+****************************************************
+Detected System Hardware:
+****************************************************
+---- General ----
+PcName              : NAODEMO1
+OsName              : Windows 11
+OsVersion           : 10.0.26200
+---- Processor ----
+Name                : AMD Ryzen 7 6800HS with Radeon Graphics         ˜ëÓÑR
+Architecture        : x64
+CoreCount           : 16
+SSE4.2 Support      : true
+---- Graphics ----
+--- Adapter [0] (selected) ---
+Name                : NVIDIA GeForce RTX 3050 Laptop GPU
+Vendor              : NVidia
+Type                : Discrete
+VulkanVersion       : 1.4
+GLSLVersion         : 4.6
+MemoryLocal         : 0 MB
+MemoryHostVisible   : 7806 MB
+MemoryUnified       : 3962 MB
+VRAM                : 3962 MB
+DriverVersion       : 32.0.15.9200
+DriverDate          : 2026-2-12
+-- Texture Limits --
+Dimension1D         : 32768
+Dimension2D         : 32768
+Dimension3D         : 16384
+DimensionCube       : 32768
+ArraySlices1D       : 2048
+ArraySlices2D       : 2048
+Multisampling2D     : true
+Multisampling2DArray: true
+CubeArray           : true
+- Main Texture Format -
+MultisamplingCount  : 1 2 4 8 
+-- Features --
+GeometryShader      : Enabled
+MeshShader          : Available
+ComputeShader       : Enabled
+DurationQuery       : Enabled
+WireframeFill       : Enabled
+--- Adapter [1] ---
+Name                : AMD Radeon(TM) Graphics
+Vendor              : AMD
+Type                : Integrated
+VulkanVersion       : 1.3
+GLSLVersion         : 4.6
+MemoryLocal         : 256 MB
+MemoryHostVisible   : 7550 MB
+MemoryUnified       : 256 MB
+VRAM                : 512 MB
+DriverVersion       : 31.0.12028.21003
+DriverDate          : 2024-6-3
+-- Texture Limits --
+Dimension1D         : 16384
+Dimension2D         : 16384
+Dimension3D         : 8192
+DimensionCube       : 16384
+ArraySlices1D       : 8192
+ArraySlices2D       : 8192
+Multisampling2D     : true
+Multisampling2DArray: true
+CubeArray           : true
+- Main Texture Format -
+MultisamplingCount  : 1 2 4 8 
+-- Features --
+GeometryShader      : Available
+MeshShader          : Not Available
+ComputeShader       : Enabled
+DurationQuery       : Enabled
+WireframeFill       : Available
+--- Adapter [2] ---
+Name                : Microsoft Basic Render Driver
+Vendor              : Unknown
+Type                : Unknown
+VulkanVersion       : 
+GLSLVersion         : 
+MemoryLocal         : 0 MB
+MemoryHostVisible   : 7806 MB
+MemoryUnified       : 0 MB
+VRAM                : 0 MB
+DriverVersion       : 
+DriverDate          : 0-0-0
+-- Texture Limits --
+Dimension1D         : 0
+Dimension2D         : 0
+Dimension3D         : 0
+DimensionCube       : 0
+ArraySlices1D       : 0
+ArraySlices2D       : 0
+Multisampling2D     : false
+Multisampling2DArray: false
+CubeArray           : false
+- Main Texture Format -
+MultisamplingCount  : 
+-- Features --
+GeometryShader      : Not Available
+MeshShader          : Not Available
+ComputeShader       : Not Available
+DurationQuery       : Not Available
+WireframeFill       : Not Available
+---- Memory ----
+Total               : 15612
+Available           : 4352
+---- Disk ----
+Total               : 487266
+Available           : 176269
+SystemCheckApplication has started components
+SystemCheckApplication is stopping components
+SystemCheckApplication has stopped components
+SystemCheckApplication is destroying components
+15h24m15.706s          App : loaded dll  C:/Program Files/MALightingTechnology/gma3_2.5.1/bin/avutil-59.dll
+15h24m15.707s          App : loaded dll  C:/Program Files/MALightingTechnology/gma3_2.5.1/bin/swresample-5.dll
+15h24m15.708s          App : loaded dll  C:/Program Files/MALightingTechnology/gma3_2.5.1/bin/avcodec-61.dll
+15h24m15.709s          App : loaded dll  C:/Program Files/MALightingTechnology/gma3_2.5.1/bin/avformat-61.dll
+15h24m15.710s          App : loaded dll  C:/Program Files/MALightingTechnology/gma3_2.5.1/bin/swscale-8.dll
+15h24m15.710s          App : loaded dll  C:/Program Files/MALightingTechnology/gma3_2.5.1/bin/avfilter-10.dll
+15h24m15.711s          App : loaded dll  C:/Program Files/MALightingTechnology/gma3_2.5.1/bin/avdevice-61.dll
+15h24m15.884s          App : TimeConfig OS tz 1
+15h24m15.884s          App : TimeConfig OS daylight info 1
+15h24m15.885s          App : This application is using realtime threads. Raising process priority.
+15h24m15.895s          App : Total references update requested : UserCleanup
+15h24m16.291s          App : loaded dll  C:/Program Files/MALightingTechnology/gma3_2.5.1/bin/Processing.NDI.Lib.x64.dll
+15h24m17.932s          App : ****************************************************
+15h24m17.932s          App : 3D Configuration
+15h24m17.932s          App : ****************************************************
+15h24m17.932s          App : VRAM Shadow    : 32 MB
+15h24m17.932s          App : Main Tex MS Cnt: 8
+15h24m17.932s          App : Gobo Array Res : 128
+15h24m17.932s          App : Gobo Array Dim : 512
+15h24m17.932s          App : Material Res   : 1024
+15h24m17.932s          App : Dyn Gobo Layers: 2048
+15h24m17.932s          App : ****************************************************
+15h24m17.932s          App : 3D Paths - v.1.1
+15h24m17.932s          App : ****************************************************
+15h24m17.932s          App : MeshLibrary    : C:/ProgramData/MALightingTechnology/gma3_2.5.1/shared/lib_fixture_types/meshes
+15h24m17.932s          App : UserMeshes     : C:/ProgramData/MALightingTechnology/gma3_library/fixturetyperesources/meshes
+15h24m17.932s          App : MaterialLibrary: C:/ProgramData/MALightingTechnology/gma3_2.5.1/shared/lib_fixture_types/meshes
+15h24m17.932s          App : UserMaterials  : C:/ProgramData/MALightingTechnology/gma3_library/fixturetyperesources/meshes
+15h24m17.933s          App : ****************************************************
+15h24m17.933s          App : *  New data status 'No show'
+15h24m17.933s          App : ****************************************************
+15h24m17.933s          App : SystemMessage::Send ShowStatusChanged
+15h24m17.996s NetworkInterface : IP addresses from different interfaces are using the same network! (192.168.13.165/24 vs 192.168.13.223/24)
+15h24m18.595s    WebServer : WebServer successfully started on port 8080 (Max connections: 2)
+15h24m18.619s          App : Output: distribution changed
+15h24m18.626s          App : Update agenda todolist
+15h24m18.699s          App : This Message was sent by an Addon
+15h24m18.701s          App : loaded dll  C:/ProgramData/MALightingTechnology/gma3_2.5.1/shared/resource/lib_addons/dll_gma3_addon.dll
+15h24m18.701s          App : Addon data changed
+15h24m18.702s          App : Gma3App has created components
+15h24m18.702s          App : Gma3App is starting components
+15h24m18.704s WatchdogTask : Failed to rename file C:/ProgramData/MALightingTechnology/gma3_2.5.1/onpc/temp/watchdog_status -> C:/ProgramData/MALightingTechnology/gma3_2.5.1/onpc/temp/watchdog_status_prev (File not found (errno=2))
+15h24m18.704s WatchdogTask : Could not open optional file C:/ProgramData/MALightingTechnology/gma3_2.5.1/onpc/temp/watchdog_status for reading
+15h24m18.709s          App : Lua engine registered 6044 enums in 757 enum collections
+15h24m18.710s          App : Could not open optional file C:/ProgramData/MALightingTechnology/gma3_2.5.1/onpc/temp/loading_cfg_status for reading
+15h24m18.722s          App : File message_center.dat (2.5.0.3) is older than required minimum version. Object MessageCenter skipped.
+15h24m18.722s          App : Display 1: x: 205, y: 717
+15h24m18.722s          App : Display 2: x: 1163, y: 503
+15h24m18.722s          App : Display 3: x: -154, y: 267
+15h24m18.722s          App : Display 4: x: 400, y: 400
+15h24m18.722s          App : Display 5: x: 500, y: 500
+15h24m18.722s          App : Display 6: x: 600, y: 600
+15h24m18.722s          App : Display 7: x: 700, y: 700
+15h24m18.722s          App : Display 8: x: 800, y: 800
+15h24m18.722s          App : Display 9: x: 900, y: 900
+15h24m18.722s          App : Display 1: x: 100, y: 100
+15h24m18.722s          App : Display 2: x: 200, y: 200
+15h24m18.722s          App : Display 3: x: 300, y: 300
+15h24m18.722s          App : Display 4: x: 400, y: 400
+15h24m18.722s          App : Display 5: x: 500, y: 500
+15h24m18.722s          App : Display 6: x: 600, y: 600
+15h24m18.722s          App : Display 7: x: 700, y: 700
+15h24m18.722s          App : Display 8: x: 800, y: 800
+15h24m18.722s          App : Display 9: x: 900, y: 900
+15h24m18.736s          App : Could not open optional file C:/ProgramData/MALightingTechnology/gma3_library/netkeys/key_registry.dat for reading
+15h24m18.797s          App : Could not open optional file C:/ProgramData/MALightingTechnology/gma3_2.5.1/shared/resource/virtual_keys.dat for reading
+15h24m18.803s    WebServer : WebServer shut down
+15h24m18.851s          App : Could not open optional file C:/ProgramData/MALightingTechnology/gma3_2.5.1/shared/resource/lib_color_themes/default.dat for reading
+15h24m18.919s          App : Could not open optional file C:/ProgramData/MALightingTechnology/gma3_2.5.1/shared/resource/lib_menus/menus.menus.dat for reading
+15h24m18.937s          App : Could not open file C:/ProgramData/MALightingTechnology/gma3_2.5.1/shared/resource/software/updater.bin for reading
+15h24m18.937s          App : Could not open optional file C:/ProgramData/MALightingTechnology/gma3_2.5.1/shared/psr/convert_task.dat for reading
+15h24m18.939s          App : Could not open optional file C:/ProgramData/MALightingTechnology/gma3_2.5.1/onpc/temp/loading_status for reading
+15h24m19.168s          App : Total references update requested : UserCleanup
+15h24m19.168s    WebServer : WebServer successfully started on port 8080 (Max connections: 2)
+15h24m19.187s          App : Output: distribution changed
+15h24m19.191s          App : Update agenda todolist
+15h24m19.195s          App : Addon data changed
+15h24m19.230s          App : Output: distribution NOT changed
+15h24m19.233s          App : Addon data changed
+15h24m19.837s          App : Total references update requested : References
+15h24m19.837s          App : Total references update requested : Content
+15h24m20.182s          App : Output: distribution NOT changed
+15h24m20.185s          App : Addon data changed
+15h24m20.226s          App : Application version is 2.5.1.1 Release. HostType onPC, HostSubType Undefined
+15h24m20.226s          App : Compiled at Oct  6 2026 17:36:13 from 6dd1a8dc4455bd75374a94ad6a6625dd3c99b392(2026-10-06 09:55:15 +0200)
+15h24m20.226s          App : OsDevice::InitPlayback: use default audio device
+15h24m20.231s          App : Sound: opened playback for device: <<default>>
+15h24m20.231s          App : Sound device initialized. (Wanted Caps: 7; Has Caps: 5)
+15h24m20.297s          App : Gma3App has started components
+15h24m23.002s NetworkInterface : IP addresses from different interfaces are using the same network! (192.168.13.165/24 vs 192.168.13.223/24)
+15h24m25.193s     MainTask : No creation/deletion of display 1 is needed. Re-initializing
+15h24m25.193s     MainTask : No creation/deletion of display 1 is needed. Re-initializing
+15h24m25.193s     MainTask : Initialized Cue Part Matrix
+15h24m25.199s     MainTask : Lua engine registered 6071 enums in 768 enum collections
+15h24m25.199s     MainTask : Preparing library access to C:/ProgramData/MALightingTechnology/gma3_2.5.1/shared/resource/lib_menus
+15h24m25.199s     MainTask : Could not open optional file C:/ProgramData/MALightingTechnology/gma3_2.5.1/shared/resource/lib_menus/libcache.dat for reading
+15h24m25.307s     MainTask : System menu structure has changed. Performing full reload.
+15h24m28.008s NetworkInterface : IP addresses from different interfaces are using the same network! (192.168.13.165/24 vs 192.168.13.223/24)
+15h24m30.711s WatchdogTask : Watchdog Sensor DataBase is going offline
+15h24m30.711s WatchdogTask : Watchdog Sensor Graphics is going offline
+15h24m40.626s     MainTask : OK: ReloadUI
+15h24m42.717s WatchdogTask : Watchdog Sensor Graphics is coming online again
+15h24m43.110s     MainTask : OK: Menu 'ReleaseNotesFullscreen'
+15h24m43.215s     DBWorker : Could not open optional file C:/ProgramData/MALightingTechnology/gma3_2.5.1/onpc/temp/loading_status for reading
+15h24m43.224s     DBWorker : heap instance Cue closed 1 unused memory pages
+15h24m43.224s     DBWorker : heap instance CuePart closed 1 unused memory pages
+15h24m43.270s     DBWorker : Output: distribution changed
+15h24m43.275s     DBWorker : Update agenda todolist
+15h24m43.411s     DBWorker : Addon data changed
+15h24m43.413s     DBWorker : ****************************************************
+15h24m43.413s     DBWorker : *  New data status 'Show loading'
+15h24m43.413s     DBWorker : ****************************************************
+15h24m43.413s     DBWorker : SystemMessage::Send ShowStatusChanged
+15h24m43.413s     DBWorker : Addon got new show status ShowLoading
+15h24m43.413s     DBWorker : Addon got new host status Undefined
+15h24m43.413s     DBWorker : Addon got data valid status 0
+15h24m43.413s     DBWorker : Could not open optional file C:/ProgramData/MALightingTechnology/gma3_2.5.1/shared/shows/NewShow_2026.10.26_15.09.14UTC.show for reading
+15h24m43.428s     DBWorker : detected change in primary interface [up:1=>0; ip:a50da8c0 => 0; prefix:18 => 0]
+15h24m43.428s     DBWorker : detected change in session name ([; 0] => [NAODEMO1; 0])
+15h24m43.428s     DBWorker : detected change in location name( => Local)
+15h24m43.428s     DBWorker : detected change in enable network(0 => 1)
+15h24m43.428s     DBWorker : detected change in host type [Undefined => onPC]
+15h24m43.428s     DBWorker : multicast base has changed. Restarting [0 => 104ec]
+15h24m43.429s  ManetSocket : Socket InitTask; Mac=2930C94CE000
+15h24m43.429s  ManetSocket : Multicast Base change: re-subscribing to multicast groups
+15h24m43.429s  ManetSocket : UdpSocket::AddMembership 236.4.1.0 No Cable failed
+15h24m43.429s  ManetSocket : UdpSocket::DelMembershipIPv4 236.4.1.0 No Cable
+15h24m43.539s     DBWorker : Output: distribution NOT changed
+15h24m43.686s     DBWorker : Addon data changed
+15h24m43.688s     DBWorker : Total references update requested : Content
+15h24m43.717s WatchdogTask : Watchdog Sensor DataBase is coming online again
+15h24m43.831s     DBWorker : Could not open optional file C:/ProgramData/MALightingTechnology/gma3_2.5.1/shared/resource/lib_addons/demo.dat for reading
+15h24m43.831s     DBWorker : ****************************************************
+15h24m43.831s     DBWorker : *  New data status 'Show loaded'
+15h24m43.831s     DBWorker : ****************************************************
+15h24m43.831s     DBWorker : SystemMessage::Send ShowStatusChanged
+15h24m43.831s     DBWorker : Addon got new show status ShowLoaded
+15h24m43.831s     DBWorker : Addon got new host status Undefined
+15h24m43.831s     DBWorker : Addon got data valid status 1
+15h24m43.831s     DBWorker : Output: distribution NOT changed
+15h24m43.831s     DBWorker : >> RequestShowDataNegotiation <<
+15h24m43.836s     MainTask : Initialized Cue Part Matrix
+15h24m43.842s     MainTask : << RequestShowDataNegotiation canceled >>
+15h24m43.842s     MainTask : Connected to system services
+15h24m43.857s     MainTask : Starting total reference update with a running update type: Content
+15h24m43.857s     MainTask : Total references update status changed to Collecting Presets
+15h24m43.910s     MainTask : Output: distribution changed
+15h24m43.913s     MainTask : Addon got new show status ShowLoaded
+15h24m43.913s     MainTask : Addon got new host status Standalone
+15h24m43.913s     MainTask : Addon got data valid status 1
+15h24m43.914s     MainTask : Could not open optional file C:/ProgramData/MALightingTechnology/gma3_2.5.1/onpc/temp/statistics/s2_26D7BE9E53EB371E_0_2.5.1.dat for reading
+15h24m43.951s     MainTask : Timetest Total reference update: collecting presets : Finished in 0.004 ms
+15h24m43.951s     MainTask : Total references update status changed to Collecting Cues
+15h24m43.980s      Display : arg = file:///C:/ProgramData/MALightingTechnology/gma3_2.5.1/shared/language/HTML/splash_key_releasenotes.html
+15h24m43.982s     MainTask : Timetest Total reference update: collecting cues : Finished in 0.006 ms
+15h24m43.982s     MainTask : Total references update status changed to Sorting Handles
+15h24m44.000s     MainTask : Total reference update: sorted 2 handles
+15h24m44.000s     MainTask : Total references update status changed to Updating Presets
+15h24m44.013s     MainTask : Total references update status changed to Updating Programmer
+15h24m44.013s     MainTask : Timetest Updating References 1 : Finished in 0.218 ms
+15h24m44.030s     MainTask : Total references update status changed to Cleaning up Generators
+15h24m44.048s     MainTask : Total references update status changed to Cleaning up Tags
+15h24m44.048s     MainTask : Timetest Total reference update: generator cleanup 1 : Finished in 0.600 ms
+15h24m44.063s     MainTask : Timetest Total reference update: recursion test 1 : Finished in 0.011 ms
+15h24m44.064s     MainTask : Total references update status changed to Tracking Conversion
+15h24m44.080s     MainTask : Total references update status changed to Testing Recursions
+15h24m44.082s     MainTask : Output: distribution changed
+15h24m44.086s     MainTask : Addon got new show status ShowLoaded
+15h24m44.086s     MainTask : Addon got new host status IdleMaster
+15h24m44.086s     MainTask : Addon got data valid status 1
+15h24m44.095s     MainTask : Total references update status changed to User Cleanup
+15h24m44.095s     MainTask : Timetest Total reference update: tag cleanup 1 : Finished in 0.012 ms
+15h24m44.095s     MainTask : ******** logged in summary report ********
+15h24m44.095s     MainTask : * user 2 logged into session ****
+15h24m44.095s     MainTask : * profile 1 logged into session
+15h24m44.095s     MainTask : * preview in session unchanged
+15h24m44.095s     MainTask : ******************************************
+15h24m44.112s     MainTask : **********************************************************************
+15h24m44.112s     MainTask : * ServiceUserCleanup                                                 *
+15h24m44.112s     MainTask : **********************************************************************
+15h24m44.112s     MainTask : Total references update status changed to Idle
+15h24m44.112s     MainTask : ===============TRU Finished=================
+15h24m44.112s     MainTask : Timetest TRU Full: : TRU done in 255.106 ms
+15h24m44.112s     MainTask : TRU Stage Idle took 0.000ms
+15h24m44.112s     MainTask : TRU Stage Collecting Presets took 94.572ms
+15h24m44.112s     MainTask : TRU Stage Collecting Cues took 30.426ms
+15h24m44.112s     MainTask : TRU Stage Sorting Handles took 18.230ms
+15h24m44.112s     MainTask : TRU Stage Updating Presets took 13.205ms
+15h24m44.112s     MainTask : TRU Stage Tracking Conversion took 16.184ms
+15h24m44.112s     MainTask : TRU Stage Cleaning up Generators took 17.705ms
+15h24m44.112s     MainTask : TRU Stage Updating Programmer took 16.883ms
+15h24m44.112s     MainTask : TRU Stage Cleaning up Tags took 15.895ms
+15h24m44.112s     MainTask : TRU Stage Testing Recursions took 15.518ms
+15h24m44.112s     MainTask : TRU Stage User Cleanup took 16.484ms
+15h24m44.112s     MainTask : TRU Stage User Conversion took 0.000ms
+15h24m44.112s     MainTask : TRU Stage Verify Presets took 0.000ms
+15h24m44.112s     MainTask : TRU Items skipped 0
+15h24m44.112s     MainTask : Sequence inits made: 0
+15h24m44.112s     MainTask : Sequence analyze blocked made: 0
+15h24m44.112s     MainTask : Preset inits made: 0
+15h24m49.092s  WorldServer : Starting file transfer 3986
+15h24m49.093s  WorldServer : Receiving file transfer data 3986
+15h24m49.093s  WorldServer : Ending file transfer 3986
+15h24m49.093s  WorldServer : SecureProtocolWorldClient::OnFileTransferComplete() updater.bin
+15h24m59.091s  WorldServer : Server connection switching to FastTimeout
+15h37m33.845s     MainTask : OK: Edit Root 2.2 Property 'ShowReleaseNotes'
+15h41m19.076s     MainTask : OK: Menu "MenuSelector"
+15h41m19.942s     MainTask : OK: Menu 'Backup'
+15h41m19.953s     MainTask : Preparing show meta data access to C:/ProgramData/MALightingTechnology/gma3_2.5.1/shared/shows
+15h41m19.954s     MainTask : Could not open optional file C:/ProgramData/MALightingTechnology/gma3_2.5.1/shared/shows/metadatacache.dat for reading
+15h41m19.954s ShowMetaDataScan : Total import time: 0.133000 ms
+15h41m20.590s     MainTask : Preparing show meta data access to C:/ProgramData/MALightingTechnology/gma3_2.5.1/shared/shows
+15h41m20.590s     MainTask : Preparing show meta data access to C:/ProgramData/MALightingTechnology/gma3_2.5.1/shared/shows
+15h41m23.705s     MainTask : Select Drive 2
+15h41m23.801s     MainTask : Preparing show meta data access to C:/ProgramData/MALightingTechnology/gma3_2.5.0/shared/shows
+15h41m23.857s ShowMetaDataScan : Total import time: 43.762000 ms
+15h41m28.848s     DBWorker : ****************************************************
+15h41m28.848s     DBWorker : *  New data status 'No show'
+15h41m28.848s     DBWorker : ****************************************************
+15h41m28.848s     DBWorker : SystemMessage::Send ShowStatusChanged
+15h41m28.848s     DBWorker : Addon got new show status NoShow
+15h41m28.848s     DBWorker : Addon got new host status IdleMaster
+15h41m28.848s     DBWorker : Addon got data valid status 1
+15h41m28.853s     DBWorker : Total references update requested : References
+15h41m28.860s     DBWorker : heap instance Cue closed 2 unused memory pages
+15h41m28.860s     DBWorker : heap instance CuePart closed 2 unused memory pages
+15h41m28.893s     DBWorker : Output: distribution changed
+15h41m28.896s     DBWorker : Update agenda todolist
+15h41m28.972s     DBWorker : Addon data changed
+15h41m28.984s     DBWorker : ****************************************************
+15h41m28.984s     DBWorker : *  New data status 'Show loading'
+15h41m28.984s     DBWorker : ****************************************************
+15h41m28.984s     DBWorker : SystemMessage::Send ShowStatusChanged
+15h41m28.984s     DBWorker : Addon got new show status ShowLoading
+15h41m28.984s     DBWorker : Addon got new host status IdleMaster
+15h41m28.984s     DBWorker : Addon got data valid status 0
+15h41m28.984s     DBWorker : AnnounceSessionShowfileLoad MAIN ANATOLE v06-26 3PO26.show
+15h41m28.988s     DBWorker : LoadFileContent: file does not exist "C:/ProgramData/MALightingTechnology/gma3_2.5.1/shared/lib_fixture_types/gobos/Robin iPainte_11020278_9.png"
+15h41m28.989s     DBWorker : LoadFileContent: file does not exist "C:/ProgramData/MALightingTechnology/gma3_2.5.1/shared/lib_fixture_types/gobos/Robin iPainte_11020278_8.png"
+15h41m28.989s     DBWorker : LoadFileContent: file does not exist "C:/ProgramData/MALightingTechnology/gma3_2.5.1/shared/lib_fixture_types/gobos/Robin iPainte_11020278_7.png"
+15h41m28.989s     DBWorker : LoadFileContent: file does not exist "C:/ProgramData/MALightingTechnology/gma3_2.5.1/shared/lib_fixture_types/gobos/Robin iPainte_11020278_6.png"
+15h41m28.989s     DBWorker : LoadFileContent: file does not exist "C:/ProgramData/MALightingTechnology/gma3_2.5.1/shared/lib_fixture_types/gobos/Robin iPainte_11020278_5.png"
+15h41m28.989s     DBWorker : LoadFileContent: file does not exist "C:/ProgramData/MALightingTechnology/gma3_2.5.1/shared/lib_fixture_types/gobos/Robin iPainte_11020278_4.png"
+15h41m28.990s     DBWorker : LoadFileContent: file does not exist "C:/ProgramData/MALightingTechnology/gma3_2.5.1/shared/lib_fixture_types/gobos/Robin iPainte_11020278_3.png"
+15h41m28.990s     DBWorker : LoadFileContent: file does not exist "C:/ProgramData/MALightingTechnology/gma3_2.5.1/shared/lib_fixture_types/gobos/Robin iPainte_11020278_2.png"
+15h41m28.990s     DBWorker : LoadFileContent: file does not exist "C:/ProgramData/MALightingTechnology/gma3_2.5.1/shared/lib_fixture_types/gobos/Robin iPainte_11020278_1.png"
+15h41m28.990s     DBWorker : LoadFileContent: file does not exist "C:/ProgramData/MALightingTechnology/gma3_2.5.1/shared/lib_fixture_types/gobos/Robin iPainte_15020441(1).png"
+15h41m28.990s     DBWorker : LoadFileContent: file does not exist "C:/ProgramData/MALightingTechnology/gma3_2.5.1/shared/lib_fixture_types/gobos/Robin iPainte_15020442(1).png"
+15h41m28.990s     DBWorker : LoadFileContent: file does not exist "C:/ProgramData/MALightingTechnology/gma3_2.5.1/shared/lib_fixture_types/gobos/Robin iPainte_15020443(1).png"
+15h41m28.991s     DBWorker : LoadFileContent: file does not exist "C:/ProgramData/MALightingTechnology/gma3_2.5.1/shared/lib_fixture_types/gobos/Robin iPainte_15020444(1).png"
+15h41m28.991s     DBWorker : LoadFileContent: file does not exist "C:/ProgramData/MALightingTechnology/gma3_2.5.1/shared/lib_fixture_types/gobos/Robin iPainte_15020445.png"
+15h41m28.991s     DBWorker : LoadFileContent: file does not exist "C:/ProgramData/MALightingTechnology/gma3_2.5.1/shared/lib_fixture_types/gobos/Robin iPainte_15020446.png"
+15h41m28.991s     DBWorker : LoadFileContent: file does not exist "C:/ProgramData/MALightingTechnology/gma3_2.5.1/shared/lib_fixture_types/gobos/Robin iPainte_15020447.png"
+15h41m28.991s     DBWorker : LoadFileContent: file does not exist "C:/ProgramData/MALightingTechnology/gma3_2.5.1/shared/lib_fixture_types/gobos/Robin iPainte_15020448.png"
+15h41m29.831s     DBWorker : LoadFileContent: file does not exist "C:/ProgramData/MALightingTechnology/gma3_2.5.1/shared/resource/lib_symbols/Robin iPainte_thumbnail.png"
+15h41m29.831s     DBWorker : LoadFileContent: file does not exist "C:/ProgramData/MALightingTechnology/gma3_2.5.1/shared/resource/lib_symbols/PATT 2013_thumbnail.png"
+15h41m29.995s     DBWorker : LoadFileContent: file does not exist "Robin iPainte_base.glb"
+15h41m29.996s     DBWorker : LoadFileContent: file does not exist "Robin iPainte_yoke.glb"
+15h41m29.996s     DBWorker : LoadFileContent: file does not exist "Robin iPainte_head.glb"
+15h41m29.996s     DBWorker : LoadFileContent: file does not exist "PATT 2013_yoke.glb"
+15h41m29.996s     DBWorker : LoadFileContent: file does not exist "PATT 2013_head2.glb"
+15h41m29.996s     DBWorker : LoadFileContent: file does not exist "PATT 2013_cross2.glb"
+15h41m30.024s     DBWorker : LoadFileContent: file does not exist "Esprite (Bulb=LED)_primitivetype_base_1.1.3ds"
+15h41m30.024s     DBWorker : LoadFileContent: file does not exist "Esprite (Bulb=LED)_primitivetype_yoke.3ds"
+15h41m30.025s     DBWorker : LoadFileContent: file does not exist "Esprite (Bulb=LED)_primitivetype_head.3ds"
+15h41m30.025s     DBWorker : LoadFileContent: file does not exist "Esprite (Bulb=LED)_cylinder.3ds"
+15h41m30.025s     DBWorker : LoadFileContent: file does not exist "Mini-B (Bulb=LED)_primitivetype_base_1.1.3ds"
+15h41m30.025s     DBWorker : LoadFileContent: file does not exist "Mini-B (Bulb=LED)_primitivetype_yoke.3ds"
+15h41m30.025s     DBWorker : LoadFileContent: file does not exist "Mini-B (Bulb=LED)_primitivetype_head.3ds"
+15h41m30.026s     DBWorker : LoadFileContent: file does not exist "Mini-B (Bulb=LED)_cylinder.3ds"
+15h41m30.026s     DBWorker : LoadFileContent: file does not exist "Color Strike M (Bulb=LED)_primitivetype_base_1.1.3ds"
+15h41m30.026s     DBWorker : LoadFileContent: file does not exist "Color Strike M (Bulb=LED)_primitivetype_yoke.3ds"
+15h41m30.026s     DBWorker : LoadFileContent: file does not exist "Color Strike M (Bulb=LED)_primitivetype_head.3ds"
+15h41m30.027s     DBWorker : LoadFileContent: file does not exist "Color Strike M (Bulb=LED)_cylinder.3ds"
+15h41m30.027s     DBWorker : LoadFileContent: file does not exist "Strike 4 (Bulb=LED 3200K)_primitivetype_base_1.1.3ds"
+15h41m30.027s     DBWorker : LoadFileContent: file does not exist "Strike 4 (Bulb=LED 3200K)_primitivetype_yoke.3ds"
+15h41m30.027s     DBWorker : LoadFileContent: file does not exist "Strike 4 (Bulb=LED 3200K)_primitivetype_head.3ds"
+15h41m30.027s     DBWorker : LoadFileContent: file does not exist "Strike 4 (Bulb=LED 3200K)_cylinder.3ds"
+15h41m30.028s     DBWorker : LoadFileContent: file does not exist "VDO Atomic Dot WRM (Bulb=LED 3200K)_primitivetype_base_1.1.3ds"
+15h41m30.028s     DBWorker : LoadFileContent: file does not exist "VDO Atomic Dot WRM (Bulb=LED 3200K)_primitivetype_yoke.3ds"
+15h41m30.028s     DBWorker : LoadFileContent: file does not exist "VDO Atomic Dot WRM (Bulb=LED 3200K)_primitivetype_head.3ds"
+15h41m30.028s     DBWorker : LoadFileContent: file does not exist "VDO Atomic Dot WRM (Bulb=LED 3200K)_cylinder.3ds"
+15h41m30.028s     DBWorker : LoadFileContent: file does not exist "Robin MegaPointe (Bulb=Sirius HRI 475W)_primitivetype_base_1.1.3ds"
+15h41m30.029s     DBWorker : LoadFileContent: file does not exist "Robin MegaPointe (Bulb=Sirius HRI 475W)_primitivetype_yoke.3ds"
+15h41m30.029s     DBWorker : LoadFileContent: file does not exist "Robin MegaPointe (Bulb=Sirius HRI 475W)_primitivetype_head.3ds"
+15h41m30.029s     DBWorker : LoadFileContent: file does not exist "Robin MegaPointe (Bulb=Sirius HRI 475W)_cylinder.3ds"
+15h41m30.222s     DBWorker : LoadFileContent: file does not exist "C:/ProgramData/MALightingTechnology/gma3_library/datapools/plugins/Appearance Builder.lua"
+15h41m30.256s     DBWorker : LoadFileContent: file does not exist "C:/ProgramData/MALightingTechnology/gma3_2.5.1/shared/resource/lib_plugins/Pro Plugins/Pool Browser - v1.3.4/MA3 1.9/main.lua"
+15h41m30.256s     DBWorker : LoadFileContent: file does not exist "C:/ProgramData/MALightingTechnology/gma3_2.5.1/shared/resource/lib_plugins/Pro Plugins/Sequence Widget - v1.3.4/MA3 1.9/F:/grandMA3/gma3_library/datapools/plugins/Pro Plugins/Sequence Widget - v1.3.4/MA3 1.9/main.lua"
+15h41m30.380s     DBWorker : Total references update requested : UserCleanup
+15h41m30.437s     DBWorker : Detected set but invalid reference when converting ShowData.DataPools.AZ.Sequences.TEST 'Sequence 6 'TEST'': expected type Cue
+15h41m30.456s     DBWorker : Total references update requested : TagCleanup
+15h41m30.496s     DBWorker : Detected bounding box issue for fixture type No 21 with the name SceneObject in DMX mode 0xD1E4EC4B3ds: Infinity. This can, for example, cause problems when clicking on this object or rendering light and shadows on this object.
+15h41m30.516s     DBWorker : Detected bounding box issue for fixture type No 21 with the name SceneObject in DMX mode 0xD1E4EC4B3ds: Infinity. This can, for example, cause problems when clicking on this object or rendering light and shadows on this object.
+15h41m30.557s     DBWorker : Output: distribution changed
+15h41m30.562s     DBWorker : Total references update requested : References
+15h41m30.562s     DBWorker : Total references update requested : Content
+15h41m30.569s     DBWorker : Could not load Appearance Builder@Appearance Builder.lua as content is empty
+15h41m30.581s     DBWorker : Could not execute loaded buffer for SongMAnager@SongMAnager_V1.1.5.0_Main.lua
+15h41m30.581s     DBWorker : LUA Runtime Error[string "SongMAnager@SongMAnager_V1.1.5.0_Main.lua"]:28: attempt to call a nil value
+15h41m30.581s     DBWorker : stack traceback:
+15h41m30.593s     DBWorker : Could not execute loaded buffer for SongMAnager@MATools_2.2.2_Resources.lua
+15h41m30.593s     DBWorker : LUA Runtime Error[string "SongMAnager@MATools_2.2.2_Resources.lua"]:1: attempt to call a nil value
+15h41m30.593s     DBWorker : stack traceback:
+15h41m30.594s     DBWorker : Could not load Pool Browser v1_3_4@main.lua as content is empty
+15h41m30.594s     DBWorker : Could not load Sequence Widget v1_3_4@main.lua as content is empty
+15h41m30.601s     DBWorker : Could not execute loaded buffer for BeatGrid@
+15h41m30.601s     DBWorker : LUA Runtime Error[string "BeatGrid@"]:24: attempt to call a nil value
+15h41m30.601s     DBWorker : stack traceback:
+15h41m30.614s     DBWorker : Could not execute loaded buffer for FlyoutMAker@FlyoutMAker_V1.3.1.1_Main.lua
+15h41m30.614s     DBWorker : LUA Runtime Error[string "FlyoutMAker@FlyoutMAker_V1.3.1.1_Main.lua"]:28: attempt to call a nil value
+15h41m30.614s     DBWorker : stack traceback:
+15h41m30.625s     DBWorker : Could not execute loaded buffer for FlyoutMAker@MATools_2.2.2_Resources.lua
+15h41m30.625s     DBWorker : LUA Runtime Error[string "FlyoutMAker@MATools_2.2.2_Resources.lua"]:1: attempt to call a nil value
+15h41m30.625s     DBWorker : stack traceback:
+15h41m30.638s     DBWorker : Could not execute loaded buffer for FXMAker@FXMAker_V1.3.7.1_Main.lua
+15h41m30.638s     DBWorker : LUA Runtime Error[string "FXMAker@FXMAker_V1.3.7.1_Main.lua"]:28: attempt to call a nil value
+15h41m30.638s     DBWorker : stack traceback:
+15h41m30.650s     DBWorker : Could not execute loaded buffer for FXMAker@MATools_2.2.2_Resources.lua
+15h41m30.650s     DBWorker : LUA Runtime Error[string "FXMAker@MATools_2.2.2_Resources.lua"]:1: attempt to call a nil value
+15h41m30.650s     DBWorker : stack traceback:
+15h41m30.663s     DBWorker : Could not execute loaded buffer for BounceMAker@BounceMAker_V1.2.5.1_Main.lua
+15h41m30.663s     DBWorker : LUA Runtime Error[string "BounceMAker@BounceMAker_V1.2.5.1_Main.lua"]:28: attempt to call a nil value
+15h41m30.663s     DBWorker : stack traceback:
+15h41m30.676s     DBWorker : Could not execute loaded buffer for BounceMAker@MATools_2.2.2_Resources.lua
+15h41m30.676s     DBWorker : LUA Runtime Error[string "BounceMAker@MATools_2.2.2_Resources.lua"]:1: attempt to call a nil value
+15h41m30.676s     DBWorker : stack traceback:
+15h41m30.686s     DBWorker : UserAttributePreferences is updating defaults
+15h41m30.687s     DBWorker : UserAttributePreferences is updating defaults
+15h41m30.767s     DBWorker : Addon data changed
+15h41m30.770s     DBWorker : Starting total reference update with a running update type: Content
+15h41m30.770s     DBWorker : Total references update status changed to Collecting Presets
+15h41m30.770s     DBWorker : Timetest Total reference update: collecting presets : Finished in 0.044 ms
+15h41m30.770s     DBWorker : Total references update status changed to Collecting Cues
+15h41m30.771s     DBWorker : Timetest Total reference update: collecting cues : Finished in 0.203 ms
+15h41m30.771s     DBWorker : Total references update status changed to Sorting Handles
+15h41m30.771s     DBWorker : Total reference update: sorted 3378 handles
+15h41m30.771s     DBWorker : Total references update status changed to Updating Presets
+15h41m30.772s     DBWorker : Total references update status changed to Updating Programmer
+15h41m30.772s     DBWorker : Timetest Updating References 1 : Finished in 1.584 ms
+15h41m30.772s     DBWorker : Total references update status changed to Cleaning up Generators
+15h41m30.773s     DBWorker : Total references update status changed to Cleaning up Tags
+15h41m30.773s     DBWorker : Timetest Total reference update: generator cleanup 1 : Finished in 0.339 ms
+15h41m30.774s     DBWorker : Timetest Total reference update: recursion test 1 : Finished in 0.953 ms
+15h41m30.774s     DBWorker : Total references update status changed to Tracking Conversion
+15h41m30.774s     DBWorker : Total references update status changed to Testing Recursions
+15h41m30.774s     DBWorker : Total references update status changed to User Cleanup
+15h41m30.774s     DBWorker : Timetest Total reference update: tag cleanup 1 : Finished in 0.006 ms
+15h41m30.774s     DBWorker : **********************************************************************
+15h41m30.774s     DBWorker : * ServiceUserCleanup                                                 *
+15h41m30.774s     DBWorker : **********************************************************************
+15h41m30.774s     DBWorker : Total references update status changed to Idle
+15h41m30.774s     DBWorker : ===============TRU Finished=================
+15h41m30.774s     DBWorker : Timetest TRU Full: : TRU done in 3.430 ms
+15h41m30.774s     DBWorker : TRU Stage Idle took 0.000ms
+15h41m30.774s     DBWorker : TRU Stage Collecting Presets took 0.086ms
+15h41m30.774s     DBWorker : TRU Stage Collecting Cues took 0.217ms
+15h41m30.774s     DBWorker : TRU Stage Sorting Handles took 0.193ms
+15h41m30.774s     DBWorker : TRU Stage Updating Presets took 1.590ms
+15h41m30.774s     DBWorker : TRU Stage Tracking Conversion took 0.003ms
+15h41m30.774s     DBWorker : TRU Stage Cleaning up Generators took 0.334ms
+15h41m30.774s     DBWorker : TRU Stage Updating Programmer took 0.014ms
+15h41m30.774s     DBWorker : TRU Stage Cleaning up Tags took 0.968ms
+15h41m30.774s     DBWorker : TRU Stage Testing Recursions took 0.010ms
+15h41m30.774s     DBWorker : TRU Stage User Cleanup took 0.013ms
+15h41m30.774s     DBWorker : TRU Stage User Conversion took 0.000ms
+15h41m30.774s     DBWorker : TRU Stage Verify Presets took 0.000ms
+15h41m30.774s     DBWorker : TRU Items skipped 0
+15h41m30.774s     DBWorker : Sequence inits made: 0
+15h41m30.774s     DBWorker : Sequence analyze blocked made: 0
+15h41m30.774s     DBWorker : Preset inits made: 0
+15h41m30.774s     DBWorker : Total time spent on preset update: 0.000000s (Count: 0)
+15h41m30.774s     DBWorker : Total time spent on cooking: 0.000000s (Count: 0)
+15h41m30.781s     DBWorker : Could not open optional file C:/ProgramData/MALightingTechnology/gma3_2.5.1/shared/resource/lib_addons/demo.dat for reading
+15h41m30.781s     DBWorker : ****************************************************
+15h41m30.781s     DBWorker : *  New data status 'Show loaded'
+15h41m30.781s     DBWorker : ****************************************************
+15h41m30.781s     DBWorker : SystemMessage::Send ShowStatusChanged
+15h41m30.781s     DBWorker : Addon got new show status ShowLoaded
+15h41m30.781s     DBWorker : Addon got new host status IdleMaster
+15h41m30.781s     DBWorker : Addon got data valid status 1
+15h41m30.781s     DBWorker : Output: distribution NOT changed
+15h41m30.781s     DBWorker : >> RequestShowDataNegotiation <<
+15h41m30.796s     MainTask : Initialized Cue Part Matrix
+15h41m30.801s     MainTask : OK: LoadShow "C:/ProgramData/MALightingTechnology/gma3_2.5.0/shared/shows/MAIN ANATOLE v06-26 3PO26.show" /All
+15h41m30.843s     MainTask : ******** logged in summary report ********
+15h41m30.843s     MainTask : * user 5 logged into session ****
+15h41m30.843s     MainTask : * profiles in session unchanged
+15h41m30.843s     MainTask : * preview in session unchanged
+15h41m30.843s     MainTask : ******************************************
+15h41m30.843s     MainTask : Update agenda todolist
+15h41m30.849s     MainTask : (Macro 9504 'Pro Plugins Startup')OK: Lua '_G["pro_plugins@pro_plugins_core@v1"]:onStartup()'
+15h41m30.867s     MainTask : LUA Runtime Error[string "_G["pro_plugins@pro_plugins_core@v1"]:onStart..."]:1: attempt to index a nil value (field 'pro_plugins@pro_plugins_core@v1')
+15h41m30.867s     MainTask : stack traceback:
+15h41m30.867s     MainTask : 	[string "_G["pro_plugins@pro_plugins_core@v1"]:onStart..."]:1: in main chunk
+15h41m30.948s     MainTask : Master patch version has changed
+15h41m32.608s     MainTask : OK: Call View 48
+15h41m35.086s     MainTask : OK: Edit Plugin 28
+15h41m36.939s     MainTask : Preparing library access to C:/ProgramData/MALightingTechnology/gma3_library/datapools/plugins
+15h41m37.063s     MainTask : OK: Library
+15h41m37.068s     MainTask : Preparing library access to C:/ProgramData/MALightingTechnology/gma3_library/datapools/plugins
+15h41m37.078s     MainTask : OK: Library
+15h41m42.198s     MainTask : OK: Import _FrameSelection 1 At Plugin 28 /NoConfirmation
+15h41m43.493s     MainTask : OK: Call Plugin 28
+15h41m43.509s     MainTask : [AZP] ================ AutoZoomGroupProbe v0.2 ================
+15h42m22.061s     MainTask : [AZP] cancelled
+15h42m23.171s     MainTask : OK: Menu "MenuSelector"
+15h42m25.327s     MainTask : Detected bounding box issue for fixture type No 21 with the name SceneObject in DMX mode 0xD1E4EC4B3ds: Infinity. This can, for example, cause problems when clicking on this object or rendering light and shadows on this object.
+15h42m25.354s     MainTask : Detected bounding box issue for fixture type No 21 with the name SceneObject in DMX mode 0xD1E4EC4B3ds: Infinity. This can, for example, cause problems when clicking on this object or rendering light and shadows on this object.
+15h42m25.394s     MainTask : OK: Menu 'Patch'.'Edit'
+15h42m25.399s     MainTask : 3D Settings:View3DSettings
+15h42m25.400s     MainTask : OK: ChangeDestination Root 14.10
+15h42m25.400s     MainTask : OK: ChangeDestination 7.1
+15h42m25.400s     MainTask : OK: ChangeDestination "Fixtures"
+15h42m25.400s     MainTask : >>> Visible State No. Caller was:FixturePatch
+15h42m25.400s     MainTask : >>> Visible State No. Caller was:FixturePatch
+15h42m25.400s     MainTask : >>> Visible State No. Caller was:FixturePatch
+15h42m32.577s     MainTask : OK: Edit UIGridSelection
+15h42m34.782s      Display : Command line destination is no more within the scope of this main dialog.
+15h42m34.782s      Display : Command line destination is no more within the scope of this main dialog.
+15h42m40.765s     MainTask : OK: Call View 20
+15h42m43.199s     MainTask : OK: SelectFixtures Group 1001
+15h42m43.717s     MainTask : OK: SelectFixtures Group 1001
+15h42m47.256s     MainTask : OK: SelectFixtures Group 1001
+15h42m48.291s     MainTask : OK: SelectFixtures Group 1001
+15h42m48.447s     MainTask : OK: SelectFixtures Group 1001
+15h42m55.550s     MainTask : OK: Fixture 101 Thru 112
+15h43m05.054s     MainTask : OK: Store Group 10
+15h43m08.747s     MainTask : OK: Label Group 10
+15h43m10.570s     MainTask : OK: Call View 48
+15h43m11.744s     MainTask : OK: Call Plugin 28
+15h43m11.760s     MainTask : [AZP] ================ AutoZoomGroupProbe v0.2 ================
+15h43m25.677s     MainTask : [AZP] cancelled
+15h43m27.427s     MainTask : OK: Menu "AddWindow"
+15h43m29.091s     MainTask : OK: Store ScreenContent Default 'WindowPresetPool' "MinW"="2" "MinH"="2" "MaxW"="0" "MaxH"="0" "PresetPoolType"="1" "SnapToBlockSize"='true' /NoConfirmation
+15h43m30.656s     MainTask : OK: Fixture 101
+15h43m35.848s     MainTask : --- Compressing preset ---
+15h43m35.848s     MainTask :     Dictionary    : 6 , 144 Bytes
+15h43m35.848s     MainTask :     Preset Memory : 60 Bytes
+15h43m35.848s     MainTask :     Dependencies  : 0 , 0 Bytes
+15h43m35.848s     MainTask :     Colors        : 0
+15h43m35.848s     MainTask :     Compression   : 50.0%
+15h43m35.848s     MainTask : Total references update requested : References
+15h43m35.849s     MainTask : OK: Store Preset 2.37
+15h43m35.864s     MainTask : Starting total reference update with a running update type: References
+15h43m35.864s     MainTask : Total references update status changed to Collecting Presets
+15h43m35.881s     MainTask : Timetest Total reference update: collecting presets : Finished in 0.038 ms
+15h43m35.881s     MainTask : Total references update status changed to Collecting Cues
+15h43m35.898s     MainTask : Timetest Total reference update: collecting cues : Finished in 0.675 ms
+15h43m35.898s     MainTask : Total references update status changed to Sorting Handles
+15h43m35.914s     MainTask : Total reference update: sorted 3379 handles
+15h43m35.914s     MainTask : Total references update status changed to Updating Presets
+15h43m35.929s     MainTask : Total references update status changed to Cleaning up Generators
+15h43m35.929s     MainTask : Timetest Updating References 1 : Finished in 0.497 ms
+15h43m35.944s     MainTask : Total references update status changed to Cleaning up Tags
+15h43m35.944s     MainTask : Timetest Total reference update: generator cleanup 1 : Finished in 0.707 ms
+15h43m35.961s     MainTask : Timetest Total reference update: recursion test 1 : Finished in 0.923 ms
+15h43m35.961s     MainTask : Total references update status changed to Testing Recursions
+15h43m35.976s     MainTask : Total references update status changed to User Cleanup
+15h43m35.976s     MainTask : Timetest Total reference update: tag cleanup 1 : Finished in 0.015 ms
+15h43m35.991s     MainTask : **********************************************************************
+15h43m35.991s     MainTask : * ServiceUserCleanup                                                 *
+15h43m35.991s     MainTask : **********************************************************************
+15h43m35.991s     MainTask : Total references update status changed to Idle
+15h43m35.991s     MainTask : ===============TRU Finished=================
+15h43m35.991s     MainTask : Timetest TRU Full: : TRU done in 126.504 ms
+15h43m35.991s     MainTask : TRU Stage Idle took 0.000ms
+15h43m35.991s     MainTask : TRU Stage Collecting Presets took 16.960ms
+15h43m35.991s     MainTask : TRU Stage Collecting Cues took 16.741ms
+15h43m35.991s     MainTask : TRU Stage Sorting Handles took 15.573ms
+15h43m35.991s     MainTask : TRU Stage Updating Presets took 14.895ms
+15h43m35.991s     MainTask : TRU Stage Tracking Conversion took 0.000ms
+15h43m35.991s     MainTask : TRU Stage Cleaning up Generators took 15.489ms
+15h43m35.991s     MainTask : TRU Stage Updating Programmer took 0.000ms
+15h43m35.991s     MainTask : TRU Stage Cleaning up Tags took 16.496ms
+15h43m35.991s     MainTask : TRU Stage Testing Recursions took 14.988ms
+15h43m35.991s     MainTask : TRU Stage User Cleanup took 15.343ms
+15h43m35.991s     MainTask : TRU Stage User Conversion took 0.000ms
+15h43m35.991s     MainTask : TRU Stage Verify Presets took 0.000ms
+15h43m35.991s     MainTask : TRU Items skipped 0
+15h43m35.991s     MainTask : Sequence inits made: 0
+15h43m35.991s     MainTask : Sequence analyze blocked made: 0
+15h43m35.991s     MainTask : Preset inits made: 0
+15h43m38.050s     MainTask : OK(ClearSelection): Clear
+15h43m38.209s     MainTask : OK: Clear
+15h43m38.349s     MainTask : OK: Clear
+15h43m38.476s     MainTask : OK: Clear
+15h43m38.649s     MainTask : OK: Clear
+15h43m40.303s     MainTask : OK: Call Plugin 28
+15h43m40.318s     MainTask : [AZP] ================ AutoZoomGroupProbe v0.2 ================
+15h43m52.098s     MainTask : [AZP] inputs: group 10, fixtures 101 + 102, cid 1, preset 37
+15h43m52.098s     MainTask : [AZP] G0: 40 groups
+15h43m52.098s     MainTask : [AZP] G0:   no 1, name ALL WASH
+15h43m52.098s     MainTask : [AZP] G0:   no 2, name BARRE LED PIXELS
+15h43m52.098s     MainTask : [AZP] G0:   no 3, name BARRE LED MASTERS
+15h43m52.098s     MainTask : [AZP] G0:   no 10, name ESPRITE XYZ
+15h43m52.098s     MainTask : [AZP] G0:   no 15, name WS MASTER
+15h43m52.098s     MainTask : [AZP] G0:   no 16, name WS PIXEL ENGINES
+15h43m52.098s     MainTask : [AZP] G0:   no 17, name WS PIXELS
+15h43m52.098s     MainTask : [AZP] G0:   no 18, name WS 201 GRID PROPRE
+15h43m52.098s     MainTask : [AZP] G0:   no 19, name WS RINGS
+15h43m52.098s     MainTask : [AZP] G0:   no 20, name WS PIXELS PHYSICAL
+15h43m52.098s     MainTask : [AZP] G0:   ...
+15h43m52.098s     MainTask : [AZP] G1: name ESPRITE XYZ, class Group
+15h43m52.098s     MainTask : [AZP] G1: .SelectionData = table: 000002E0FFF02220 (table)
+15h43m52.098s     MainTask : [AZP] G1: .Selection = table: 000002E0FFF2AD30 (table)
+15h43m52.098s     MainTask : [AZP] G1: .Fixtures = nil (nil)
+15h43m52.098s     MainTask : [AZP] G1: .Count = function: 00007FF63608B500 (function)
+15h43m52.098s     MainTask : [AZP] G1: .no = 10 (number)
+15h43m52.098s     MainTask : [AZP] G1: 0 children
+15h43m52.098s     MainTask : [AZP] G2: 1 objects
+15h43m52.098s     MainTask : [AZP] G2:   1 class Group, fid nil, name ESPRITE XYZ
+15h43m52.098s     MainTask : [AZP] G3: saved selection (empty)
+15h43m52.099s     MainTask : OK: SelectFixtures Group 10
+15h43m52.099s     MainTask : [AZP] G3: group selection 101 + 102 + 103 + 104 + 105 + 106 + 107 + 108 + 109 + 110 + 111 + 112
+15h43m52.100s     MainTask : OK: ClearSelection
+15h43m52.100s     MainTask : [AZP] G3: restored (empty) -> EXACT
+15h43m52.103s     MainTask : OK: ClearAll
+15h43m52.104s     MainTask : OK: Fixture 101 + 102
+15h43m52.106s     MainTask : OK: Attribute "XYZ_MArker" At 1
+15h43m52.106s     MainTask : OK: Attribute "XYZ_X" Thru "XYZ_Z" At Preset 37
+15h43m52.107s     MainTask : [AZP] P1: fixture 101 marker 5.9604644775390625e-06 (1 steps), X 50.0 (1 steps)
+15h43m52.107s     MainTask : [AZP] P1: fixture 102 marker 5.9604644775390625e-06 (1 steps), X 50.0 (1 steps)
+15h43m52.108s     MainTask : OK: ClearAll
+15h43m52.108s     MainTask : [AZP] X1: preset not found
+15h43m52.108s     MainTask : [AZP] C1: Global: Disabled, Focus, FocusText, AnimatedFocus1, AnimatedFocus2, Hover, Pressed, Selected, SelectedInverted, SelectedEdge, InvalidGridPosition, PartlySelected, SelectedPreset, PartlySelectedPreset, Transparent, Transparent25, Transparent50, Transparent75, Background, BackgroundSelected, BackgroundSelectedInverted, Default, DefaultTransparent75, Inactive, Bright, Shadow, Lightened, Darkened, Text, LabelText, WarningText, ErrorText, AlertText, SuccessText, Neutral, Collected, UserChanged, Charging, Running, Preview
+15h43m52.108s     MainTask : [AZP] C1: ProgLayer: Auto, Fade, Delay, Speed, SpeedMaster, Phase, Transition, Width, Measure, NShot, GridPos, Absolute, Relative, Accel, Decel, CueAbs, CueRel, SequID, TextActive, BackgroundActiveFade, BackgroundActiveDelay, BackgroundActiveSpeed, BackgroundActiveSpeedMaster, BackgroundActivePhase, BackgroundActiveMeasure, BackgroundActiveNShot, BackgroundActiveGridPos, BackgroundActiveAbsolute, BackgroundActiveRelative, BackgroundActiveAccel, BackgroundActiveDecel, BackgroundActiveTransition, BackgroundActiveWidth, TextOtherUser, BackgroundOtherUser, TextPlayback, BackgroundPlayback, TextPlaybackOther, BackgroundPlaybackOther, TextProgOther, BackgroundProgOther, TextSelectedPlayback, BackgroundSelectedPlayback
+15h43m52.108s     MainTask : [AZP] ================ done ================
+15h44m26.337s     MainTask : OK: Call Macro 907
+15h44m28.179s     MainTask : Application version is 2.5.1.1
+15h44m28.179s     MainTask : Station  SN   : f3E
+15h44m28.179s     MainTask : Station  IP   : onPC 192.168.13.165
+15h44m28.179s     MainTask : Station  OS   : Windows
+15h44m28.179s     MainTask : Station  Build: Release
+15h44m28.179s     MainTask : Station  Name : NAODEMO1
+15h44m28.179s     MainTask : Session  Name : NAODEMO1
+15h44m28.179s     MainTask : Location Name : Local
+15h44m28.179s     MainTask : Show file Name : MAIN ANATOLE v06-26 3PO26
+15h44m28.179s     MainTask : Station Status: IdleMaster
+15h44m28.179s     MainTask : Release type Release
+15h44m28.179s     MainTask : Compiled at Oct  6 2026 17:36:13
+15h44m28.179s     MainTask : Binary hash 861526db71dcd51ef89a93a509333ee0b5f3179ea0a021e988e26ce1e3580bb7
+15h44m28.179s     MainTask : Repository hash 6dd1a8dc4455bd75374a94ad6a6625dd3c99b392
+15h44m28.179s     MainTask : Commit date     2026-10-06 09:55:15 +0200

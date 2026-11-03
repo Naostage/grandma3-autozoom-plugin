@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <GMA3 DataVersion="2.1.1.2">
-<UserPlugin Name="AutoZoom Group Probe" Version="0.2.0.0" Author="Naostage">
+<UserPlugin Name="AutoZoom Group Probe" Version="0.3.0.0" Author="Naostage">
     <ComponentLua FileName="AutoZoomGroupProbe.lua" />
 </UserPlugin>
 </GMA3>

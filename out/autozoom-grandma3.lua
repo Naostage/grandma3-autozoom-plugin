@@ -3129,7 +3129,7 @@ end
 function ____exports.tickColor(kind)
     local ____temp_2
     if kind == "self" then
-        ____temp_2 = ____exports.color("Global", "Selected")
+        ____temp_2 = ____exports.color("Global", "SuccessText")
     else
         ____temp_2 = ____exports.color("Global", "WarningText")
     end

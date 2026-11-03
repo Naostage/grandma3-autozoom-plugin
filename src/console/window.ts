@@ -145,9 +145,9 @@ export function paint(obj: any, c: any): void {
 }
 
 // Tick colours of the add picker: green = in the list by itself, yellow = only through a group.
-// Theme colour names to be confirmed by the group probe (C1).
+// Theme colour names from the group probe (C1, onPC 2.5.1.1).
 export function tickColor(kind: "self" | "group"): any {
-    return kind === "self" ? color("Global", "Selected") : color("Global", "WarningText");
+    return kind === "self" ? color("Global", "SuccessText") : color("Global", "WarningText");
 }
 
 export function textColor(obj: any, c: any): void {

@@ -1,9 +1,8 @@
--- AutoZoom — group probe: how to read a Group's fixtures, program several fixtures at once,
--- read the attribute names of an XYZ preset, and list the theme colour names (tick colours).
+-- AutoZoom — group probe v0.3: what a Group object's SelectionData / Selection hold (to read its
+-- fixtures without touching the selection), and the attribute names of an XYZ preset.
 --
--- SETUP: a Group holding a few XYZ fixtures, those fixtures' IDs, a marker CID and an XYZ preset.
--- The probe clears the programmer (ClearAll) twice. Send back the whole command line feedback
--- (every line starting with [AZP]).
+-- SETUP: a Group holding a few XYZ fixtures and an XYZ preset (pool.number, e.g. 2.37). Nothing is
+-- selected or programmed. Send back every line starting with [AZP].
 
 local function P(s) Printf("[AZP] " .. s) end
 
@@ -18,126 +17,51 @@ local function field(o, k)
     return "<err>"
 end
 
-local function children(o)
-    local ok, list = pcall(function() return o:Children() end)
-    if ok and type(list) == "table" then return list end
-    return {}
+local function show(v)
+    if type(v) ~= "userdata" then return tostring(v) .. " (" .. type(v) .. ")" end
+    local ok, cls = pcall(function() return v:GetClass() end)
+    local name = field(v, "name")
+    return "<" .. (ok and tostring(cls) or "userdata") .. " " .. tostring(name) .. " fid " .. tostring(field(v, "fid")) .. ">"
 end
 
-local function fids(list)
-    local out = {}
-    for f in string.gmatch(list, "%d+") do out[#out + 1] = tonumber(f) end
-    return out
-end
-
-local function selection()
-    local out = {}
-    local i = SelectionFirst()
-    while i do
-        local sf = GetSubfixture(i)
-        out[#out + 1] = sf and tonumber(sf.fid) or ("?" .. tostring(i))
-        i = SelectionNext(i)
+-- Prints a table's entries (max 12 per level) down to `depth` levels.
+local function dump(label, t, depth, indent)
+    indent = indent or ""
+    if type(t) ~= "table" then P(label .. ": " .. indent .. show(t)) return end
+    local n = 0
+    for k, v in pairs(t) do
+        n = n + 1
+        if n > 12 then P(label .. ": " .. indent .. "...") break end
+        P(label .. ": " .. indent .. "[" .. tostring(k) .. "] = " .. (type(v) == "table" and "table" or show(v)))
+        if type(v) == "table" and depth > 1 then dump(label, v, depth - 1, indent .. "    ") end
     end
-    return out
-end
-
-local function join(t) local s = {} for _, v in ipairs(t) do s[#s + 1] = tostring(v) end return table.concat(s, " + ") end
-
-local function subIndex(fid)
-    for i = 0, GetSubfixtureCount() do
-        local sf = GetSubfixture(i)
-        if sf and tonumber(sf.fid) == fid then return i end
-    end
-end
-
-local function prog(ui)
-    local ok, t = pcall(GetProgPhaser, ui, false)
-    if not ok then return "<error> " .. tostring(t) end
-    if type(t) ~= "table" then return tostring(t) end
-    return tostring(t[1] and t[1].absolute) .. " (" .. #t .. " steps)"
+    if n == 0 then P(label .. ": " .. indent .. "(empty table)") end
 end
 
 return function()
-    P("================ AutoZoomGroupProbe v0.2 ================")
+    P("================ AutoZoomGroupProbe v0.3 ================")
     local box = MessageBox({
-        title = "AutoZoom group probe",
+        title = "AutoZoom group probe v0.3",
         commands = { { value = 1, name = "Run" }, { value = 0, name = "Cancel" } },
-        inputs = {
-            { name = "Group", value = "1" },
-            { name = "Fixtures", value = "101 + 102" },
-            { name = "Marker CID", value = "1" },
-            { name = "XYZ preset", value = "2.30" },
-        },
+        inputs = { { name = "Group", value = "10" }, { name = "XYZ preset", value = "2.37" } },
     })
     if not box or box.result ~= 1 then P("cancelled") return end
     local gno = tonumber(box.inputs["Group"])
-    local list = fids(box.inputs["Fixtures"] or "")
-    local cid = box.inputs["Marker CID"]
     local preset = box.inputs["XYZ preset"]
-    P("inputs: group " .. tostring(gno) .. ", fixtures " .. join(list) .. ", cid " .. tostring(cid) .. ", preset " .. tostring(preset))
+    P("inputs: group " .. tostring(gno) .. ", preset " .. tostring(preset))
+    local g = DataPool().Groups[gno]
+    if not g then P("group not found") return end
 
-    run("G0", function()
-        local kids = children(DataPool().Groups)
-        P("G0: " .. #kids .. " groups")
-        for i, g in ipairs(kids) do
-            if i > 10 then P("G0:   ...") break end
-            P("G0:   no " .. tostring(field(g, "no")) .. ", name " .. tostring(field(g, "name")))
+    run("S1", function() dump("S1 SelectionData", field(g, "SelectionData"), 3) end)
+    run("S2", function() dump("S2 Selection", field(g, "Selection"), 3) end)
+    run("S3", function() P("S3: Count() = " .. tostring(g:Count())) end)
+    run("S4", function()
+        local sd = field(g, "SelectionData")
+        if type(sd) == "table" and type(sd[1]) == "userdata" then
+            local s = sd[1]
+            P("S4: first entry " .. show(s) .. ", no " .. tostring(field(s, "no")) .. ", id " .. tostring(field(s, "id")) ..
+                ", sub " .. tostring(field(s, "sub")))
         end
-    end)
-
-    run("G1", function()
-        local g = DataPool().Groups[gno]
-        if not g then P("G1: DataPool().Groups[" .. tostring(gno) .. "] is nil") return end
-        P("G1: name " .. tostring(field(g, "name")) .. ", class " .. tostring(field(g, "GetClass") and g:GetClass()))
-        for _, k in ipairs({ "SelectionData", "Selection", "Fixtures", "Count", "no" }) do
-            local v = field(g, k)
-            P("G1: ." .. k .. " = " .. tostring(v) .. " (" .. type(v) .. ")")
-        end
-        local kids = children(g)
-        P("G1: " .. #kids .. " children")
-        for i, c in ipairs(kids) do
-            P("G1:   child " .. i .. " class " .. tostring(c:GetClass()) .. ", name " .. tostring(field(c, "name")) ..
-                ", fid " .. tostring(field(c, "fid")) .. ", no " .. tostring(field(c, "no")))
-        end
-    end)
-
-    run("G2", function()
-        local l = ObjectList("Group " .. tostring(gno))
-        if not l then P("G2: ObjectList returned nil") return end
-        P("G2: " .. #l .. " objects")
-        for i, o in ipairs(l) do
-            P("G2:   " .. i .. " class " .. tostring(o:GetClass()) .. ", fid " .. tostring(field(o, "fid")) ..
-                ", name " .. tostring(field(o, "name")))
-        end
-    end)
-
-    run("G3", function()
-        local saved = selection()
-        P("G3: saved selection " .. (#saved > 0 and join(saved) or "(empty)"))
-        Cmd("SelFix Group " .. tostring(gno))
-        P("G3: group selection " .. join(selection()))
-        Cmd("ClearSelection")
-        if #saved > 0 then Cmd("Fixture " .. join(saved)) end
-        local back = selection()
-        P("G3: restored " .. (#back > 0 and join(back) or "(empty)") .. " -> " ..
-            (join(back) == join(saved) and "EXACT" or "DIFFERENT"))
-    end)
-
-    run("P1", function()
-        Cmd("ClearAll")
-        Cmd("Fixture " .. join(list))
-        Cmd('Attribute "XYZ_MArker" At ' .. tostring(cid))
-        Cmd('Attribute "XYZ_X" Thru "XYZ_Z" At Preset ' .. tostring(preset))
-        local am, ax = GetAttributeIndex("XYZ_MArker"), GetAttributeIndex("XYZ_X")
-        for _, f in ipairs(list) do
-            local s = subIndex(f)
-            if not s then
-                P("P1: fixture " .. f .. " not found")
-            else
-                P("P1: fixture " .. f .. " marker " .. prog(GetUIChannelIndex(s, am)) .. ", X " .. prog(GetUIChannelIndex(s, ax)))
-            end
-        end
-        Cmd("ClearAll")
     end)
 
     run("X1", function()
@@ -151,14 +75,6 @@ return function()
             table.sort(names)
             P("X1: fixture " .. tostring(fid) .. ": " .. table.concat(names, ", "))
             break
-        end
-    end)
-    run("C1", function()
-        local groups = Root().ColorTheme.ColorGroups
-        for _, gname in ipairs({ "Global", "ProgLayer" }) do
-            local names = {}
-            for _, c in ipairs(children(groups[gname])) do names[#names + 1] = tostring(field(c, "name")) end
-            P("C1: " .. gname .. ": " .. table.concat(names, ", "))
         end
     end)
     P("================ done ================")

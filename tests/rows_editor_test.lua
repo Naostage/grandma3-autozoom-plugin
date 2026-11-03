@@ -73,6 +73,7 @@ T.test("ticks show what the list covers", function()
   U.click("AZW_RowAdd")
   U.click("AZW_AddTab_2")
   local w = az().window
+  T.eq(w.tickColor("self"), "green", "green = Global.SuccessText"); T.eq(w.tickColor("group"), "yellow", "yellow = Global.WarningText")
   local t101, t102, t205 = tile("101  "), tile("102  "), tile("205  ")
   T.truthy(t101.Text:find("✔", 1, true), "101 ticked"); T.eq(t101.TextColor, w.tickColor("group"), "101 yellow")
   T.eq(rawget(t101, "Enabled"), nil, "101 still tappable")
