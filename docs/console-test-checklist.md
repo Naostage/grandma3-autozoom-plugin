@@ -40,7 +40,7 @@ Tick each line on a copy of a real show. Note the System Monitor output for any 
 35. [ ] Setup → Layout rows… opens the editor; /\ and \/ reorder lines (disabled at the ends); the trash asks "Remove …?" and No keeps the line.
 36. [ ] + opens the picker: Groups and Fixtures tabs, several tiles numbered in tap order, Add appends them in that order; Cancel adds nothing.
 37. [ ] Ticks: a fixture listed by itself has a green tick (tile disabled); a fixture only in a listed group has a yellow tick; a listed group has a green tick.
-38. [ ] Close after a change rebuilds the layout (also while running): group rows and fixture rows in list order, group rows without Distance/Zoom/Iris/Size.
+38. [ ] Each change (add, reorder, remove) rebuilds the layout at once, also while running: group rows and fixture rows in list order, group rows without Distance/Zoom/Iris/Size. Closing with the title-bar X keeps the changes.
 39. [ ] Tap a marker cell of a group row: every XYZ fixture of the group is in the programmer on that marker with the XYZ offset (check each fixture in the Fixture sheet); the cell shows P; tap again releases them all.
 40. [ ] Group Arm cell: shows n/m armed; with one member disarmed a tap arms all, then a tap disarms all.
 41. [ ] A fixture left out of the list stops being driven: its zoom/iris return to the cue values.

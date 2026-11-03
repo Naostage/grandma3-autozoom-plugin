@@ -399,6 +399,17 @@ T.test("closing the editor with changes rebuilds via RescanLater while running",
   T.eq(az().config.parseConfig(d.saved["AutoZoom.config"]).config.rows, { { kind = "fixture", fid = 101 } }, "saved")
 end)
 
+T.test("each edit rebuilds via RescanLater, so closing with the title-bar X loses nothing", function()
+  local d, a = rowsSetup(G3)
+  a:Install(); a:Start()
+  a:Rows()
+  d.rowsEditor.onChange({ { kind = "fixture", fid = 101 } })
+  d:runLaters()   -- no onClose: the window was dismissed with its X or replaced by another window
+  local k = cellKeys(d)
+  T.truthy(k["arm 101"], "fixture row"); T.eq(k["garm 3"], nil, "group row gone")
+  T.truthy(a.running, "still running")
+end)
+
 T.test("closing the editor without changes does not rescan", function()
   local d, a = rowsSetup(G3)
   a:Install(); a:Rows()

@@ -354,16 +354,16 @@ export class AutoZoom {
         this.openRows();
     }
 
-    // Edits are stored as they are made; closing with changes rebuilds the layout and the managed set.
+    // Each edit is stored and rebuilds the layout and the managed set at once: the window can also be closed
+    // with its title-bar X or replaced by another window, and neither calls back.
     private openRows(): void {
         const catalog = { groups: this.desk.listGroups(), fixtures: this.patch.fixtures.map(f => ({ fid: f.fid, name: f.name })) };
         this.desk.openRowsEditor(this.config.rows, catalog, rows => {
             if (!this.ensureCurrent()) return;
             this.config.rows = rows;
             this.markDirty();
-        }, changed => {
-            if (changed) this.RescanLater();
-        });
+            this.RescanLater();
+        }, () => undefined);
     }
 
     PickOffset(): void {
