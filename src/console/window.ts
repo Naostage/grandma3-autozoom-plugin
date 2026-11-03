@@ -18,7 +18,9 @@ export function color(group: string, name: string): any {
 }
 
 function screenOverlay(): any {
-    let idx = (Obj as any).Index(GetFocusDisplay());
+    // Obj.Index is a plain function (Bake Offset: Obj.Index(GetFocusDisplay())); called through `any`, tstl would emit Obj:Index.
+    const index: (this: void, h: any) => number = (Obj as any).Index;
+    let idx = index(GetFocusDisplay());
     if (idx > 5) idx = 1;
     return (GetDisplayByIndex(idx) as any).ScreenOverlay;
 }

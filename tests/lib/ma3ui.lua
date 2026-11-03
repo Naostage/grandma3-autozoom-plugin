@@ -27,8 +27,10 @@ U.signals = {}
 function U.install()
   U.overlay = node("ScreenOverlay")
   U.signals = {}
-  _G.GetFocusDisplay = function() return {} end
-  _G.Obj = { Index = function() return 1 end }
+  U.display = { name = "Display 1" }
+  _G.GetFocusDisplay = function() return U.display end
+  -- Obj.Index(handle) is a plain function on the console: Obj:Index(handle) would pass Obj as the handle.
+  _G.Obj = { Index = function(h) if h ~= U.display then error("Obj.Index called with " .. tostring(h)) end return 1 end }
   _G.GetDisplayByIndex = function() return { ScreenOverlay = U.overlay } end
   _G.Root = function() return { ColorTheme = { ColorGroups = { Global = { ErrorText = "red", Selected = "blue", SuccessText = "green", WarningText = "yellow" },
     ProgLayer = { Absolute = "blue" } } } } end
