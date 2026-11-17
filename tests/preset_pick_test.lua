@@ -92,6 +92,17 @@ T.test("Cancel closes without a pick", function()
   T.eq(got, {}, "no pick"); T.eq(U.texts(), "", "window closed")
 end)
 
+T.test("Cancel sits above the grid, so a full pool cannot push it off a short screen", function()
+  pickerWindow()
+  local body = U.find(function(x) return x.class == "DialogFrame" end)[1]
+  local holder
+  for _, c in ipairs(body.children) do
+    for _, b in ipairs(c.children) do if b.Clicked == "AZW_PickCancel" then holder = c end end
+  end
+  T.truthy(holder, "Cancel in a body row"); T.eq(holder.Anchors, "0,1", "hint row, under the pool tabs")
+  T.eq(body.Rows, 3, "tabs, hint + Cancel, grid: no footer row")
+end)
+
 T.test("Setup with Save applies the answers", function()
   local d, a = setup()
   d.setupAnswer = { action = "save", source = "values", preset = "", x = "1", y = "2", z = "3", min = "1", max = "4", rate = "30" }

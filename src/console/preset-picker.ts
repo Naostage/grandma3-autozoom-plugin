@@ -9,7 +9,7 @@ const TILE_HEIGHT = 70;
 const MAX_HEIGHT = 520;
 const TAB_HEIGHT = 70;
 const HINT_HEIGHT = 60;
-const FOOTER_HEIGHT = 70;
+const CANCEL_WIDTH = 200;
 const SCROLLBAR_WIDTH = 30;
 
 interface PresetItem { addr: string; no: number; name: string; handle: any }
@@ -58,7 +58,8 @@ export function openPresetPicker(current: string, onPick: (preset: string) => vo
         const presets = pool?.presets ?? [];
         const rows = Math.max(1, Math.ceil(presets.length / COLUMNS));
         const content = rows * TILE_HEIGHT + 10;
-        fixedRows(body, [TAB_HEIGHT, HINT_HEIGHT, Math.min(content, MAX_HEIGHT), FOOTER_HEIGHT]);
+        // Cancel shares the hint row: a footer under a full grid can fall below a short screen.
+        fixedRows(body, [TAB_HEIGHT, HINT_HEIGHT, Math.min(content, MAX_HEIGHT)]);
 
         const tabs = row(body, 0);
         const tabW = Math.min(180, Math.floor((WIDTH - 20) / Math.max(pools.length, 1)) - 5);
@@ -67,7 +68,9 @@ export function openPresetPicker(current: string, onPick: (preset: string) => vo
             if (pool !== undefined && p.no === pool.no) paint(b, color("ProgLayer", "Absolute"));
         });
 
-        label(row(body, 1), "Tap the preset that holds the XYZ offset. Greyed: no XYZ values.", WIDTH - 30, HINT_HEIGHT - 10);
+        const hint = row(body, 1);
+        label(hint, "Tap the preset that holds the XYZ offset. Greyed: no XYZ values.", WIDTH - CANCEL_WIDTH - 40, HINT_HEIGHT - 10);
+        button(hint, "Cancel", CANCEL_WIDTH, HINT_HEIGHT - 10, "AZW_PickCancel", () => closeWindow());
 
         const grid = scrollGrid(body, 2, WIDTH, content, COLUMNS, rows);
         const tileW = Math.floor((WIDTH - SCROLLBAR_WIDTH - 40) / COLUMNS);
@@ -85,7 +88,6 @@ export function openPresetPicker(current: string, onPick: (preset: string) => vo
             if (!usable) pcall(() => { tile.Enabled = "No"; });
         });
 
-        button(row(body, 3), "Cancel", 200, FOOTER_HEIGHT - 20, "AZW_PickCancel", () => closeWindow());
     }
     draw();
 }
