@@ -94,11 +94,7 @@ end)
 
 T.test("Cancel sits above the grid, so a full pool cannot push it off a short screen", function()
   pickerWindow()
-  local body = U.find(function(x) return x.class == "DialogFrame" end)[1]
-  local holder
-  for _, c in ipairs(body.children) do
-    for _, b in ipairs(c.children) do if b.Clicked == "AZW_PickCancel" then holder = c end end
-  end
+  local holder, body = U.bodyRowOf("AZW_PickCancel")
   T.truthy(holder, "Cancel in a body row"); T.eq(holder.Anchors, "0,1", "hint row, under the pool tabs")
   T.eq(body.Rows, 3, "tabs, hint + Cancel, grid: no footer row")
 end)

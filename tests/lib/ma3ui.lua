@@ -52,6 +52,15 @@ function U.texts()
   return table.concat(t, " | ")
 end
 
+-- The window body and the body row holding the button wired to `signal`.
+function U.bodyRowOf(signal)
+  local body = U.find(function(x) return x.class == "DialogFrame" end)[1]
+  for _, c in ipairs(body.children) do
+    for _, b in ipairs(c.children) do if b.Clicked == signal then return c, body end end
+  end
+  return nil, body
+end
+
 function U.click(name, caller)
   local fn = U.signals[name]
   assert(fn, "no signal " .. tostring(name))

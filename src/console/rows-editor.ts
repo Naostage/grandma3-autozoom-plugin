@@ -9,7 +9,7 @@ const WIDTH = 1000;
 const LINE_HEIGHT = 70;
 const MAX_HEIGHT = 520;
 const TAB_HEIGHT = 70;
-const FOOTER_HEIGHT = 70;
+const TOOLS_HEIGHT = 70;
 const ARROW_WIDTH = 90;
 const COLUMNS = 4;
 const TILE_HEIGHT = 70;
@@ -40,8 +40,15 @@ export function openRowsEditor(rows: RowEntry[], catalog: Catalog, onChange: (ro
         const body = buildBase("AutoZoom — layout rows", WIDTH);
         const lines = Math.max(1, current.length);
         const content = lines * LINE_HEIGHT + 10;
-        fixedRows(body, [Math.min(content, MAX_HEIGHT), FOOTER_HEIGHT]);
-        const grid = scrollGrid(body, 0, WIDTH, content, 1, lines);
+        // Buttons above the list: a footer under a full list can fall below a short screen.
+        fixedRows(body, [TOOLS_HEIGHT, Math.min(content, MAX_HEIGHT)]);
+        const tools = row(body, 0);
+        button(tools, "+", 120, TOOLS_HEIGHT - 20, "AZW_RowAdd", () => { picked = []; drawAdd(); });
+        button(tools, "Close", 200, TOOLS_HEIGHT - 20, "AZW_RowClose", () => {
+            closeWindow();
+            onClose(changed);
+        });
+        const grid = scrollGrid(body, 1, WIDTH, content, 1, lines);
         const labelW = WIDTH - SCROLLBAR_WIDTH - 60 - 3 * (ARROW_WIDTH + 5);
         if (current.length === 0) label(grid, "Empty: every XYZ fixture gets its own row", labelW, LINE_HEIGHT - 10).Anchors = "0,0";
         current.forEach((e, i) => {
@@ -56,12 +63,6 @@ export function openRowsEditor(rows: RowEntry[], catalog: Catalog, onChange: (ro
             pcall(() => { del.Icon = "trash"; });
             if (i === 0) disable(up);
             if (i === current.length - 1) disable(down);
-        });
-        const footer = row(body, 1);
-        button(footer, "+", 120, FOOTER_HEIGHT - 20, "AZW_RowAdd", () => { picked = []; drawAdd(); });
-        button(footer, "Close", 200, FOOTER_HEIGHT - 20, "AZW_RowClose", () => {
-            closeWindow();
-            onClose(changed);
         });
     }
 
@@ -83,13 +84,19 @@ export function openRowsEditor(rows: RowEntry[], catalog: Catalog, onChange: (ro
         const list = tiles();
         const lines = Math.max(1, Math.ceil(list.length / COLUMNS));
         const content = lines * TILE_HEIGHT + 10;
-        fixedRows(body, [TAB_HEIGHT, Math.min(content, MAX_HEIGHT), FOOTER_HEIGHT]);
+        fixedRows(body, [TAB_HEIGHT, Math.min(content, MAX_HEIGHT)]);   // Add / Cancel share the tab row
 
         const tabs = row(body, 0);
         (["Groups", "Fixtures"] as const).forEach((name, i) => {
             const b = button(tabs, name, 200, TAB_HEIGHT - 10, `AZW_AddTab_${i + 1}`, () => { tab = i + 1; drawAdd(); });
             if (tab === i + 1) paint(b, color("ProgLayer", "Absolute"));
         });
+        button(tabs, `Add ${fmtInt(picked.length)}`, 200, TAB_HEIGHT - 10, "AZW_AddOk", () => {
+            const next = addEntries(current, picked);
+            picked = [];
+            if (next.length !== current.length) commit(next); else drawEditor();
+        });
+        button(tabs, "Cancel", 200, TAB_HEIGHT - 10, "AZW_AddCancel", () => { picked = []; drawEditor(); });
 
         const grid = scrollGrid(body, 1, WIDTH, content, COLUMNS, lines);
         const tileW = Math.floor((WIDTH - SCROLLBAR_WIDTH - 40) / COLUMNS);
@@ -108,13 +115,6 @@ export function openRowsEditor(rows: RowEntry[], catalog: Catalog, onChange: (ro
             if (t.tick === "self") disable(b);         // already in the list by itself: no duplicate entries
         });
 
-        const footer = row(body, 2);
-        button(footer, `Add ${fmtInt(picked.length)}`, 200, FOOTER_HEIGHT - 20, "AZW_AddOk", () => {
-            const next = addEntries(current, picked);
-            picked = [];
-            if (next.length !== current.length) commit(next); else drawEditor();
-        });
-        button(footer, "Cancel", 200, FOOTER_HEIGHT - 20, "AZW_AddCancel", () => { picked = []; drawEditor(); });
     }
 
     drawEditor();

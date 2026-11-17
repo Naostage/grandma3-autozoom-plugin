@@ -94,3 +94,16 @@ T.test("Close reports whether anything changed", function()
   U.click("AZW_RowClose")
   T.eq(got.closed, { true }, "changed")
 end)
+
+T.test("editor and add window keep their buttons above the grid, so a long list cannot push them off screen", function()
+  editor({ G3, F205 })
+  for _, sig in ipairs({ "AZW_RowAdd", "AZW_RowClose" }) do
+    local holder, body = U.bodyRowOf(sig)
+    T.truthy(holder, sig .. " in a body row"); T.eq(holder.Anchors, "0,0", sig .. " in the top row"); T.eq(body.Rows, 2, "buttons, list")
+  end
+  U.click("AZW_RowAdd")
+  for _, sig in ipairs({ "AZW_AddOk", "AZW_AddCancel" }) do
+    local holder, body = U.bodyRowOf(sig)
+    T.truthy(holder, sig .. " in a body row"); T.eq(holder.Anchors, "0,0", sig .. " with the tabs"); T.eq(body.Rows, 2, "tabs + buttons, grid")
+  end
+end)
