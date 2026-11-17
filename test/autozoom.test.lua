@@ -146,6 +146,33 @@ test("Enable restarts the update loop even if the previous loop never completed"
     assertEqual(AZ.expected_remaining_update, remaining - 1, "remaining updates after one tick")
 end)
 
+test("plugin starts when the global AZ is a foreign value without Cleanup (grandMA3 v2.5.1)", function()
+    _G.AZ = {}
+    plugin()()
+    assertEqual(type(AZ.CreateMacros), "function", "AZ.CreateMacros")
+    AZ:CreateMacros(1)
+end)
+
+test("plugin starts when the global table resolves AZ through a metamethod", function()
+    _G.AZ = nil
+    local previousMeta = getmetatable(_G)
+    setmetatable(_G, {__index = function(_, key) if key == "AZ" then return {} end end})
+    local ok, err = pcall(function() plugin()() end)
+    local azRaw = rawget(_G, "AZ")
+    setmetatable(_G, previousMeta)
+    assert(ok, err)
+    assertEqual(type(azRaw), "table", "raw global AZ")
+    assertEqual(type(azRaw.CreateMacros), "function", "AZ.CreateMacros")
+end)
+
+test("restarting the plugin stops the previous instance", function()
+    local previous = AZ
+    previous:Enable()
+    plugin()()
+    assertEqual(previous.enabled, false, "previous instance enabled")
+    assert(AZ ~= previous, "a new instance replaces the previous one")
+end)
+
 local failed = 0
 for _, t in ipairs(tests) do
     setup()
