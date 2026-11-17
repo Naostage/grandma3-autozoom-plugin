@@ -1297,7 +1297,7 @@ function AZ_Global_Type.prototype.Start(self)
     local ____Popup_5 = Popup
     local ____array_4 = __TS__SparseArrayNew(
         "Plugin GRANDMA3 AUTOZOOM launched",
-        "Plugin version : 1.1.2",
+        "Plugin version : 1.2.1",
         "Plugin author : Naostage 2025",
         "",
         table.unpack(patchMessage)

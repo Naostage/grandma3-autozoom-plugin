@@ -231,7 +231,7 @@ export class AZ_Global_Type {
         this.initialized = true;
         Popup([
             "Plugin GRANDMA3 AUTOZOOM launched",
-            "Plugin version : 1.1.2",
+            "Plugin version : 1.2.1",
             "Plugin author : Naostage 2025",
             "",
             ...patchMessage,
